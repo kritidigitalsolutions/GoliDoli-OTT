@@ -5,6 +5,13 @@ const Episode = require("../models/episode.model");
 const Microdrama = require("../models/microdrama.model");
 const MicrodramaEpisode = require("../models/microdramaEpisode.model");
 
+const getSearchFilter = (search) => {
+  const term = String(search || "").trim();
+  return term
+    ? { title: { $regex: term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } }
+    : {};
+};
+
 const getEpisodesByParent = async (Model, parentField, parents, sort, projection) => {
   const parentIds = parents.map((parent) => parent._id);
   const episodes = await Model.find({ [parentField]: { $in: parentIds } })
@@ -92,18 +99,19 @@ const getLandingContent = async (req, res) => {
 
 const getHomeContent = async (req, res) => {
   try {
+    const filter = { isPublished: true, ...getSearchFilter(req.query.search) };
     const [movies, series, microdramas] = await Promise.all([
-      Movie.find({ isPublished: true }).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
-      Series.find({ isPublished: true }).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
-      Microdrama.find({ isPublished: true }).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
+      Movie.find(filter).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
+      Series.find(filter).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
+      Microdrama.find(filter).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
     ]);
 
     const [moviesCount, seriesCount, microdramasCount, seriesData, microdramaData, episodesBySeries, episodesByMicrodrama] = await Promise.all([
-      Movie.countDocuments({ isPublished: true }),
-      Series.countDocuments({ isPublished: true }),
-      Microdrama.countDocuments({ isPublished: true }),
-      Series.find({ isPublished: true }, "totalEpisodes").lean(),
-      Microdrama.find({ isPublished: true }, "totalEpisodes").lean(),
+      Movie.countDocuments(filter),
+      Series.countDocuments(filter),
+      Microdrama.countDocuments(filter),
+      Series.find(filter, "totalEpisodes").lean(),
+      Microdrama.find(filter, "totalEpisodes").lean(),
       getEpisodesByParent(Episode, "seriesId", series, { seasonNumber: 1, episodeNumber: 1 }),
       getEpisodesByParent(MicrodramaEpisode, "tvShowId", microdramas, { episodeNumber: 1 }),
     ]);

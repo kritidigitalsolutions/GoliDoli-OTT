@@ -1,12 +1,20 @@
 const Series = require("../models/series.model");
 const Episode = require("../models/episode.model");
 
+const getSearchFilter = (search) => {
+  const term = String(search || "").trim();
+  return term
+    ? { title: { $regex: term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } }
+    : {};
+};
+
 // ========================================
 // GET ALL SERIES
 // ========================================
 const getAllSeries = async (req, res) => {
   try {
-    const series = await Series.find({ isPublished: true }).sort({ priority: 1, createdAt: -1 }).lean();
+    const filter = { isPublished: true, ...getSearchFilter(req.query.search) };
+    const series = await Series.find(filter).sort({ priority: 1, createdAt: -1 }).lean();
 
     // Fetch all episodes for these series
     const seriesIds = series.map(s => s._id);

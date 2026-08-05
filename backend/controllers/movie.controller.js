@@ -1,5 +1,12 @@
 const Movie = require("../models/movie.model");
 
+const getSearchFilter = (search) => {
+  const term = String(search || "").trim();
+  return term
+    ? { title: { $regex: term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } }
+    : {};
+};
+
 // ========================================
 // GET ALL MOVIES
 // ========================================
@@ -12,14 +19,15 @@ const getAllMovies = async (req, res) => {
     const limit = Number(req.query.limit) || 10;
 
     const skip = (page - 1) * limit;
+    const filter = { isPublished: true, ...getSearchFilter(req.query.search) };
 
-    const movies = await Movie.find({ isPublished: true })
+    const movies = await Movie.find(filter)
       .sort({ priority: 1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const total = await Movie.countDocuments({ isPublished: true });
+    const total = await Movie.countDocuments(filter);
 
     return res.json({
       success: true,

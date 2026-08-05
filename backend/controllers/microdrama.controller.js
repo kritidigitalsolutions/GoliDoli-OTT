@@ -9,6 +9,12 @@ const TvShowsEpisode = require(
 const fs = require("fs");
 const path = require("path");
 
+const getSearchFilter = (search) => {
+  const term = String(search || "").trim();
+  return term
+    ? { title: { $regex: term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } }
+    : {};
+};
 
 // GET ALL MICRODRAMAS
 const getAllMicrodramas =
@@ -16,7 +22,7 @@ const getAllMicrodramas =
     try {
 
       const dramas =
-        await TvShow.find({ isPublished: true })
+        await TvShow.find({ isPublished: true, ...getSearchFilter(req.query.search) })
           .sort({
             priority: -1,
             createdAt: -1,
