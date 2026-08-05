@@ -1,0 +1,76 @@
+/* ======================================
+   ADMIN LAYOUT — Shell & Page Container
+====================================== */
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  transition: background var(--transition);
+}
+
+body.light .app-shell,
+.light.app-shell {
+  background:
+    linear-gradient(180deg, #f8fafc 0%, #eef3f9 100%) !important;
+}
+
+.page-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background var(--transition);
+}
+
+body.light .page-shell,
+.light .page-shell {
+  background:
+    radial-gradient(circle at 78% 0%, rgba(255, 209, 26, 0.12), transparent 28%),
+    #f3f6fb !important;
+}
+
+.page-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 36px;
+  transition: padding var(--transition);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .page-body {
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-body {
+    padding: 18px 16px;
+  }
+}
+
+/* ── Coming Soon Placeholder ── */
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 16px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.coming-soon-icon { font-size: 4rem; }
+
+.coming-soon h2 {
+  font-size: 1.8rem;
+  color: var(--text);
+}
+
+.coming-soon p {
+  font-size: 1rem;
+  color: var(--text-muted);
+}

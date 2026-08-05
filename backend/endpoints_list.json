@@ -1,0 +1,747 @@
+[
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/login"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/logout"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/auth/profile"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/auth/bunny-config"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/bunny-upload"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/send-otp"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/verify-otp"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/reset-password"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/change-password/send-otp"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/change-password"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/change-email/send-otp"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/auth/change-email"
+  },
+  {
+    "file": "admin/auth.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/auth/profile"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/users/profile"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/users/complete-profile"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/users/update-profile"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/users"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/users/registration-stats"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/users/growth"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/users/:id"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/users/:id/block"
+  },
+  {
+    "file": "admin/user.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/users/:id"
+  },
+  {
+    "file": "admin/movie.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/movies/add"
+  },
+  {
+    "file": "admin/movie.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/movies/:id"
+  },
+  {
+    "file": "admin/movie.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/movies"
+  },
+  {
+    "file": "admin/movie.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/movies/search"
+  },
+  {
+    "file": "admin/movie.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/movies/:id"
+  },
+  {
+    "file": "admin/movie.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/movies/:id"
+  },
+  {
+    "file": "admin/series.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/series/add"
+  },
+  {
+    "file": "admin/series.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/series/:id"
+  },
+  {
+    "file": "admin/series.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/series"
+  },
+  {
+    "file": "admin/series.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/series/search"
+  },
+  {
+    "file": "admin/series.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/series/:id"
+  },
+  {
+    "file": "admin/series.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/series/:id"
+  },
+  {
+    "file": "admin/episode.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/episodes/add"
+  },
+  {
+    "file": "admin/episode.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/episodes/:id"
+  },
+  {
+    "file": "admin/episode.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/episodes"
+  },
+  {
+    "file": "admin/episode.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/episodes/search"
+  },
+  {
+    "file": "admin/episode.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/episodes/season/:seriesId/:seasonNumber"
+  },
+  {
+    "file": "admin/episode.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/episodes/:id"
+  },
+  {
+    "file": "admin/content.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/content/stats"
+  },
+  {
+    "file": "admin/content.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/content/all"
+  },
+  {
+    "file": "admin/shortdrama.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/shortdramas/add"
+  },
+  {
+    "file": "admin/shortdrama.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/shortdramas"
+  },
+  {
+    "file": "admin/shortdrama.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/shortdramas/search"
+  },
+  {
+    "file": "admin/shortdrama.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/shortdramas/:id"
+  },
+  {
+    "file": "admin/shortdrama.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/shortdramas/:id"
+  },
+  {
+    "file": "admin/shortdrama.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/shortdramas/:id"
+  },
+  {
+    "file": "admin/dramaEpisode.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/drama-episodes/:shortDramaId/add"
+  },
+  {
+    "file": "admin/dramaEpisode.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/drama-episodes/:shortDramaId"
+  },
+  {
+    "file": "admin/dramaEpisode.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/drama-episodes/search"
+  },
+  {
+    "file": "admin/dramaEpisode.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/drama-episodes/:id"
+  },
+  {
+    "file": "admin/dramaEpisode.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/drama-episodes/:id"
+  },
+  {
+    "file": "admin/legal.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/legal"
+  },
+  {
+    "file": "admin/legal.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/legal/:type"
+  },
+  {
+    "file": "admin/legal.routes.js",
+    "method": "PUT",
+    "endpoint": "/api/admin/legal/:type"
+  },
+  {
+    "file": "admin/legal.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/legal/:type/toggle"
+  },
+  {
+    "file": "admin/help.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/help"
+  },
+  {
+    "file": "admin/help.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/help"
+  },
+  {
+    "file": "admin/help.routes.js",
+    "method": "PUT",
+    "endpoint": "/api/admin/help/:id"
+  },
+  {
+    "file": "admin/help.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/help/:id"
+  },
+  {
+    "file": "admin/help.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/help/:id/toggle"
+  },
+  {
+    "file": "admin/promo.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/promo"
+  },
+  {
+    "file": "admin/promo.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/promo"
+  },
+  {
+    "file": "admin/promo.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/promo/:id"
+  },
+  {
+    "file": "admin/promo.routes.js",
+    "method": "PUT",
+    "endpoint": "/api/admin/promo/:id"
+  },
+  {
+    "file": "admin/voucher.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/voucher"
+  },
+  {
+    "file": "admin/voucher.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/voucher"
+  },
+  {
+    "file": "admin/voucher.routes.js",
+    "method": "PUT",
+    "endpoint": "/api/admin/voucher/:id"
+  },
+  {
+    "file": "admin/voucher.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/voucher/:id"
+  },
+  {
+    "file": "admin/subscription.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/subscription/revenue"
+  },
+  {
+    "file": "admin/subscription.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/subscription/stats"
+  },
+  {
+    "file": "admin/subscription.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/subscription/income-stats"
+  },
+  {
+    "file": "admin/subscription.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/subscription/all"
+  },
+  {
+    "file": "admin/subscription.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/subscription/:id/extend"
+  },
+  {
+    "file": "admin/notification.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/notifications/send"
+  },
+  {
+    "file": "admin/notification.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/notifications/unread-count"
+  },
+  {
+    "file": "admin/notification.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/notifications"
+  },
+  {
+    "file": "admin/notification.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/notifications/:id/read"
+  },
+  {
+    "file": "admin/notification.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/notifications/:id"
+  },
+  {
+    "file": "admin/support.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/support"
+  },
+  {
+    "file": "admin/support.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/support"
+  },
+  {
+    "file": "admin/support.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/support/:id"
+  },
+  {
+    "file": "admin/support.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/support/reply/:id"
+  },
+  {
+    "file": "admin/support.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/support/status/:id"
+  },
+  {
+    "file": "admin/support.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/support/conversation/:id"
+  },
+  {
+    "file": "admin/support.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/support/:id"
+  },
+  {
+    "file": "admin/plan.routes.js",
+    "method": "POST",
+    "endpoint": "/api/admin/plan"
+  },
+  {
+    "file": "admin/plan.routes.js",
+    "method": "GET",
+    "endpoint": "/api/admin/plan"
+  },
+  {
+    "file": "admin/plan.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/admin/plan/:id"
+  },
+  {
+    "file": "admin/plan.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/admin/plan/:id"
+  },
+  {
+    "file": "user/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/auth/send-otp"
+  },
+  {
+    "file": "user/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/auth/verify-otp"
+  },
+  {
+    "file": "user/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/auth/google-login"
+  },
+  {
+    "file": "user/auth.routes.js",
+    "method": "POST",
+    "endpoint": "/api/auth/logout"
+  },
+  {
+    "file": "user/user.routes.js",
+    "method": "GET",
+    "endpoint": "/api/user"
+  },
+  {
+    "file": "user/user.routes.js",
+    "method": "GET",
+    "endpoint": "/api/user/profile"
+  },
+  {
+    "file": "user/user.routes.js",
+    "method": "POST",
+    "endpoint": "/api/user/complete-profile"
+  },
+  {
+    "file": "user/user.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/user/update-profile"
+  },
+  {
+    "file": "user/user.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/user/fcm-token"
+  },
+  {
+    "file": "user/movie.routes.js",
+    "method": "GET",
+    "endpoint": "/api/movies"
+  },
+  {
+    "file": "user/movie.routes.js",
+    "method": "GET",
+    "endpoint": "/api/movies/slug/:slug"
+  },
+  {
+    "file": "user/movie.routes.js",
+    "method": "GET",
+    "endpoint": "/api/movies/id/:id"
+  },
+  {
+    "file": "user/series.routes.js",
+    "method": "GET",
+    "endpoint": "/api/series"
+  },
+  {
+    "file": "user/series.routes.js",
+    "method": "GET",
+    "endpoint": "/api/series/slug/:slug"
+  },
+  {
+    "file": "user/series.routes.js",
+    "method": "GET",
+    "endpoint": "/api/series/:id"
+  },
+  {
+    "file": "user/series.routes.js",
+    "method": "GET",
+    "endpoint": "/api/series/episodes/:seriesId"
+  },
+  {
+    "file": "user/content.routes.js",
+    "method": "GET",
+    "endpoint": "/api/content"
+  },
+  {
+    "file": "user/content.routes.js",
+    "method": "GET",
+    "endpoint": "/api/content/search"
+  },
+  {
+    "file": "user/legal.routes.js",
+    "method": "GET",
+    "endpoint": "/api/legal"
+  },
+  {
+    "file": "user/legal.routes.js",
+    "method": "GET",
+    "endpoint": "/api/legal/:type"
+  },
+  {
+    "file": "user/help.routes.js",
+    "method": "GET",
+    "endpoint": "/api/help"
+  },
+  {
+    "file": "user/help.routes.js",
+    "method": "GET",
+    "endpoint": "/api/help/:category"
+  },
+  {
+    "file": "user/rating.routes.js",
+    "method": "POST",
+    "endpoint": "/api/rating/rate"
+  },
+  {
+    "file": "user/rating.routes.js",
+    "method": "GET",
+    "endpoint": "/api/rating/all"
+  },
+  {
+    "file": "user/plan.routes.js",
+    "method": "GET",
+    "endpoint": "/api/plan"
+  },
+  {
+    "file": "user/promo.routes.js",
+    "method": "POST",
+    "endpoint": "/api/promo/apply"
+  },
+  {
+    "file": "user/voucher.routes.js",
+    "method": "POST",
+    "endpoint": "/api/voucher/redeem"
+  },
+  {
+    "file": "user/subscription.routes.js",
+    "method": "POST",
+    "endpoint": "/api/subscription/create-plan"
+  },
+  {
+    "file": "user/subscription.routes.js",
+    "method": "POST",
+    "endpoint": "/api/subscription/create-subscription"
+  },
+  {
+    "file": "user/subscription.routes.js",
+    "method": "POST",
+    "endpoint": "/api/subscription/subscribe"
+  },
+  {
+    "file": "user/subscription.routes.js",
+    "method": "GET",
+    "endpoint": "/api/subscription/status"
+  },
+  {
+    "file": "user/subscription.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/subscription/cancel"
+  },
+  {
+    "file": "user/watchlist.routes.js",
+    "method": "POST",
+    "endpoint": "/api/watchlist"
+  },
+  {
+    "file": "user/watchlist.routes.js",
+    "method": "GET",
+    "endpoint": "/api/watchlist"
+  },
+  {
+    "file": "user/watchlist.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/watchlist/:id"
+  },
+  {
+    "file": "user/notification.routes.js",
+    "method": "POST",
+    "endpoint": "/api/notifications/fcm-token"
+  },
+  {
+    "file": "user/notification.routes.js",
+    "method": "GET",
+    "endpoint": "/api/notifications"
+  },
+  {
+    "file": "user/notification.routes.js",
+    "method": "GET",
+    "endpoint": "/api/notifications/unread-count"
+  },
+  {
+    "file": "user/notification.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/notifications/read-all"
+  },
+  {
+    "file": "user/notification.routes.js",
+    "method": "PATCH",
+    "endpoint": "/api/notifications/:id/read"
+  },
+  {
+    "file": "user/notification.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/notifications/:id"
+  },
+  {
+    "file": "user/interation.routes.js",
+    "method": "POST",
+    "endpoint": "/api/interaction/toggle"
+  },
+  {
+    "file": "user/interation.routes.js",
+    "method": "GET",
+    "endpoint": "/api/interaction/status/:contentId"
+  },
+  {
+    "file": "user/interation.routes.js",
+    "method": "GET",
+    "endpoint": "/api/interaction/stats/:contentId"
+  },
+  {
+    "file": "user/support.routes.js",
+    "method": "POST",
+    "endpoint": "/api/support"
+  },
+  {
+    "file": "user/support.routes.js",
+    "method": "GET",
+    "endpoint": "/api/support"
+  },
+  {
+    "file": "user/support.routes.js",
+    "method": "GET",
+    "endpoint": "/api/support/:id"
+  },
+  {
+    "file": "user/support.routes.js",
+    "method": "POST",
+    "endpoint": "/api/support/reply/:id"
+  },
+  {
+    "file": "user/support.routes.js",
+    "method": "GET",
+    "endpoint": "/api/support/conversation/:id"
+  },
+  {
+    "file": "user/reel.routes.js",
+    "method": "POST",
+    "endpoint": "/api/reels/upload"
+  },
+  {
+    "file": "user/reel.routes.js",
+    "method": "GET",
+    "endpoint": "/api/reels/feed"
+  },
+  {
+    "file": "user/reel.routes.js",
+    "method": "GET",
+    "endpoint": "/api/reels/:id"
+  },
+  {
+    "file": "user/reel.routes.js",
+    "method": "DELETE",
+    "endpoint": "/api/reels/:id"
+  },
+  {
+    "file": "user/shortdrama.routes.js",
+    "method": "GET",
+    "endpoint": "/api/shortdramas"
+  },
+  {
+    "file": "user/shortdrama.routes.js",
+    "method": "GET",
+    "endpoint": "/api/shortdramas/search"
+  },
+  {
+    "file": "user/shortdrama.routes.js",
+    "method": "GET",
+    "endpoint": "/api/shortdramas/:id"
+  },
+  {
+    "file": "user/dramaEpisode.routes.js",
+    "method": "GET",
+    "endpoint": "/api/drama-episodes/:shortDramaId"
+  },
+  {
+    "file": "user/dramaEpisode.routes.js",
+    "method": "GET",
+    "endpoint": "/api/drama-episodes/search"
+  }
+]
