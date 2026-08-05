@@ -40,7 +40,7 @@ const adminUrls = process.env.ADMIN_URL
 const defaultAllowed = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://golidoli-website.vercel.app "
+  "https://golidoli-website.vercel.app"
 ];
 
 const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...defaultAllowed])];
