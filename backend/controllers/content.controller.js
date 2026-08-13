@@ -5,11 +5,121 @@ const Episode = require("../models/episode.model");
 const Microdrama = require("../models/microdrama.model");
 const MicrodramaEpisode = require("../models/microdramaEpisode.model");
 
-const getSearchFilter = (search) => {
-  const term = String(search || "").trim();
-  return term
-    ? { title: { $regex: term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } }
-    : {};
+const tokenMatchesType = (token, docType) => {
+  const t = token.toLowerCase();
+  if (t.length < 2) return false;
+
+  if (docType === "movie") {
+    return "movies".startsWith(t) || "movie".startsWith(t) || t === "movie" || t === "movies" || t === "mov";
+  }
+
+  if (docType === "series") {
+    return "series".startsWith(t) || t === "series" || t === "ser";
+  }
+
+  if (docType === "microdrama") {
+    return (
+      "microdramas".startsWith(t) ||
+      "microdrama".startsWith(t) ||
+      "dramas".startsWith(t) ||
+      "drama".startsWith(t) ||
+      t === "mic" ||
+      t === "micro" ||
+      t === "drama" ||
+      t === "dramas" ||
+      t === "microdrama" ||
+      t === "microdramas"
+    );
+  }
+
+  return false;
+};
+
+const buildModelFilter = (docType, reqQuery) => {
+  const searchParam = String(reqQuery.search || reqQuery.query || "").trim();
+  const typeParam = String(reqQuery.type || "").trim().toLowerCase();
+  const genreParam = String(reqQuery.genre || "").trim();
+  const categoryParam = String(reqQuery.category || "").trim();
+  const languageParam = String(reqQuery.language || "").trim();
+  const releaseYearParam = reqQuery.releaseYear ? Number(reqQuery.releaseYear) : null;
+  const isPremiumParam = reqQuery.isPremium !== undefined ? reqQuery.isPremium === "true" || reqQuery.isPremium === "1" : null;
+  const isComingSoonParam = reqQuery.isComingSoon !== undefined ? reqQuery.isComingSoon === "true" || reqQuery.isComingSoon === "1" : null;
+
+  // 1. If explicit ?type=... is provided, check if this docType matches requested type
+  if (typeParam) {
+    let requestedType = null;
+    if (typeParam === "movie" || typeParam === "movies" || typeParam === "mov") {
+      requestedType = "movie";
+    } else if (typeParam === "series" || typeParam === "ser") {
+      requestedType = "series";
+    } else if (typeParam === "microdrama" || typeParam === "microdramas" || typeParam === "drama" || typeParam === "dramas" || typeParam === "mic") {
+      requestedType = "microdrama";
+    }
+
+    if (requestedType && requestedType !== docType) {
+      return null; // Skip this model
+    }
+  }
+
+  // 2. Base conditions
+  const conditions = [{ isPublished: true }];
+
+  // 3. Add explicit criteria filters
+  if (genreParam) {
+    const regex = new RegExp(genreParam.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    conditions.push({ genre: regex });
+  }
+
+  if (categoryParam) {
+    const regex = new RegExp(categoryParam.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    conditions.push({ category: regex });
+  }
+
+  if (languageParam) {
+    const regex = new RegExp(languageParam.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    conditions.push({ language: regex });
+  }
+
+  if (releaseYearParam && !isNaN(releaseYearParam)) {
+    conditions.push({ releaseYear: releaseYearParam });
+  }
+
+  if (isPremiumParam !== null) {
+    conditions.push({ isPremium: isPremiumParam });
+  }
+
+  if (isComingSoonParam !== null) {
+    conditions.push({ isComingSoon: isComingSoonParam });
+  }
+
+  // 4. Token-based flexible search across fields AND type
+  if (searchParam) {
+    const tokens = searchParam.split(/\s+/).filter(Boolean);
+
+    for (const token of tokens) {
+      // If token matches content-type for this model, it matches type
+      if (tokenMatchesType(token, docType)) {
+        continue; // Token satisfied by model type
+      }
+
+      // Otherwise, token must match at least one of: title, description, genre, category, language
+      const regex = new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      conditions.push({
+        $or: [
+          { title: regex },
+          { description: regex },
+          { genre: regex },
+          { category: regex },
+          { language: regex },
+        ],
+      });
+    }
+  }
+
+  if (conditions.length === 1) {
+    return conditions[0];
+  }
+  return { $and: conditions };
 };
 
 const getEpisodesByParent = async (Model, parentField, parents, sort, projection) => {
@@ -99,21 +209,46 @@ const getLandingContent = async (req, res) => {
 
 const getHomeContent = async (req, res) => {
   try {
-    const filter = { isPublished: true, ...getSearchFilter(req.query.search) };
+    const movieFilter = buildModelFilter("movie", req.query);
+    const seriesFilter = buildModelFilter("series", req.query);
+    const microdramaFilter = buildModelFilter("microdrama", req.query);
+
+    const hasSearch = Boolean(
+      req.query.search ||
+        req.query.query ||
+        req.query.type ||
+        req.query.genre ||
+        req.query.category ||
+        req.query.language ||
+        req.query.releaseYear ||
+        req.query.isPremium !== undefined ||
+        req.query.isComingSoon !== undefined
+    );
+
+    const moviesQuery = movieFilter ? Movie.find(movieFilter).sort({ priority: -1, createdAt: -1 }) : null;
+    const seriesQuery = seriesFilter ? Series.find(seriesFilter).sort({ priority: -1, createdAt: -1 }) : null;
+    const microdramasQuery = microdramaFilter ? Microdrama.find(microdramaFilter).sort({ priority: -1, createdAt: -1 }) : null;
+
+    if (!hasSearch) {
+      if (moviesQuery) moviesQuery.limit(20);
+      if (seriesQuery) seriesQuery.limit(20);
+      if (microdramasQuery) microdramasQuery.limit(20);
+    }
+
     const [movies, series, microdramas] = await Promise.all([
-      Movie.find(filter).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
-      Series.find(filter).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
-      Microdrama.find(filter).sort({ priority: -1, createdAt: -1 }).limit(20).lean(),
+      moviesQuery ? moviesQuery.lean() : Promise.resolve([]),
+      seriesQuery ? seriesQuery.lean() : Promise.resolve([]),
+      microdramasQuery ? microdramasQuery.lean() : Promise.resolve([]),
     ]);
 
     const [moviesCount, seriesCount, microdramasCount, seriesData, microdramaData, episodesBySeries, episodesByMicrodrama] = await Promise.all([
-      Movie.countDocuments(filter),
-      Series.countDocuments(filter),
-      Microdrama.countDocuments(filter),
-      Series.find(filter, "totalEpisodes").lean(),
-      Microdrama.find(filter, "totalEpisodes").lean(),
-      getEpisodesByParent(Episode, "seriesId", series, { seasonNumber: 1, episodeNumber: 1 }),
-      getEpisodesByParent(MicrodramaEpisode, "tvShowId", microdramas, { episodeNumber: 1 }),
+      movieFilter ? Movie.countDocuments(movieFilter) : Promise.resolve(0),
+      seriesFilter ? Series.countDocuments(seriesFilter) : Promise.resolve(0),
+      microdramaFilter ? Microdrama.countDocuments(microdramaFilter) : Promise.resolve(0),
+      seriesFilter ? Series.find(seriesFilter, "totalEpisodes").lean() : Promise.resolve([]),
+      microdramaFilter ? Microdrama.find(microdramaFilter, "totalEpisodes").lean() : Promise.resolve([]),
+      seriesFilter && series.length > 0 ? getEpisodesByParent(Episode, "seriesId", series, { seasonNumber: 1, episodeNumber: 1 }) : Promise.resolve({}),
+      microdramaFilter && microdramas.length > 0 ? getEpisodesByParent(MicrodramaEpisode, "tvShowId", microdramas, { episodeNumber: 1 }) : Promise.resolve({}),
     ]);
 
     const formattedMovies = movies.map((movie) => ({
@@ -146,26 +281,42 @@ const getHomeContent = async (req, res) => {
 
 const searchContent = async (req, res) => {
   try {
-    const { query } = req.query;
-    if (!query) return res.status(400).json({ success: false, message: "Search query is required" });
+    const movieFilter = buildModelFilter("movie", req.query);
+    const seriesFilter = buildModelFilter("series", req.query);
+    const microdramaFilter = buildModelFilter("microdrama", req.query);
 
-    const search = { $text: { $search: query }, isPublished: true };
-    const projection = { score: { $meta: "textScore" } };
+    const hasSearch = Boolean(
+      req.query.search ||
+        req.query.query ||
+        req.query.type ||
+        req.query.genre ||
+        req.query.category ||
+        req.query.language ||
+        req.query.releaseYear ||
+        req.query.isPremium !== undefined ||
+        req.query.isComingSoon !== undefined
+    );
+
+    if (!hasSearch) {
+      return res.status(400).json({ success: false, message: "Search criteria is required" });
+    }
+
     const [movies, series, microdramas] = await Promise.all([
-      Movie.find(search, projection).select(projection).lean(),
-      Series.find(search, projection).select(projection).lean(),
-      Microdrama.find(search, projection).select(projection).lean(),
+      movieFilter ? Movie.find(movieFilter).lean() : Promise.resolve([]),
+      seriesFilter ? Series.find(seriesFilter).lean() : Promise.resolve([]),
+      microdramaFilter ? Microdrama.find(microdramaFilter).lean() : Promise.resolve([]),
     ]);
+
     const [episodesBySeries, episodesByMicrodrama] = await Promise.all([
-      getEpisodesByParent(Episode, "seriesId", series, { seasonNumber: 1, episodeNumber: 1 }),
-      getEpisodesByParent(MicrodramaEpisode, "tvShowId", microdramas, { episodeNumber: 1 }),
+      seriesFilter && series.length > 0 ? getEpisodesByParent(Episode, "seriesId", series, { seasonNumber: 1, episodeNumber: 1 }) : Promise.resolve({}),
+      microdramaFilter && microdramas.length > 0 ? getEpisodesByParent(MicrodramaEpisode, "tvShowId", microdramas, { episodeNumber: 1 }) : Promise.resolve({}),
     ]);
 
     const results = [
       ...movies.map((movie) => ({ ...movie, type: "movie" })),
       ...series.map((item) => ({ ...item, type: "series", episodes: episodesBySeries[item._id.toString()] || [] })),
       ...formatMicrodramas(microdramas, episodesByMicrodrama),
-    ].sort((a, b) => (b.score || 0) - (a.score || 0));
+    ].sort((a, b) => (b.priority || 0) - (a.priority || 0) || new Date(b.createdAt) - new Date(a.createdAt));
 
     return res.json({ success: true, results });
   } catch (error) {

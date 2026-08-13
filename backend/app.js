@@ -193,7 +193,7 @@ app.use(
 app.use(
   "/api/microdramas",
   microdramaUserRoutes
-); 
+);
 
 app.use(
   "/api/microdramas-episodes",
@@ -340,6 +340,35 @@ app.use(
 app.use(
   "/api/admin/support",
   adminSupportRoutes
+);
+
+//intro screen
+const adminIntroScreenRoutes = require("./routes/admin/introScreen.routes");
+const introScreenRoutes = require("./routes/user/introScreen.routes");
+
+app.use(
+  "/api/admin/intro-screens",
+  adminIntroScreenRoutes
+);
+
+app.use(
+  "/api/intro-screens",
+  introScreenRoutes
+);
+
+// ========================================
+// HOME BANNER ROUTES
+// ========================================
+const adminHomeBannerRoutes = require("./routes/admin/homeBanner.routes");
+const homeBannerRoutes = require("./routes/user/homeBanner.routes");
+app.use(
+  "/api/admin/home-banners",
+  adminHomeBannerRoutes
+);
+
+app.use(
+  "/api/home-banners",
+  homeBannerRoutes
 );
 
 // app.use(

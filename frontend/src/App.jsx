@@ -13,17 +13,19 @@ const DashboardHome = lazy(() => import("./pages/Dashboard"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
 const AddContent = lazy(() => import("./pages/AddContent"));
 const Content = lazy(() => import("./pages/Content"));
-const RatingsPage = lazy(() => import("./pages/Ratings"));
+// const RatingsPage = lazy(() => import("./pages/Ratings"));
 const PlansPage = lazy(() => import("./pages/Plans"));
-const PromoVoucher = lazy(() => import("./pages/PromoVoucher"));
+// const PromoVoucher = lazy(() => import("./pages/PromoVoucher"));
 const SubscriptionPage = lazy(() => import("./pages/Subscriptions"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
-const SupportDetails = lazy(() => import("./pages/SupportDetails"));
+// const SupportDetails = lazy(() => import("./pages/SupportDetails"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
 const Settings = lazy(() => import("./pages/Settings"));
 const CompanyInfoPage = lazy(() => import("./pages/CompanyInfo"));
 const CategoriesPage = lazy(() => import("./pages/Categories"));
+const IntroScreensPage = lazy(() => import("./pages/IntroScreens"));
+const HomeBannersPage = lazy(() => import("./pages/HomeBanners"));
 const DramaPage = lazy(() => import("./pages/Drama"));
 const AddDramaPage = lazy(() => import("./pages/AddDrama"));
 
@@ -101,17 +103,19 @@ function App() {
             <Route path="users" element={<UsersPage />} />
             <Route path="add-content" element={<AddContent />} />
             <Route path="content" element={<Content />} />
-            <Route path="ratings" element={<RatingsPage />} />
+            {/* <Route path="ratings" element={<RatingsPage />} /> */}
             <Route path="plans" element={<PlansPage />} />
-            <Route path="promo" element={<PromoVoucher />} />
+            {/* <Route path="promo" element={<PromoVoucher />} /> */}
             <Route path="pricing" element={<SubscriptionPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="support" element={<SupportDetails />} />
+            {/* <Route path="support" element={<SupportDetails />} /> */}
             <Route path="legal" element={<LegalPage />} />
             <Route path="help" element={<HelpPage />} />
             <Route path="settings" element={<Settings />} />
             <Route path="company-info" element={<CompanyInfoPage />} />
             <Route path="categories" element={<CategoriesPage />} />
+            <Route path="intro-screens" element={<IntroScreensPage />} />
+            <Route path="home-banners" element={<HomeBannersPage />} />
             <Route path="dramas" element={<DramaPage />} />
             <Route path="add-drama" element={<AddDramaPage />} />
           </Route>

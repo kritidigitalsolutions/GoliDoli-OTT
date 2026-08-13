@@ -1,22 +1,24 @@
 import "./Sidebar.css";
 import { NavLink } from "react-router-dom";
 // import { BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut } from "lucide-react";
-import { X, BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut, Star, Bell, MessageSquare, Clapperboard, MapPin, Layers } from "lucide-react";
+import { X, BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut, Star, Bell, MessageSquare, Clapperboard, MapPin, Layers, Smartphone, Image as ImageIcon } from "lucide-react";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "#FF7A1A" },
   { id: "users", label: "Users", icon: Users, color: "#3b82f6" },
   { id: "categories", label: "Categories", icon: Layers, color: "#a78bfa" },
+  { id: "intro-screens", label: "Intro Screens", icon: Smartphone, color: "#ff4757" },
+  { id: "home-banners", label: "Home Banners", icon: ImageIcon, color: "#FF7A1A" },
   { id: "add-content", label: "Add Content", icon: Plus, color: "#10b981" },
   { id: "content", label: "Content Library", icon: Film, color: "#f59e0b" },
   // { id: "add-drama", label: "Add Short Drama", icon: Plus, color: "#a78bfa" },
   // { id: "dramas", label: "Short Dramas", icon: Clapperboard, color: "#8b5cf6" },
-  { id: "ratings", label: "Ratings", icon: Star, color: "#facc15" },
+  // { id: "ratings", label: "Ratings", icon: Star, color: "#facc15" },
   { id: "plans", label: "Subscription Plans", icon: CreditCard, color: "#ec4899" },
-  { id: "promo", label: "Promo&Voucher", icon: CreditCard, color: "#ec4899" },
+  // { id: "promo", label: "Promo&Voucher", icon: CreditCard, color: "#ec4899" },
   { id: "pricing", label: "User Plan", icon: CreditCard, color: "#ec4899" },
   { id: "notifications", label: "Notifications", icon: Bell, color: "#f59e0b" },
-  { id: "support", label: "Support", icon: MessageSquare, color: "#06b6d4" },
+  // { id: "support", label: "Support", icon: MessageSquare, color: "#06b6d4" },
   { id: "legal", label: "Legal", icon: FileText, color: "#8b5cf6" },
   { id: "help", label: "Help Center", icon: HelpCircle, color: "#06b6d4" },
   { id: "company-info", label: "Company Info", icon: MapPin, color: "#0ea5e9" },

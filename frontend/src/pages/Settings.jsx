@@ -311,7 +311,7 @@ const Settings = () => {
 
         {/* PASSWORD CARD */}
         <div className="form-card">
-          <h3><Lock size={18}/> Change Password</h3>
+          <h3><Lock size={18} /> Change Password</h3>
 
           <form onSubmit={handleSubmit} className="settings-form">
 
