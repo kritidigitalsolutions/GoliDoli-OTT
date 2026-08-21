@@ -19,6 +19,18 @@ const notificationSchema = new mongoose.Schema(
             default: "GENERAL"
         },
 
+        category: {
+            type: String,
+            enum: ["newEpisodes", "newMovies", "recommendations", "downloads", "continueWatching", "subscriptionAlerts", "promotionalOffers", null],
+            default: null
+        },
+
+        imageUrl: {
+            type: String,
+            default: null,
+            trim: true
+        },
+
         // If null, notification is for all users
         targetUser: {
             type: mongoose.Schema.Types.ObjectId,

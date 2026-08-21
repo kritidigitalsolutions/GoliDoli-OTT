@@ -105,6 +105,7 @@ const addSeries = async (req, res) => {
       banner: getMediaUrl(banner, req.body.banner),
       trailerUrl: getMediaUrl(trailer, req.body.trailerUrl),
       isComingSoon: req.body.isComingSoon === "true",
+      isPopular: req.body.isPopular === "true" || req.body.isPopular === true,
       releaseDate: normalizeDateInput(req.body.releaseDate),
       isPremium: req.body.isPremium === "true",
       rating: req.body.rating || 0,
@@ -224,6 +225,9 @@ const updateSeries = async (req, res) => {
       if (!series.isComingSoon && req.body.releaseDate === undefined) {
         series.releaseDate = null;
       }
+    }
+    if (req.body.isPopular !== undefined) {
+      series.isPopular = req.body.isPopular === "true" || req.body.isPopular === true;
     }
     if (req.body.isPremium !== undefined) {
       series.isPremium = req.body.isPremium === "true" || req.body.isPremium === true;

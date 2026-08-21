@@ -16,7 +16,7 @@ const NAV = [
   // { id: "ratings", label: "Ratings", icon: Star, color: "#facc15" },
   { id: "plans", label: "Subscription Plans", icon: CreditCard, color: "#ec4899" },
   // { id: "promo", label: "Promo&Voucher", icon: CreditCard, color: "#ec4899" },
-  { id: "pricing", label: "User Plan", icon: CreditCard, color: "#ec4899" },
+  { id: "pricing", label: "Subscribed Users", icon: CreditCard, color: "#ec4899" },
   { id: "notifications", label: "Notifications", icon: Bell, color: "#f59e0b" },
   // { id: "support", label: "Support", icon: MessageSquare, color: "#06b6d4" },
   { id: "legal", label: "Legal", icon: FileText, color: "#8b5cf6" },

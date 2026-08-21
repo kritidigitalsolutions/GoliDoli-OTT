@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Razorpay Payment Gateway Test - GoliDoli OTT</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Razorpay Web SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #f97316; /* Orange */
+      --primary-hover: #ea580c;
+      --secondary: #6366f1; /* Indigo */
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --error: #ef4444;
+      --border-radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--border-radius);
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-align: center;
+      background: linear-gradient(to right, #f97316, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 32px;
+    }
+
+    .step-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .step-card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .step-num {
+      background: var(--primary);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .step-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .step-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    input, select {
+      flex: 1;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #4f46e5;
+    }
+
+    .plan-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 480px) {
+      .plan-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .plan-option {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.2s;
+      background: rgba(15, 23, 42, 0.3);
+    }
+
+    .plan-option:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .plan-option.selected {
+      border-color: var(--primary);
+      background: rgba(249, 115, 22, 0.1);
+    }
+
+    .plan-name {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .plan-price {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .plan-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .console-card {
+      background: #090d16;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 24px;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 6px;
+    }
+
+    .console-logs {
+      max-height: 180px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .log-item {
+      line-height: 1.4;
+      word-break: break-all;
+    }
+
+    .log-info { color: #38bdf8; }
+    .log-success { color: #4ade80; }
+    .log-warn { color: #facc15; }
+    .log-error { color: #f87171; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      margin-left: auto;
+    }
+
+    .status-active {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Razorpay Integration Test</h1>
+    <div class="subtitle">GoliDoli OTT Payment Gateway Verification Panel</div>
+
+    <div class="step-container">
+      <!-- STEP 1: AUTHENTICATION -->
+      <div class="step-card" id="card-auth">
+        <div class="step-header">
+          <div class="step-num">1</div>
+          <span class="step-title">User Authentication</span>
+          <span class="status-badge" id="auth-status">Not Logged In</span>
+        </div>
+
+        <div class="step-content">
+          <div id="auth-flow-send">
+            <div class="input-group">
+              <label for="phone-input">Indian Phone Number</label>
+              <div class="input-row">
+                <input type="text" id="phone-input" value="+919999999999" placeholder="Enter Phone Number">
+                <button id="btn-send-otp" onclick="sendOtp()">Send OTP</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="auth-flow-verify" style="display: none;">
+            <div class="input-group">
+              <label for="otp-input">Verification Code (OTP)</label>
+              <div class="input-row">
+                <input type="text" id="otp-input" value="1234" placeholder="Enter 4-digit OTP">
+                <button id="btn-verify-otp" class="btn-secondary" onclick="verifyOtp()">Verify OTP</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="auth-success-msg" style="display: none;">
+            <p style="color: var(--success); font-size: 0.95rem; font-weight: 500;">✓ Connected to database & logged in successfully!</p>
+            <div class="input-group" style="margin-top: 8px;">
+              <label>Authentication Token (JWT)</label>
+              <input type="text" id="jwt-display" readonly style="font-size: 0.8rem; background: rgba(0,0,0,0.3); color: var(--text-muted);">
+            </div>
+            <button onclick="logout()" class="btn-secondary" style="margin-top: 10px; padding: 6px 12px; font-size: 0.8rem; background: #374151;">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: SELECT PLAN -->
+      <div class="step-card" id="card-plans">
+        <div class="step-header">
+          <div class="step-num">2</div>
+          <span class="step-title">Select OTT Plan</span>
+        </div>
+
+        <div class="step-content">
+          <div class="plan-grid" id="plans-container">
+            <div class="plan-option" onclick="selectPlan('6a674791c03ac60c2142cbdb', 'Premium Monthly', 199)" id="plan-6a674791c03ac60c2142cbdb">
+              <span class="plan-name">Premium Monthly</span>
+              <span class="plan-price">₹199</span>
+              <span class="plan-desc">30 Days Duration</span>
+            </div>
+            <div class="plan-option" onclick="selectPlan('6a68890422946009aaf8bf61', 'BASIC', 100)" id="plan-6a68890422946009aaf8bf61">
+              <span class="plan-name">BASIC</span>
+              <span class="plan-price">₹100</span>
+              <span class="plan-desc">10 Days Duration</span>
+            </div>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 4px;">Plans fetched from live MongoDB database.</p>
+        </div>
+      </div>
+
+      <!-- STEP 3: PAYMENT PROCESS -->
+      <div class="step-card" id="card-payment">
+        <div class="step-header">
+          <div class="step-num">3</div>
+          <span class="step-title">Razorpay Checkout</span>
+        </div>
+
+        <div class="step-content">
+          <div class="input-group">
+            <label for="promo-input">Promo Code (Optional)</label>
+            <input type="text" id="promo-input" placeholder="e.g. GET50" style="text-transform: uppercase;">
+          </div>
+          <button id="btn-pay" onclick="startPayment()" disabled style="width: 100%; height: 50px; font-size: 1.1rem;">
+            Authenticate First to Pay
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE CONSOLE -->
+    <div class="console-card">
+      <div class="console-header">
+        <span>Test Suite Logs</span>
+        <span style="cursor: pointer; text-decoration: underline;" onclick="clearLogs()">Clear Log</span>
+      </div>
+      <div class="console-logs" id="console-logs">
+        <div class="log-item log-info">[System] Ready to test Razorpay payment gateway.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let token = localStorage.getItem("token") || null;
+    let selectedPlanId = null;
+    let selectedPlanName = "";
+    let selectedPlanPrice = 0;
+
+    // Check token on load
+    window.addEventListener("DOMContentLoaded", () => {
+      if (token) {
+        log("info", "[Auth] Saved token found in local storage.");
+        showAuthSuccess();
+      }
+      fetchPlans();
+    });
+
+    function log(type, msg) {
+      const logger = document.getElementById("console-logs");
+      const item = document.createElement("div");
+      item.className = `log-item log-${type}`;
+      item.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logger.appendChild(item);
+      logger.scrollTop = logger.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById("console-logs").innerHTML = `<div class="log-item log-info">[System] Logs cleared.</div>`;
+    }
+
+    // Dynamic Plan Fetching
+    async function fetchPlans() {
+      try {
+        log("info", "[API] Fetching plans from database...");
+        const res = await fetch("/api/plan");
+        const data = await res.json();
+        
+        if (data.success && data.plans && data.plans.length > 0) {
+          log("success", `[API] Successfully loaded ${data.plans.length} plans.`);
+          const container = document.getElementById("plans-container");
+          container.innerHTML = "";
+          
+          data.plans.forEach(plan => {
+            if (plan.isActive) {
+              const div = document.createElement("div");
+              div.className = "plan-option";
+              div.id = `plan-${plan._id}`;
+              div.setAttribute("onclick", `selectPlan('${plan._id}', '${plan.name}', ${plan.price})`);
+              div.innerHTML = `
+                <span class="plan-name">${plan.name}</span>
+                <span class="plan-price">₹${plan.price}</span>
+                <span class="plan-desc">${plan.duration} Days Duration</span>
+              `;
+              container.appendChild(div);
+            }
+          });
+        } else {
+          log("warn", "[API] No plans returned. Using fallback options.");
+        }
+      } catch (err) {
+        log("error", `[API] Failed to fetch plans: ${err.message}. Using fallback options.`);
+      }
+    }
+
+    function selectPlan(planId, name, price) {
+      selectedPlanId = planId;
+      selectedPlanName = name;
+      selectedPlanPrice = price;
+      
+      // Remove selected class from all
+      document.querySelectorAll(".plan-option").forEach(el => el.classList.remove("selected"));
+      
+      // Add to selected
+      const selectedEl = document.getElementById(`plan-${planId}`);
+      if (selectedEl) {
+        selectedEl.classList.add("selected");
+      }
+      
+      log("info", `[Plan] Selected plan: ${name} (ID: ${planId}, Price: ₹${price})`);
+      updatePayButton();
+    }
+
+    async function sendOtp() {
+      const phoneInput = document.getElementById("phone-input");
+      const phone = phoneInput.value.trim();
+      const btn = document.getElementById("btn-send-otp");
+
+      if (!phone) {
+        log("error", "[Auth] Phone number is required.");
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        log("info", `[Auth] Sending OTP request for ${phone}...`);
+        
+        const res = await fetch("/api/auth/send-otp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ phone })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          log("success", `[Auth] OTP request successful. Server response: "${data.message}"`);
+          if (data.otp) {
+            log("info", `[Auth] Sandbox OTP received: "${data.otp}"`);
+            document.getElementById("otp-input").value = data.otp;
+          }
+          document.getElementById("auth-flow-verify").style.display = "block";
+          document.getElementById("auth-flow-send").style.display = "none";
+        } else {
+          log("error", `[Auth] Failed to send OTP: ${data.message}`);
+          btn.disabled = false;
+        }
+      } catch (err) {
+        log("error", `[Auth] API Error sending OTP: ${err.message}`);
+        btn.disabled = false;
+      }
+    }
+
+    async function verifyOtp() {
+      const phoneInput = document.getElementById("phone-input");
+      const phone = phoneInput.value.trim();
+      const otpInput = document.getElementById("otp-input");
+      const otp = otpInput.value.trim();
+      const btn = document.getElementById("btn-verify-otp");
+
+      if (!otp) {
+        log("error", "[Auth] OTP is required.");
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        log("info", `[Auth] Verifying OTP ${otp} for ${phone}...`);
+        
+        const res = await fetch("/api/auth/verify-otp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ phone, otp })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          token = data.token || data.data?.token || data.userToken;
+          
+          log("success", "[Auth] OTP verification successful.");
+          showAuthSuccess();
+        } else {
+          log("error", `[Auth] OTP verification failed: ${data.message}`);
+          btn.disabled = false;
+        }
+      } catch (err) {
+        log("error", `[Auth] API Error verifying OTP: ${err.message}`);
+        btn.disabled = false;
+      }
+    }
+
+    function showAuthSuccess() {
+      try {
+        if (token) {
+          localStorage.setItem("token", token);
+          document.getElementById("jwt-display").value = token;
+        }
+      } catch (e) {}
+
+      document.getElementById("auth-status").innerText = "Authenticated";
+      document.getElementById("auth-status").className = "status-badge status-active";
+      document.getElementById("auth-flow-send").style.display = "none";
+      document.getElementById("auth-flow-verify").style.display = "none";
+      document.getElementById("auth-success-msg").style.display = "block";
+      
+      updatePayButton();
+    }
+
+    function logout() {
+      token = null;
+      localStorage.removeItem("token");
+      document.getElementById("auth-status").innerText = "Not Logged In";
+      document.getElementById("auth-status").className = "status-badge";
+      document.getElementById("auth-success-msg").style.display = "none";
+      document.getElementById("auth-flow-send").style.display = "block";
+      document.getElementById("btn-send-otp").disabled = false;
+      log("info", "[Auth] Logged out.");
+      updatePayButton();
+    }
+
+    function updatePayButton() {
+      const btn = document.getElementById("btn-pay");
+      if (!token) {
+        btn.disabled = true;
+        btn.innerText = "Authenticate First to Pay";
+        btn.style.background = "var(--primary)";
+      } else if (!selectedPlanId) {
+        btn.disabled = true;
+        btn.innerText = "Select an OTT Plan First";
+        btn.style.background = "var(--primary)";
+      } else {
+        btn.disabled = false;
+        btn.innerText = `Pay ₹${selectedPlanPrice} via Razorpay`;
+        btn.style.background = "var(--success)";
+      }
+    }
+
+    // Step 3: Trigger payment gateway
+    async function startPayment() {
+      if (!token || !selectedPlanId) return;
+      const promoInput = document.getElementById("promo-input");
+      const promoCode = promoInput.value.trim().toUpperCase();
+
+      log("info", `[Payment] Initiating order creation for Plan ID ${selectedPlanId}...`);
+
+      try {
+        const orderRes = await fetch("/api/payment/create-order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            planId: selectedPlanId,
+            promoCode: promoCode || undefined
+          })
+        });
+
+        const orderData = await orderRes.json();
+
+        if (!orderData.success) {
+          log("error", `[Payment] Create Order Failed: ${orderData.message}`);
+          return;
+        }
+
+        const { order, key, finalAmount } = orderData;
+        log("success", `[Payment] Order created successfully: ID: ${order.id}, Amount: ₹${finalAmount}`);
+
+        // Open Razorpay Checkout Option
+        const options = {
+          key: key,
+          amount: order.amount,
+          currency: order.currency,
+          name: "GoliDoli OTT",
+          description: `Test Purchase - ${selectedPlanName}`,
+          image: "https://golidoli-website.vercel.app/logo.png",
+          order_id: order.id,
+          handler: async function (response) {
+            log("success", `[Razorpay] Payment complete! Signature: ${response.razorpay_signature}`);
+            log("info", "[Payment] Verifying signature with backend...");
+
+            try {
+              const verifyRes = await fetch("/api/payment/verify", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  planId: selectedPlanId
+                })
+              });
+
+              const verifyData = await verifyRes.json();
+
+              if (verifyData.success) {
+                log("success", "🎉 PAYMENT VERIFIED SUCCESSFULLY! Subscription activated in MongoDB database.");
+                log("success", `[Subscription] ID: ${verifyData.subscription._id}, End Date: ${new Date(verifyData.subscription.endDate).toLocaleDateString()}`);
+                alert("🎉 Subscription activated successfully!");
+              } else {
+                log("error", `[Payment] Verification Failed: ${verifyData.message}`);
+                alert(`❌ Verification Failed: ${verifyData.message}`);
+              }
+            } catch (err) {
+              log("error", `[Payment] Verification API Error: ${err.message}`);
+            }
+          },
+          prefill: {
+            name: "Test User",
+            email: "testuser@gmail.com",
+            contact: "9999999999"
+          },
+          notes: order.notes,
+          theme: {
+            color: "#f97316"
+          },
+          modal: {
+            ondismiss: function () {
+              log("warn", "[Razorpay] Checkout modal dismissed by user.");
+            }
+          }
+        };
+
+        log("info", "[Razorpay] Launching Razorpay Modal...");
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+      } catch (err) {
+        log("error", `[Payment] API Error creating order: ${err.message}`);
+      }
+    }
+  </script>
+</body>
+</html>

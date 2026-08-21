@@ -44,6 +44,7 @@ const buildModelFilter = (docType, reqQuery) => {
   const releaseYearParam = reqQuery.releaseYear ? Number(reqQuery.releaseYear) : null;
   const isPremiumParam = reqQuery.isPremium !== undefined ? reqQuery.isPremium === "true" || reqQuery.isPremium === "1" : null;
   const isComingSoonParam = reqQuery.isComingSoon !== undefined ? reqQuery.isComingSoon === "true" || reqQuery.isComingSoon === "1" : null;
+  const isPopularParam = reqQuery.isPopular !== undefined ? reqQuery.isPopular === "true" || reqQuery.isPopular === "1" : null;
 
   // 1. If explicit ?type=... is provided, check if this docType matches requested type
   if (typeParam) {
@@ -90,6 +91,10 @@ const buildModelFilter = (docType, reqQuery) => {
 
   if (isComingSoonParam !== null) {
     conditions.push({ isComingSoon: isComingSoonParam });
+  }
+
+  if (isPopularParam !== null) {
+    conditions.push({ isPopular: isPopularParam });
   }
 
   // 4. Token-based flexible search across fields AND type
@@ -222,7 +227,8 @@ const getHomeContent = async (req, res) => {
         req.query.language ||
         req.query.releaseYear ||
         req.query.isPremium !== undefined ||
-        req.query.isComingSoon !== undefined
+        req.query.isComingSoon !== undefined ||
+        req.query.isPopular !== undefined
     );
 
     const moviesQuery = movieFilter ? Movie.find(movieFilter).sort({ priority: -1, createdAt: -1 }) : null;
@@ -294,7 +300,8 @@ const searchContent = async (req, res) => {
         req.query.language ||
         req.query.releaseYear ||
         req.query.isPremium !== undefined ||
-        req.query.isComingSoon !== undefined
+        req.query.isComingSoon !== undefined ||
+        req.query.isPopular !== undefined
     );
 
     if (!hasSearch) {

@@ -1,6 +1,7 @@
 const Watchlist = require("../models/watchlist.model");
 const Movie = require("../models/movie.model");
 const Series = require("../models/series.model");
+const TvShow = require("../models/microdrama.model");
 
 // ➕ Add to watchlist
 const addToWatchlist = async (req, res) => {
@@ -21,6 +22,11 @@ const addToWatchlist = async (req, res) => {
       const isSeries = await Series.exists({ _id: itemId });
       if (isSeries) {
         itemModel = "Series";
+      } else {
+        const isTvShow = await TvShow.exists({ _id: itemId });
+        if (isTvShow) {
+          itemModel = "TvShow";
+        }
       }
     }
 

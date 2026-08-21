@@ -48,6 +48,7 @@ const microdramaSchema =
         type: Boolean,
         default: false,
       },
+       isPopular : { type: Boolean, default: false},
 
       totalEpisodes: {
         type: Number,

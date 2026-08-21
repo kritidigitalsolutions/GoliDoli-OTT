@@ -263,7 +263,7 @@ exports.updateHomeBannerStatus = async (req, res) => {
         isActive,
       },
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       }
     );

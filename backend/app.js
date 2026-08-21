@@ -58,8 +58,8 @@ const corsOptions = {
     }
 
     // Dynamic pattern matching for development / Vercel preview environments
-    const isLocalhost = origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
-    const isGolidoliDomain = origin.endsWith(".vercel.app") && (origin.includes("mirchi") || origin.includes("sigma"));
+    const isLocalhost = origin.includes("localhost") || origin.includes("127.0.0.1") || origin.includes("192.168");
+    const isGolidoliDomain = origin.endsWith(".vercel.app") && (origin.includes("golidoli") || origin.includes("sigma"));
 
     if (isLocalhost || isGolidoliDomain) {
       return callback(null, true);
@@ -233,6 +233,19 @@ app.use(
   preferenceRoutes
 );
 
+// ========================================
+// NOTIFICATION SETTINGS ROUTES
+// ========================================
+const notificationSettingsRoutes = require("./routes/user/notificationSettings.routes");
+app.use("/api/notification-settings", notificationSettingsRoutes);
+
+// ========================================
+// CONTINUE WATCHING / WATCH PROGRESS ROUTES
+// ========================================
+const watchProgressRoutes = require("./routes/user/watchProgress.routes");
+app.use("/api/continue-watching", watchProgressRoutes);
+app.use("/api/watch-progress", watchProgressRoutes);
+
 app.use("/api/movies", updateUpcomingStatus, movieUserRoutes);
 
 app.use("/api/series", updateUpcomingStatus, seriesUserRoutes);
@@ -262,6 +275,26 @@ const adminCategoryRoutes = require("./routes/admin/category.routes");
 const userCategoryRoutes = require("./routes/user/category.routes");
 app.use("/api/admin/categories", adminCategoryRoutes);
 app.use("/api/categories", userCategoryRoutes);
+
+// Audio Stories routes
+const adminAudioCategoryRoutes = require("./routes/admin/audioCategory.routes");
+const adminAudioStoryRoutes = require("./routes/admin/audioStory.routes");
+const adminAudioEpisodeRoutes = require("./routes/admin/audioEpisode.routes");
+
+const userAudioCategoryRoutes = require("./routes/user/audioCategory.routes");
+const userAudioStoryRoutes = require("./routes/user/audioStory.routes");
+const userAudioEpisodeRoutes = require("./routes/user/audioEpisode.routes");
+const userAudioProgressRoutes = require("./routes/user/audioProgress.routes");
+
+app.use("/api/admin/audio-categories", adminAudioCategoryRoutes);
+app.use("/api/admin/audio-stories", adminAudioStoryRoutes);
+app.use("/api/admin/audio-episodes", adminAudioEpisodeRoutes);
+
+app.use("/api/audio-categories", userAudioCategoryRoutes);
+app.use("/api/audio-stories", userAudioStoryRoutes);
+app.use("/api/audio-episodes", userAudioEpisodeRoutes);
+app.use("/api/audio-progress", userAudioProgressRoutes);
+
 
 //company routes
 const adminCompanyRoutes = require("./routes/admin/companyInfo.routes");
@@ -302,9 +335,9 @@ const userSubscriptionRoutes = require("./routes/user/subscription.routes");
 app.use("/api/admin/subscription", adminSubscriptionRoutes);
 app.use("/api/subscription", userSubscriptionRoutes);
 
-// //watchlist routes
-// const watchlistRoutes = require("./routes/user/watchlist.routes");
-// app.use("/api/watchlist", watchlistRoutes);
+//watchlist routes
+const watchlistRoutes = require("./routes/user/watchlist.routes");
+app.use("/api/watchlist", watchlistRoutes);
 
 //notification routes
 const adminNotificationRoutes = require("./routes/admin/notification.routes");
@@ -316,9 +349,9 @@ app.use("/api/notifications", userNotificationRoutes);
 // const interactionRoutes = require("./routes/user/interation.routes");
 // app.use("/api/interaction", interactionRoutes);
 
-// // ================Razor Pay===============
-// const paymentRoutes = require("./routes/user/payment.routes");
-// app.use("/api/payment", paymentRoutes);
+// ================Razor Pay===============
+const paymentRoutes = require("./routes/user/payment.routes");
+app.use("/api/payment", paymentRoutes);
 
 // SUPPORT ROUTES
 const userSupportRoutes = require(

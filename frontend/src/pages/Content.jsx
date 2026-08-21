@@ -7,7 +7,7 @@ import "./Dashboard.css";
 import {
   Eye, Edit2, Trash2, X, Play, Film, Tv,
   Search, Plus, ChevronRight, ChevronLeft, ChevronDown, User, Calendar, Video,
-  Activity, Upload, Layers
+  Activity, Upload, Layers, Flame
 } from "lucide-react";
 
 /* ===================== PAGINATION COMPONENT ===================== */
@@ -491,7 +491,7 @@ export default function Content() {
           uploadData.trailer,
           typeFolder,
           "trailers",
-          (percent) => setUploadProgress(percent)   // ✅ add this
+          (percent) => setUploadProgress(percent)   // Γ£à add this
         );
       }
 
@@ -505,7 +505,7 @@ export default function Content() {
 
       const formData = new FormData();
       // Basic text fields
-      const textFields = ["title", "description", "language", "duration", "rating", "releaseYear", "isPremium", "isComingSoon", "releaseDate", "priority"];
+      const textFields = ["title", "description", "language", "duration", "rating", "releaseYear", "isPremium", "isComingSoon", "isPopular", "releaseDate", "priority"];
 
       textFields.forEach(k => {
         const value = editData[k];
@@ -776,7 +776,7 @@ export default function Content() {
         </div>
 
         {/* Search status */}
-        {isSearching && <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Searching…</p>}
+        {isSearching && <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>SearchingΓÇª</p>}
         {searchResults !== null && !isSearching && (
           <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: 12 }}>
             {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "{searchQuery}"
@@ -791,7 +791,7 @@ export default function Content() {
               <h3 style={{ margin: 0 }}><Film size={20} /> Movies Library</h3>
               <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>{totalItems} Total Movies</span>
             </div>
-            {loading ? <p>Loading…</p> : (
+            {loading ? <p>LoadingΓÇª</p> : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
@@ -806,7 +806,10 @@ export default function Content() {
                       <tr key={movie._id}>
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <img src={getFullUrl(movie.poster)} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4 }} />
+                            <div className="thumb-popular-wrap" style={{ width: 40, height: 60, flexShrink: 0 }}>
+                              <img src={getFullUrl(movie.poster)} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, display: "block" }} />
+                              {movie.isPopular && <span className="thumb-popular-tape">&#x1F525; Popular</span>}
+                            </div>
                             <div>
                               <div style={{ fontWeight: 600 }}>{movie.title}</div>
                               <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{movie.duration}</div>
@@ -819,7 +822,7 @@ export default function Content() {
                             </div>
                           </div>
                         </td>
-                        <td style={{ textTransform: "capitalize" }}>{Array.isArray(movie.category) ? movie.category.join(", ") : movie.category || "—"}</td>
+                        <td style={{ textTransform: "capitalize" }}>{Array.isArray(movie.category) ? movie.category.join(", ") : movie.category || "ΓÇö"}</td>
                         <td>{movie.releaseYear}</td>
                         <td>{movie.rating}</td>
                         <td><strong>{movie.priority || 0}</strong></td>
@@ -842,7 +845,7 @@ export default function Content() {
                         </td>
                         <td>
                           <div className="tbl-actions">
-                            {/* View always allowed — coming-soon shows details + release date */}
+                            {/* View always allowed ΓÇö coming-soon shows details + release date */}
                             <button className="icon-btn view" onClick={() => openView(movie)} title="View">
                               <Eye size={18} />
                             </button>
@@ -877,7 +880,7 @@ export default function Content() {
               <h3 style={{ margin: 0 }}><Tv size={20} /> {contentType === "series" ? "Series" : "Microdramas"} Library</h3>
               <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>{totalItems} Total {contentType === "series" ? "Series" : "Microdramas"}</span>
             </div>
-            {loading ? <p>Loading…</p> : (
+            {loading ? <p>LoadingΓÇª</p> : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
@@ -892,7 +895,10 @@ export default function Content() {
                       <tr key={series._id}>
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <img src={getFullUrl(series.poster)} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4 }} />
+                            <div className="thumb-popular-wrap" style={{ width: 40, height: 60, flexShrink: 0 }}>
+                              <img src={getFullUrl(series.poster)} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, display: "block" }} />
+                              {series.isPopular && <span className="thumb-popular-tape">&#x1F525; Popular</span>}
+                            </div>
                             <div>
                               <div style={{ fontWeight: 600 }}>{series.title}</div>
                               {isLocked(series) && (
@@ -904,7 +910,7 @@ export default function Content() {
                             </div>
                           </div>
                         </td>
-                        <td style={{ textTransform: "capitalize" }}>{Array.isArray(series.category) ? series.category.join(", ") : series.category || "—"}</td>
+                        <td style={{ textTransform: "capitalize" }}>{Array.isArray(series.category) ? series.category.join(", ") : series.category || "ΓÇö"}</td>
                         <td>{series.releaseYear}</td>
                         <td>{series.rating}</td>
                         <td><strong>{series.priority || 0}</strong></td>
@@ -1045,7 +1051,7 @@ export default function Content() {
                     <div className="file-input-wrapper">
                       <input type="file" accept="video/*" id="new-ep-video-new" className="file-input" onChange={e => { setNewEpisodeVideo(e.target.files[0]); setNewEpisodeVideoUrl(""); }} />
                       <label htmlFor="new-ep-video-new" className="file-label">
-                        {newEpisodeVideo ? `✓ ${newEpisodeVideo.name}` : "Choose Video"}
+                        {newEpisodeVideo ? `Γ£ô ${newEpisodeVideo.name}` : "Choose Video"}
                       </label>
                     </div>
                     <input className="form-input" placeholder="Or Paste URL" value={newEpisodeVideoUrl} onChange={e => { setNewEpisodeVideoUrl(e.target.value); if (e.target.value) setNewEpisodeVideo(null); }} />
@@ -1056,7 +1062,7 @@ export default function Content() {
                     <div className="file-input-wrapper">
                       <input type="file" accept="image/*" id="new-ep-thumb-new" className="file-input" onChange={e => { setNewEpisodeThumbnail(e.target.files[0]); setNewEpisodeThumbnailUrl(""); }} />
                       <label htmlFor="new-ep-thumb-new" className="file-label">
-                        {newEpisodeThumbnail ? `✓ ${newEpisodeThumbnail.name}` : "Choose Thumbnail"}
+                        {newEpisodeThumbnail ? `Γ£ô ${newEpisodeThumbnail.name}` : "Choose Thumbnail"}
                       </label>
                     </div>
                     <input className="form-input" placeholder="Or Paste URL" value={newEpisodeThumbnailUrl} onChange={e => { setNewEpisodeThumbnailUrl(e.target.value); if (e.target.value) setNewEpisodeThumbnail(null); }} />
@@ -1065,11 +1071,11 @@ export default function Content() {
 
                 <div className="form-row">
                   <label className="form-label">Description</label>
-                  <textarea className="form-input" rows="2" value={newEpisode.description} onChange={e => setNewEpisode(p => ({ ...p, description: e.target.value }))} placeholder="Brief description…" />
+                  <textarea className="form-input" rows="2" value={newEpisode.description} onChange={e => setNewEpisode(p => ({ ...p, description: e.target.value }))} placeholder="Brief descriptionΓÇª" />
                 </div>
                 <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
                   <button className="btn btn-primary" onClick={() => handleAddEpisode("new-season")} disabled={addingEpisode}>
-                    {addingEpisode ? "Adding…" : <><Plus size={14} /> Add Season &amp; Episode</>}
+                    {addingEpisode ? "AddingΓÇª" : <><Plus size={14} /> Add Season &amp; Episode</>}
                   </button>
                   <button className="btn btn-ghost" onClick={() => { setShowAddSeasonForm(false); setShowAddEpisodeForm(null); setNewEpisode({ title: "", episodeNumber: "", duration: "", description: "", seasonNumber: "" }); setNewSeasonNumber(""); setNewEpisodeVideo(null); setNewEpisodeVideoUrl(""); setNewEpisodeThumbnail(null); setNewEpisodeThumbnailUrl(""); }}>
                     Cancel
@@ -1150,7 +1156,7 @@ export default function Content() {
                         <label className="form-label">Video * </label>
                         <div className="file-input-wrapper">
                           <input type="file" accept="video/*" id={`ep-video-s${seasonNum}`} className="file-input" onChange={e => { setNewEpisodeVideo(e.target.files[0]); setNewEpisodeVideoUrl(""); }} />
-                          <label htmlFor={`ep-video-s${seasonNum}`} className="file-label">{newEpisodeVideo ? `✓ ${newEpisodeVideo.name}` : "Choose Video"}</label>
+                          <label htmlFor={`ep-video-s${seasonNum}`} className="file-label">{newEpisodeVideo ? `Γ£ô ${newEpisodeVideo.name}` : "Choose Video"}</label>
                         </div>
                         <input className="form-input" placeholder="Or Paste URL" value={newEpisodeVideoUrl} onChange={e => { setNewEpisodeVideoUrl(e.target.value); if (e.target.value) setNewEpisodeVideo(null); }} />
                       </div>
@@ -1159,7 +1165,7 @@ export default function Content() {
                         <label className="form-label">Thumbnail </label>
                         <div className="file-input-wrapper">
                           <input type="file" accept="image/*" id={`ep-thumb-s${seasonNum}`} className="file-input" onChange={e => { setNewEpisodeThumbnail(e.target.files[0]); setNewEpisodeThumbnailUrl(""); }} />
-                          <label htmlFor={`ep-thumb-s${seasonNum}`} className="file-label">{newEpisodeThumbnail ? `✓ ${newEpisodeThumbnail.name}` : "Choose Thumbnail"}</label>
+                          <label htmlFor={`ep-thumb-s${seasonNum}`} className="file-label">{newEpisodeThumbnail ? `Γ£ô ${newEpisodeThumbnail.name}` : "Choose Thumbnail"}</label>
                         </div>
                         <input className="form-input" placeholder="Or Paste URL" value={newEpisodeThumbnailUrl} onChange={e => { setNewEpisodeThumbnailUrl(e.target.value); if (e.target.value) setNewEpisodeThumbnail(null); }} />
                       </div>
@@ -1170,7 +1176,7 @@ export default function Content() {
                     </div>
                     <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
                       <button className="btn btn-primary" onClick={() => handleAddEpisode(seasonNum)} disabled={addingEpisode}>
-                        {addingEpisode ? "Adding…" : <><Plus size={14} /> Add Episode</>}
+                        {addingEpisode ? "AddingΓÇª" : <><Plus size={14} /> Add Episode</>}
                       </button>
                       <button className="btn btn-ghost" onClick={() => { setShowAddEpisodeForm(null); setNewEpisode({ title: "", episodeNumber: "", duration: "", description: "", seasonNumber: "" }); setNewEpisodeVideo(null); setNewEpisodeVideoUrl(""); setNewEpisodeThumbnail(null); setNewEpisodeThumbnailUrl(""); }}>
                         Cancel
@@ -1304,7 +1310,7 @@ export default function Content() {
                     <div className="detail-item"><strong>Series</strong><span>{selectedSeries?.title}</span></div>
                     <div className="detail-item"><strong>Season</strong><span>{selectedEpisode?.seasonNumber}</span></div>
                     <div className="detail-item"><strong>Episode</strong><span>{selectedEpisode?.episodeNumber}</span></div>
-                    <div className="detail-item"><strong>Duration</strong><span>{selectedEpisode?.duration || "—"}</span></div>
+                    <div className="detail-item"><strong>Duration</strong><span>{selectedEpisode?.duration || "ΓÇö"}</span></div>
                     {selectedEpisode?.description && (
                       <div className="detail-full"><strong>Description</strong><p>{selectedEpisode.description}</p></div>
                     )}
@@ -1328,11 +1334,11 @@ export default function Content() {
                       <h2 className="vp-title">{selectedItem.title}</h2>
                       <div className="vp-quick-meta">
                         <span><Calendar size={13} /> {selectedItem.releaseYear}</span>
-                        <span className="vp-dot">•</span>
-                        <span>⭐ {selectedItem.rating}/10</span>
-                        <span className="vp-dot">•</span>
+                        <span className="vp-dot">ΓÇó</span>
+                        <span>Γ¡É {selectedItem.rating}/10</span>
+                        <span className="vp-dot">ΓÇó</span>
                         <span>{selectedItem.duration || "N/A"}</span>
-                        <span className="vp-dot">•</span>
+                        <span className="vp-dot">ΓÇó</span>
                         <span>{selectedItem.language || "N/A"}</span>
                       </div>
                     </div>
@@ -1355,6 +1361,7 @@ export default function Content() {
                       <span key={i} className="vp-pill">{g}</span>
                     ))}
                     {selectedItem.isPremium && <span className="vp-pill vp-pill-gold">★ Premium</span>}
+                    {selectedItem.isPopular && <span className="vp-pill vp-pill-popular"><Flame size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />Popular</span>}
                     {(Array.isArray(selectedItem.category) ? selectedItem.category : [selectedItem.category]).filter(Boolean).map((c, i) => (
                       <span key={`c-${i}`} className="vp-pill vp-pill-blue">{c}</span>
                     ))}
@@ -1422,7 +1429,7 @@ export default function Content() {
                       </div>
                       <div className="vp-detail-card">
                         <span className="vp-detail-label">Rating</span>
-                        <span className="vp-detail-value">{selectedItem.rating} ⭐</span>
+                        <span className="vp-detail-value">{selectedItem.rating} Γ¡É</span>
                       </div>
                       <div className="vp-detail-card">
                         <span className="vp-detail-label">Priority</span>
@@ -1430,7 +1437,7 @@ export default function Content() {
                       </div>
                       <div className="vp-detail-card">
                         <span className="vp-detail-label">Premium</span>
-                        <span className={`vp-detail-value ${selectedItem.isPremium ? "text-gold" : ""}`}>{selectedItem.isPremium ? "✓ Yes" : "✗ No"}</span>
+                        <span className={`vp-detail-value ${selectedItem.isPremium ? "text-gold" : ""}`}>{selectedItem.isPremium ? "Γ£ô Yes" : "Γ£ù No"}</span>
                       </div>
                       <div className="vp-detail-card">
                         <span className="vp-detail-label">Language</span>
@@ -1496,7 +1503,7 @@ export default function Content() {
                       <label className="form-label">Thumbnail</label>
                       <div className="file-input-wrapper">
                         <input type="file" accept="image/*" id="ep-edit-thumb" className="file-input" onChange={e => handleUploadChange("thumbnail", e.target.files[0])} />
-                        <label htmlFor="ep-edit-thumb" className="file-label">{uploadData.thumbnail ? `✓ ${uploadData.thumbnail.name}` : "Change Thumbnail"}</label>
+                        <label htmlFor="ep-edit-thumb" className="file-label">{uploadData.thumbnail ? `Γ£ô ${uploadData.thumbnail.name}` : "Change Thumbnail"}</label>
                       </div>
                       <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" value={uploadData.thumbnailUrl} onChange={e => handleUploadChange("thumbnailUrl", e.target.value)} />
                     </div>
@@ -1504,7 +1511,7 @@ export default function Content() {
                       <label className="form-label">Video</label>
                       <div className="file-input-wrapper">
                         <input type="file" accept="video/*" id="ep-edit-video" className="file-input" onChange={e => handleUploadChange("video", e.target.files[0])} />
-                        <label htmlFor="ep-edit-video" className="file-label">{uploadData.video ? `✓ ${uploadData.video.name}` : "Change Video"}</label>
+                        <label htmlFor="ep-edit-video" className="file-label">{uploadData.video ? `Γ£ô ${uploadData.video.name}` : "Change Video"}</label>
                       </div>
                       <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" value={uploadData.videoUrl} onChange={e => handleUploadChange("videoUrl", e.target.value)} />
                     </div>
@@ -1525,7 +1532,7 @@ export default function Content() {
                       <input className="form-input" type="number" value={editData.releaseYear || ""} onChange={e => setEditData(s => ({ ...s, releaseYear: Number(e.target.value) }))} />
                     </div>
                     <div className="form-row">
-                      <label className="form-label">Rating (0–10)</label>
+                      <label className="form-label">Rating (0ΓÇô10)</label>
                       <input
                         className="form-input"
                         type="number"
@@ -1566,6 +1573,13 @@ export default function Content() {
                     <div className="form-row">
                       <label className="form-label">Coming Soon</label>
                       <select className="form-input" value={editData.isComingSoon ? "yes" : "no"} onChange={e => setEditData(s => ({ ...s, isComingSoon: e.target.value === "yes" }))}>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    </div>
+                    <div className="form-row">
+                      <label className="form-label">Popular</label>
+                      <select className="form-input" value={editData.isPopular ? "yes" : "no"} onChange={e => setEditData(s => ({ ...s, isPopular: e.target.value === "yes" }))}>
                         <option value="no">No</option>
                         <option value="yes">Yes</option>
                       </select>
@@ -1688,7 +1702,7 @@ export default function Content() {
                                 onChange={e => setCastImageFile(idx, e.target.files[0])}
                               />
                               <label htmlFor={`cast-img-${idx}`} className="file-label cast-file-label">
-                                {castFiles[idx] ? "✓ Changed" : c.image ? "Change Photo" : "Upload Photo"}
+                                {castFiles[idx] ? "Γ£ô Changed" : c.image ? "Change Photo" : "Upload Photo"}
                               </label>
                             </div>
                           </div>
@@ -1725,7 +1739,7 @@ export default function Content() {
                   <h4 style={{ marginBottom: 12, fontSize: "0.9rem" }}>Media Assets</h4>
                   {isLocked(selectedItem) && (
                     <p style={{ color: "var(--orange)", fontSize: "0.75rem", marginBottom: 12 }}>
-                      ⚠️ Video upload is locked until release. Trailer and images are allowed.
+                      ΓÜá∩╕Å Video upload is locked until release. Trailer and images are allowed.
                     </p>
                   )}
                   <div className="form-grid-2">
@@ -1733,7 +1747,7 @@ export default function Content() {
                       <label className="form-label">Poster</label>
                       <div className="file-input-wrapper">
                         <input type="file" accept="image/*" id="edit-poster" className="file-input" onChange={e => handleUploadChange("poster", e.target.files[0])} />
-                        <label htmlFor="edit-poster" className="file-label">{uploadData.poster ? `✓ ${uploadData.poster.name}` : "Change Poster"}</label>
+                        <label htmlFor="edit-poster" className="file-label">{uploadData.poster ? `Γ£ô ${uploadData.poster.name}` : "Change Poster"}</label>
                       </div>
                       <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" value={uploadData.posterUrl} onChange={e => handleUploadChange("posterUrl", e.target.value)} />
                     </div>
@@ -1741,7 +1755,7 @@ export default function Content() {
                       <label className="form-label">Banner</label>
                       <div className="file-input-wrapper">
                         <input type="file" accept="image/*" id="edit-banner" className="file-input" onChange={e => handleUploadChange("banner", e.target.files[0])} />
-                        <label htmlFor="edit-banner" className="file-label">{uploadData.banner ? `✓ ${uploadData.banner.name}` : "Change Banner"}</label>
+                        <label htmlFor="edit-banner" className="file-label">{uploadData.banner ? `Γ£ô ${uploadData.banner.name}` : "Change Banner"}</label>
                       </div>
                       <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" value={uploadData.bannerUrl} onChange={e => handleUploadChange("bannerUrl", e.target.value)} />
                     </div>
@@ -1749,7 +1763,7 @@ export default function Content() {
                       <label className="form-label">Trailer</label>
                       <div className="file-input-wrapper">
                         <input type="file" accept="video/*" id="edit-trailer" className="file-input" onChange={e => handleUploadChange("trailer", e.target.files[0])} />
-                        <label htmlFor="edit-trailer" className="file-label">{uploadData.trailer ? `✓ ${uploadData.trailer.name}` : "Change Trailer"}</label>
+                        <label htmlFor="edit-trailer" className="file-label">{uploadData.trailer ? `Γ£ô ${uploadData.trailer.name}` : "Change Trailer"}</label>
                       </div>
                       <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" value={uploadData.trailerUrl} onChange={e => handleUploadChange("trailerUrl", e.target.value)} />
                     </div>
@@ -1759,7 +1773,7 @@ export default function Content() {
                         <div className="file-input-wrapper">
                           <input type="file" accept="video/*" id="edit-video" className="file-input" disabled={isLocked(selectedItem)} onChange={e => handleUploadChange("video", e.target.files[0])} />
                           <label htmlFor="edit-video" className={`file-label ${isLocked(selectedItem) ? "file-label-locked" : ""}`}>
-                            {isLocked(selectedItem) ? "🔒 Locked" : uploadData.video ? `✓ ${uploadData.video.name}` : "Change Video"}
+                            {isLocked(selectedItem) ? "≡ƒöÆ Locked" : uploadData.video ? `Γ£ô ${uploadData.video.name}` : "Change Video"}
                           </label>
                         </div>
                         <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" disabled={isLocked(selectedItem)} value={uploadData.videoUrl} onChange={e => handleUploadChange("videoUrl", e.target.value)} />

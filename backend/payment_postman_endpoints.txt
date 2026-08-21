@@ -1,0 +1,139 @@
+========================================================================
+             GoliDoli OTT - Payment & Subscription API Test Suite
+========================================================================
+
+This file details the step-by-step API endpoints, request bodies, headers, 
+and instructions to test the Razorpay payment gateway and subscription flows 
+using Postman.
+
+Prerequisites:
+- Make sure the backend server is running (usually at http://localhost:8000).
+- Set the request content type to 'application/json' (JSON) in Postman.
+- Keep track of variables like '<token>' (JWT token returned from login) 
+  and '<planId>' (ID of the selected plan).
+
+------------------------------------------------------------------------
+STEP 1: USER AUTHENTICATION (OTP FLOW)
+------------------------------------------------------------------------
+
+1. Send OTP Request
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/auth/send-otp
+   - Body (JSON):
+     {
+       "phone": "+919999999999"
+     }
+   - Note: Since +919999999999 is configured as a dummy phone number in the 
+           backend, it will use the sandbox OTP: "1234".
+
+2. Verify OTP Request
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/auth/verify-otp
+   - Body (JSON):
+     {
+       "phone": "+919999999999",
+       "otp": "1234"
+     }
+   - Response: If successful, it will return a "token" (JWT Token).
+   - How to use in Postman: Copy the token value. In subsequent requests, 
+     go to the 'Authorization' tab in Postman, select 'Bearer Token' as the 
+     type, and paste this token.
+
+------------------------------------------------------------------------
+STEP 2: PLAN RETRIEVAL
+------------------------------------------------------------------------
+
+1. Get Available Plans
+   - HTTP Method: GET
+   - URL: http://localhost:8000/api/plan
+   - Headers:
+     Authorization: Bearer <token>
+   - Response: A list of available plans. Find and copy the "_id" of the plan 
+               you want to purchase (e.g. BASIC or Premium Monthly).
+               Active Plan IDs from database:
+               - Premium Monthly: 6a674791c03ac60c2142cbdb
+               - BASIC: 6a68890422946009aaf8bf61
+
+------------------------------------------------------------------------
+STEP 3: RAZORPAY PAYMENT FLOW (INTEGRATION)
+------------------------------------------------------------------------
+
+1. Create Razorpay Order
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/payment/create-order
+   - Headers:
+     Authorization: Bearer <token>
+   - Body (JSON):
+     {
+       "planId": "6a68890422946009aaf8bf61",
+       "promoCode": "" 
+     }
+     * Note: "promoCode" is optional. You can omit it or pass empty string.
+   - Response: Returns the Razorpay Key ID and the 'order' object containing 
+               the 'id' (e.g. order_PtXxxxxxxxxxxx).
+
+2. Verify Razorpay Payment
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/payment/verify
+   - Headers:
+     Authorization: Bearer <token>
+   - Body (JSON):
+     {
+       "razorpay_order_id": "order_PtXxxxxxxxxxxx",
+       "razorpay_payment_id": "pay_PtYyyyyyyyyyyy",
+       "razorpay_signature": "abcdef0123456789...",
+       "planId": "6a68890422946009aaf8bf61"
+     }
+   - Note: The razorpay signature is verified using HMAC SHA256 on the backend 
+           with your RAZORPAY_KEY_SECRET. 
+           To test this with real values on Postman:
+           1. Open http://localhost:8000/api/payment/test-page in your browser.
+           2. Authenticate and select a plan.
+           3. Click the Pay button to open the Razorpay Checkout popup.
+           4. Choose Netbanking -> SBI -> click 'Success'.
+           5. Open your browser console or check the "Test Suite Logs" section 
+              at the bottom of the page to copy the real verification payload 
+              containing order_id, payment_id, and signature.
+           6. Paste those values into this Postman request to verify the backend 
+              creates the active subscription correctly.
+
+------------------------------------------------------------------------
+STEP 4: SUBSCRIPTION MANAGEMENT
+------------------------------------------------------------------------
+
+1. Check Active Subscription Status
+   - HTTP Method: GET
+   - URL: http://localhost:8000/api/subscription/status
+   - Headers:
+     Authorization: Bearer <token>
+   - Response: Details of the current active subscription.
+
+2. Cancel Subscription
+   - HTTP Method: DELETE
+   - URL: http://localhost:8000/api/subscription/cancel
+   - Headers:
+     Authorization: Bearer <token>
+   - Body (JSON):
+     {
+       "subscriptionId": "<subscription_id>"
+     }
+   - Response: Confirmation that the subscription has been cancelled.
+
+------------------------------------------------------------------------
+STEP 5: FAKE SUBSCRIPTION FLOW (ALTERNATIVE TEST FLOW)
+------------------------------------------------------------------------
+
+If you want to test subscription features without hitting Razorpay APIs, 
+use this alternative mock endpoint:
+
+1. Subscribe (Fake Flow)
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/subscription/subscribe
+   - Headers:
+     Authorization: Bearer <token>
+   - Body (JSON):
+     {
+       "planId": "6a68890422946009aaf8bf61",
+       "promoCode": ""
+     }
+   - Response: Directly creates an active subscription in MongoDB.

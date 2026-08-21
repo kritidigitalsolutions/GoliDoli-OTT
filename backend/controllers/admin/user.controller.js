@@ -59,9 +59,9 @@ exports.getAllUsers = async (
             .limit(limit);
 
         const userIds = users.map(user => user._id);
-        const subscriptions = await Subscription.find({ 
-            user: { $in: userIds }, 
-            status: "active" 
+        const subscriptions = await Subscription.find({
+            user: { $in: userIds },
+            status: "active"
         }).populate("plan");
 
         const usersWithPlans = users.map(user => {
@@ -158,7 +158,7 @@ exports.deleteUser = async (
         await User.findByIdAndDelete(userId);
 
         // 2. Cascade delete related collections:
-        
+
         // Subscription
         await Subscription.deleteMany({ user: userId });
 
@@ -310,7 +310,7 @@ exports.toggleBlockUser = async (req, res) => {
                 message: "User not found",
             });
         }
-        
+
         user.status = user.status === "Blocked" ? "Active" : "Blocked";
         await user.save();
 

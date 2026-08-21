@@ -43,21 +43,32 @@ const formatIndianPhone = (phone) => {
 // ========================================
 const sendSMS = async (phone, otp) => {
   try {
-    const message =
-      process.env.SMS_GH_OTP_TEXT.replace(
-        "{{otp}}",
-        otp
-      );
+    const apiKey = process.env.SMS_GH_API_KEY;
+    const senderId = process.env.SMS_GH_SENDER_ID;
+    const template = process.env.SMS_GH_OTP_TEXT;
+
+    if (!apiKey || !senderId) {
+      console.error("SMS GATEWAY ERROR: SMS_GH_API_KEY or SMS_GH_SENDER_ID is missing in your .env file.");
+      return false;
+    }
+
+    if (!template) {
+      console.error("SMS GATEWAY ERROR: SMS_GH_OTP_TEXT is missing in your .env file.");
+      return false;
+    }
+
+    const message = template.replace(
+      "{{otp}}",
+      otp
+    );
 
     const response = await axios.get(
       "https://www.smsgatewayhub.com/api/mt/SendSMS",
       {
         params: {
-          APIKey:
-            process.env.SMS_GH_API_KEY,
+          APIKey: process.env.SMS_GH_API_KEY,
 
-          senderid:
-            process.env.SMS_GH_SENDER_ID,
+          senderid: process.env.SMS_GH_SENDER_ID,
 
           channel: "2",
 
@@ -66,20 +77,17 @@ const sendSMS = async (phone, otp) => {
           flashsms: 0,
 
           number: phone.replace(
-            "+91",
+            "+",
             ""
           ),
 
           text: message,
 
-          route:
-            process.env.SMS_GH_ROUTE,
+          route: process.env.SMS_GH_ROUTE,
 
-          EntityId:
-            process.env.SMS_GH_ENTITY_ID,
+          EntityId: process.env.SMS_GH_ENTITY_ID,
 
-          dlttemplateid:
-            process.env.SMS_GH_DLT_TEMPLATE_ID,
+          dlttemplateid: process.env.SMS_GH_DLT_TEMPLATE_ID,
         },
       }
     );
@@ -89,7 +97,15 @@ const sendSMS = async (phone, otp) => {
       response.data
     );
 
-    return true;
+    if (response.data && response.data.ErrorCode === "000") {
+      return true;
+    } else {
+      console.error(
+        "SMS GATEWAY ERROR:",
+        response.data?.ErrorMessage || "Unknown gateway error"
+      );
+      return false;
+    }
   } catch (error) {
     console.error(
       "SMS ERROR:",
@@ -113,10 +129,7 @@ const generateUserToken = (user) => {
     process.env.JWT_SECRET,
     {
       expiresIn:
-        process.env.JWT_EXPIRE || "7d",
-
-      issuer: "roccoplay",
-      audience: "roccoplay-app",
+        process.env.JWT_EXPIRE || "7d"
     }
   );
 };
@@ -155,23 +168,24 @@ exports.sendOTP = async (req, res) => {
     const isDummyPhone =
       isDummyOtpPhone(normalizedPhone);
 
-    // rate limit
+    // rate limit (Allow up to 7 attempts within 1 minute)
     if (!isDummyPhone) {
-      const recentOtp =
-        await OTP.findOne({
-          phone: normalizedPhone,
-          createdAt: {
-            $gt: new Date(
-              Date.now() - 60 * 1000
-            ),
-          },
-        });
+      const recentOtps = await OTP.find({
+        phone: normalizedPhone,
+        createdAt: {
+          $gt: new Date(Date.now() - 60 * 1000),
+        },
+      }).sort({ createdAt: 1 });
 
-      if (recentOtp) {
+      if (recentOtps.length >= 7) {
+        const oldestAttempt = recentOtps[0];
+        const timePassedMs = Date.now() - new Date(oldestAttempt.createdAt).getTime();
+        const remainingSeconds = Math.max(1, Math.ceil((60000 - timePassedMs) / 1000));
+
         return res.status(429).json({
           success: false,
-          message:
-            "Please wait before requesting another OTP",
+          message: `Maximum 7 OTP attempts reached. Please wait ${remainingSeconds} seconds before requesting another OTP`,
+          retryAfter: remainingSeconds,
         });
       }
     }
@@ -194,9 +208,10 @@ exports.sendOTP = async (req, res) => {
         { upsert: true }
       );
     } else {
-      // remove old otp
+      // remove old otps older than 10 minutes
       await OTP.deleteMany({
         phone: normalizedPhone,
+        createdAt: { $lt: new Date(Date.now() - 10 * 60 * 1000) },
       });
 
       // save new otp
@@ -217,27 +232,35 @@ exports.sendOTP = async (req, res) => {
     const isNewUser =
       !user || !user.profileComplete;
 
-    // console/send otp
-    // const smsSent =
-    //   isDummyPhone ||
-    //   (await sendSMS(
-    //     normalizedPhone,
-    //     otp
-    //   ));
+// console/send otp
+    const smsSent =
+      isDummyPhone ||
+      (await sendSMS(
+        normalizedPhone,
+        otp
+      ));
 
-    // Even if SMS fails (e.g., API key is commented out in .env), we still succeed in dev mode
     console.log(
       `📱 [OTP SERVICE] OTP for ${normalizedPhone} is: ${otp}`
     );
+
+    // If real SMS attempt failed, don't lie to the client with success:true
+    if (!smsSent && !isDummyPhone) {
+      return res.status(502).json({
+        success: false,
+        message:
+          "Failed to send OTP. Please try again.",
+      });
+    }
 
     return res.status(200).json({
       success: true,
       message:
         "OTP sent successfully",
       isNewUser,
-      otp, // return OTP in response for development and testing
+      // otp only exposed outside production, for testing
+      ...(process.env.NODE_ENV !== "production" && { otp }),
     });
-
   } catch (error) {
     console.error(
       "SEND OTP ERROR:",

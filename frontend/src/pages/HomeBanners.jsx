@@ -16,7 +16,7 @@ import {
   Check,
   Film
 } from "lucide-react";
-import API from "../api/axios";
+import API, { BASE_URL } from "../api/axios";
 import "./Dashboard.css";
 import "./IntroScreens.css";
 import "./HomeBanners.css";
@@ -24,7 +24,9 @@ import "./HomeBanners.css";
 const getImageUrl = (url) => {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return `http://localhost:5000${url.startsWith("/") ? "" : "/"}${url}`;
+  const cleanBase = BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  return `${cleanBase}${cleanPath}`;
 };
 
 export default function HomeBannersPage() {
@@ -35,6 +37,7 @@ export default function HomeBannersPage() {
 
   // Search in Content Selector Modal
   const [contentSearch, setContentSearch] = useState("");
+  const [filterType, setFilterType] = useState("all"); // "all" | "movie" | "series" | "microdrama"
   const [selectedContentIds, setSelectedContentIds] = useState([]);
 
   // Preview Modal State
@@ -81,12 +84,14 @@ export default function HomeBannersPage() {
     setError("");
     setSelectedContentIds([]);
     setContentSearch("");
+    setFilterType("all");
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedContentIds([]);
+    setFilterType("all");
   };
 
   const handleToggleSelectContent = (id) => {
@@ -188,10 +193,10 @@ export default function HomeBannersPage() {
 
   const filteredContentToSelect = availableContent
     .filter((c) => !existingContentIds.includes(c._id.toString()))
+    .filter((c) => filterType === "all" || (c.type || "").toLowerCase() === filterType)
     .filter(
       (c) =>
-        c.title.toLowerCase().includes(contentSearch.toLowerCase()) ||
-        (c.type || "").toLowerCase().includes(contentSearch.toLowerCase())
+        c.title.toLowerCase().includes(contentSearch.toLowerCase())
     );
 
   if (fetching) {
@@ -635,10 +640,39 @@ export default function HomeBannersPage() {
                 <div className="search-field">
                   <Search size={18} />
                   <input
-                    placeholder="Search available content by title or type..."
+                    placeholder="Search available content by title..."
                     value={contentSearch}
                     onChange={(e) => setContentSearch(e.target.value)}
                   />
+                </div>
+
+                {/* Type Filter Toggles */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                  {[
+                    { id: "all", label: "All Content" },
+                    { id: "movie", label: "Movies" },
+                    { id: "series", label: "Web Series" },
+                    { id: "microdrama", label: "Microdramas" }
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setFilterType(t.id)}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        border: '1px solid',
+                        borderColor: filterType === t.id ? 'var(--primary)' : 'var(--border)',
+                        background: filterType === t.id ? 'var(--primary-dim)' : 'rgba(255, 255, 255, 0.02)',
+                        color: filterType === t.id ? 'var(--primary)' : 'var(--text-soft)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Content Table Selector */}

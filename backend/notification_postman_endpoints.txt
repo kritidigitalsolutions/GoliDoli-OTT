@@ -1,0 +1,181 @@
+
+             GoliDoli OTT - Notification & FCM API Test Suite
+
+------------------------------------------------------------------------
+FIREBASE ENVIRONMENT CONFIGURATION (.env)
+------------------------------------------------------------------------
+
+For push notifications to function, the backend relies on the Firebase Admin SDK. 
+Ensure these environment variables are correctly populated in your backend `.env` file:
+
+FIREBASE_PROJECT_ID=golidoli
+FIREBASE_PRIVATE_KEY_ID=829c616b1b7c5239881ad19ec0e4f7c0355ca381
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCxgVwe0wjl5/HK...-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@golidoli.iam.gserviceaccount.com
+FIREBASE_CLIENT_ID=105050074416189322946
+FIREBASE_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40golidoli.iam.gserviceaccount.com
+
+------------------------------------------------------------------------
+AUTHENTICATION FOR TESTING
+------------------------------------------------------------------------
+
+1. User Login (OTP Flow)
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/auth/verify-otp
+   - Body (JSON):
+     {
+       "phone": "+919999999999",
+       "otp": "1234"
+     }
+
+2. Admin Login
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/admin/auth/login
+   - Body (JSON):
+     {
+       "email": "admin@gmail.com",
+       "password": "123456"
+     }
+   - Response: Returns an admin "token" (JWT Token). Keep this as '<admin_token>'.
+
+------------------------------------------------------------------------
+USER NOTIFICATION FLOWS (Requires '<user_token>')
+------------------------------------------------------------------------
+
+All user requests require the header: 
+Authorization: Bearer <user_token>
+
+1. Register Device FCM Token
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/notifications/fcm-token
+   - Body (JSON):
+     {
+       "fcmToken": "fcm_test_token_abcdef1234567890"
+     }
+   - Note: Saving an FCM token allows this specific user's device to receive 
+           push notifications sent by the Admin.
+
+2. Get User Notifications List
+   - HTTP Method: GET
+   - URL: http://localhost:8000/api/notifications
+   - Response: List of notifications sent to this user or sent as a broadcast.
+
+3. Get Unread Notifications Count
+   - HTTP Method: GET
+   - URL: http://localhost:8000/api/notifications/unread-count
+   - Response: Count of unread notifications.
+
+4. Mark Single Notification as Read
+   - HTTP Method: PATCH
+   - URL: http://localhost:8000/api/notifications/<notification_id>/read
+
+5. Mark All Notifications as Read
+   - HTTP Method: PATCH
+   - URL: http://localhost:8000/api/notifications/read-all
+
+6. Delete/Archive Notification
+   - HTTP Method: DELETE
+   - URL: http://localhost:8000/api/notifications/<notification_id>
+
+7. Get Notification Settings
+   - HTTP Method: GET
+   - URL: http://localhost:8000/api/notification-settings
+   - Response: Current push category preferences (true/false).
+
+8. Update Notification Settings
+   - HTTP Method: PATCH
+   - URL: http://localhost:8000/api/notification-settings
+   - Body (JSON):
+     {
+       "newEpisodes": true,
+       "newMovies": false,
+       "recommendations": true,
+       "downloads": true,
+       "continueWatching": false,
+       "subscriptionAlerts": true,
+       "promotionalOffers": true
+     }
+   - Note: You only need to pass the keys you want to change. Values must be booleans. 
+           If a category is set to 'false', any admin notification targeting that 
+           category will be automatically skipped for this user (FCM Gating).
+
+------------------------------------------------------------------------
+ADMIN NOTIFICATION CONTROL (Requires '<admin_token>')
+------------------------------------------------------------------------
+
+All admin requests require the header:
+Authorization: Bearer <admin_token>
+
+1. Send Push & Database Notification
+   - HTTP Method: POST
+   - URL: http://localhost:8000/api/admin/notifications/send
+   - Body (JSON) Options:
+
+     OPTION A: Send to ALL Users (Broadcast with Image)
+     {
+       "title": "Welcome to GoliDoli OTT!",
+       "message": "Start watching your favorite dramas and movies now.",
+       "type": "GENERAL",
+       "sendTo": "ALL",
+       "imageUrl": "https://example.com/images/welcome-banner.jpg",
+       "actionUrl": "https://golidoli.com/home"
+     }
+
+     OPTION B: Send to a SPECIFIC User
+     {
+       "title": "Account Alert",
+       "message": "Please complete your profile to access premium content.",
+       "type": "SYSTEM",
+       "sendTo": "SPECIFIC_USER",
+       "targetUser": "6a7d5ac36d12e4dbf87fd490", 
+       "imageUrl": "https://example.com/images/profile-alert.jpg",
+       "actionUrl": "https://golidoli.com/profile"
+     }
+     * Note: Replace "targetUser" value with the actual MongoDB User ID ('<user_id>').
+
+     OPTION C: Send only to Active Subscribers
+     {
+       "title": "Premium Release!",
+       "message": "Watch the new episode of Golden Drama now.",
+       "type": "GENERAL",
+       "sendTo": "SUBSCRIBERS",
+       "category": "newEpisodes",
+       "imageUrl": "https://example.com/images/poster-ep10.jpg"
+     }
+     * Note: "category" can be any valid notification preference key (e.g. 'newEpisodes').
+
+     OPTION D: Send only to Non-Subscribers
+     {
+       "title": "Limited Offer!",
+       "message": "Get 50% off on your first monthly subscription plan.",
+       "type": "PROMOTIONAL",
+       "sendTo": "NON_SUBSCRIBERS",
+       "category": "promotionalOffers",
+       "imageUrl": "https://example.com/images/discount-banner.png"
+     }
+
+     OPTION E: Send to Subscriptions Expiring Soon (Next 7 Days)
+     {
+       "title": "Subscription Renewal",
+       "message": "Your premium plan expires soon. Renew now to avoid interruption.",
+       "type": "SYSTEM",
+       "sendTo": "EXPIRING_SOON",
+       "category": "subscriptionAlerts"
+     }
+
+2. Get Admin Sent Notifications History
+   - HTTP Method: GET
+   - URL: http://localhost:8000/api/admin/notifications?page=1&limit=50&search=
+
+3. Delete Admin Notification
+   - HTTP Method: DELETE
+   - URL: http://localhost:8000/api/admin/notifications/<notification_id>
+   - Note: Soft-deletes the notification by setting isActive = false.
+
+4. Mark Admin Notification Read
+   - HTTP Method: PATCH
+   - URL: http://localhost:8000/api/admin/notifications/<notification_id>/read
+
+5. Admin Dashboard Unread Count
+   - HTTP Method: GET
+   - URL: http://localhost:8000/api/admin/notifications/unread-count

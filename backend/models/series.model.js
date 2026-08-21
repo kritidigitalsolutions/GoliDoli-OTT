@@ -49,6 +49,7 @@ const seriesSchema = new mongoose.Schema(
     trailerUrl: String,
 
     isPremium: { type: Boolean, default: false },
+    isPopular : { type: Boolean, default: false},
 
     // Priority: higher = shown first (0 = default)
     priority: { type: Number, default: 0 },

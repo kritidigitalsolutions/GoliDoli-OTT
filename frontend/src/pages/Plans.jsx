@@ -17,7 +17,7 @@ export default function PlansPage() {
 
   const [loading, setLoading] = useState(false);
   const [plans, setPlans] = useState([]);
-  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState(null);
   const [viewPlan, setViewPlan] = useState(null);
 
   // =========================
@@ -26,6 +26,11 @@ export default function PlansPage() {
   const ch = (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setForm({ ...form, [e.target.name]: value });
+  };
+
+  const chEdit = (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setEditForm({ ...editForm, [e.target.name]: value });
   };
 
   // =========================
@@ -45,7 +50,7 @@ export default function PlansPage() {
   }, []);
 
   // =========================
-  // ➕ CREATE / ✏️ UPDATE
+  // ➕ CREATE
   // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,13 +71,8 @@ export default function PlansPage() {
         isActive: form.isActive
       };
 
-      if (editId) {
-        await API.patch(`/admin/plan/${editId}`, payload);
-        alert("Plan updated successfully.");
-      } else {
-        await API.post("/admin/plan", payload);
-        alert("Plan created successfully.");
-      }
+      await API.post("/admin/plan", payload);
+      alert("Plan created successfully.");
 
       setForm({
         name: "",
@@ -85,7 +85,38 @@ export default function PlansPage() {
         isActive: true
       });
 
-      setEditId(null);
+      fetchPlans();
+
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred. Please try again.");
+    }
+
+    setLoading(false);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const payload = {
+        name: editForm.name,
+        price: Number(editForm.price),
+        duration: Number(editForm.duration),
+        features: typeof editForm.features === 'string'
+          ? editForm.features.split(",").map((f) => f.trim()).filter(Boolean)
+          : [],
+        planType: editForm.planType,
+        sortOrder: Number(editForm.sortOrder),
+        isRecommended: editForm.isRecommended,
+        isActive: editForm.isActive
+      };
+
+      await API.patch(`/admin/plan/${editForm._id}`, payload);
+      alert("Plan updated successfully.");
+
+      setEditForm(null);
       fetchPlans();
 
     } catch (err) {
@@ -114,11 +145,12 @@ export default function PlansPage() {
   // ✏️ EDIT
   // =========================
   const handleEdit = (plan) => {
-    setForm({
+    setEditForm({
+      _id: plan._id,
       name: plan.name,
       price: plan.price,
       duration: plan.duration,
-      features: plan.features.join(", "),
+      features: Array.isArray(plan.features) ? plan.features.join(", ") : "",
       planType: ["monthly", "yearly"].includes(plan.planType)
         ? plan.planType
         : "monthly",
@@ -126,7 +158,6 @@ export default function PlansPage() {
       isRecommended: plan.isRecommended || false,
       isActive: plan.isActive !== false
     });
-    setEditId(plan._id);
   };
 
   // =========================
@@ -154,64 +185,82 @@ export default function PlansPage() {
       {/* ================= FORM ================= */}
       <form onSubmit={handleSubmit}>
         <div className="form-card">
-          <h3>{editId ? "Edit Plan" : "Create New Plan"}</h3>
+          <h3>Create New Plan</h3>
 
           <div className="form-2col">
-            <input
-              className="form-input-styled"
-              name="name"
-              placeholder="Plan Name (Basic, Premium)"
-              value={form.name}
-              onChange={ch}
-              required
-            />
+            <div className="form-row">
+              <label className="form-label">Plan Name *</label>
+              <input
+                className="form-input-styled"
+                name="name"
+                placeholder="Plan Name (Basic, Premium)"
+                value={form.name}
+                onChange={ch}
+                required
+              />
+            </div>
 
-            <input
-              className="form-input-styled"
-              name="price"
-              type="number"
-              placeholder="Price (₹)"
-              value={form.price}
-              onChange={ch}
-              required
-            />
+            <div className="form-row">
+              <label className="form-label">Price (₹) *</label>
+              <input
+                className="form-input-styled"
+                name="price"
+                type="number"
+                placeholder="Price (₹)"
+                value={form.price}
+                onChange={ch}
+                required
+              />
+            </div>
 
-            <input
-              className="form-input-styled"
-              name="duration"
-              type="number"
-              placeholder="Duration (days)"
-              value={form.duration}
-              onChange={ch}
-              required
-            />
+            <div className="form-row">
+              <label className="form-label">Duration (days) *</label>
+              <input
+                className="form-input-styled"
+                name="duration"
+                type="number"
+                placeholder="Duration (days)"
+                value={form.duration}
+                onChange={ch}
+                required
+              />
+            </div>
 
-            <input
-              className="form-input-styled form-full"
-              name="features"
-              placeholder="Features (comma separated)"
-              value={form.features}
-              onChange={ch}
-            />
+            <div className="form-row form-full">
+              <label className="form-label">Features</label>
+              <input
+                className="form-input-styled"
+                name="features"
+                placeholder="Features (comma separated)"
+                value={form.features}
+                onChange={ch}
+              />
+            </div>
 
-            <select
-              className="form-input-styled"
-              name="planType"
-              value={form.planType}
-              onChange={ch}
-            >
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
+            <div className="form-row">
+              <label className="form-label">Billing Cycle</label>
+              <select
+                className="form-input-styled"
+                name="planType"
+                value={form.planType}
+                onChange={ch}
+              >
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
 
-            <input
-              className="form-input-styled"
-              name="sortOrder"
-              type="number"
-              placeholder="Sort Order (e.g. 1)"
-              value={form.sortOrder}
-              onChange={ch}
-            />
+            <div className="form-row">
+              <label className="form-label">Sort Order</label>
+              <input
+                className="form-input-styled"
+                name="sortOrder"
+                type="number"
+                placeholder="Sort Order (e.g. 1)"
+                value={form.sortOrder}
+                onChange={ch}
+              />
+            </div>
 
             <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
               <input
@@ -240,11 +289,7 @@ export default function PlansPage() {
             style={{ marginTop: 16 }}
             disabled={loading}
           >
-            {loading
-              ? "Processing..."
-              : editId
-              ? "Update Plan"
-              : "Create Plan"}
+            {loading ? "Processing..." : "Create Plan"}
           </button>
         </div>
       </form>
@@ -391,6 +436,129 @@ export default function PlansPage() {
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= EDIT MODAL ================= */}
+      {editForm && (
+        <div className="modal-overlay" onClick={() => setEditForm(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>✏️ Edit Plan</h3>
+              <button className="modal-close" onClick={() => setEditForm(null)}><X size={24} /></button>
+            </div>
+            
+            <div className="modal-body p-0">
+              <form onSubmit={handleEditSubmit} style={{ padding: 24 }}>
+                <div className="form-2col">
+                  <div className="form-row">
+                    <label className="form-label">Plan Name *</label>
+                    <input
+                      className="form-input-styled"
+                      name="name"
+                      placeholder="Plan Name (Basic, Premium)"
+                      value={editForm.name}
+                      onChange={chEdit}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">Price (₹) *</label>
+                    <input
+                      className="form-input-styled"
+                      name="price"
+                      type="number"
+                      placeholder="Price (₹)"
+                      value={editForm.price}
+                      onChange={chEdit}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">Duration (days) *</label>
+                    <input
+                      className="form-input-styled"
+                      name="duration"
+                      type="number"
+                      placeholder="Duration (days)"
+                      value={editForm.duration}
+                      onChange={chEdit}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-row form-full">
+                    <label className="form-label">Features</label>
+                    <input
+                      className="form-input-styled"
+                      name="features"
+                      placeholder="Features (comma separated)"
+                      value={editForm.features}
+                      onChange={chEdit}
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">Billing Cycle</label>
+                    <select
+                      className="form-input-styled"
+                      name="planType"
+                      value={editForm.planType}
+                      onChange={chEdit}
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">Sort Order</label>
+                    <input
+                      className="form-input-styled"
+                      name="sortOrder"
+                      type="number"
+                      placeholder="Sort Order (e.g. 1)"
+                      value={editForm.sortOrder}
+                      onChange={chEdit}
+                    />
+                  </div>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                    <input
+                      type="checkbox"
+                      name="isRecommended"
+                      checked={editForm.isRecommended}
+                      onChange={chEdit}
+                    />
+                    Recommended Plan
+                  </label>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={editForm.isActive}
+                      onChange={chEdit}
+                    />
+                    Active (Visible to users)
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                  <button type="button" className="btn-lg" style={{ background: 'transparent', border: '1px solid var(--border)' }} onClick={() => setEditForm(null)}>Cancel</button>
+                  <button
+                    className="btn-lg"
+                    type="submit"
+                    disabled={loading}
+                  >
+                    {loading ? "Processing..." : "Update Plan"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

@@ -98,7 +98,7 @@ exports.updatePreferences = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { $set: setPayload },
-      { new: true, select: "preferences" }
+      { returnDocument: "after", select: "preferences" }
     ).lean();
 
     if (!user) {

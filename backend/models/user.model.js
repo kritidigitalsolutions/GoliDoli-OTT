@@ -91,6 +91,16 @@ const userSchema = new mongoose.Schema(
     fcmTokenUpdatedAt: {
       type: Date,
     },
+
+    notificationSettings: {
+      newEpisodes:        { type: Boolean, default: true  },
+      newMovies:          { type: Boolean, default: true  },
+      recommendations:    { type: Boolean, default: true  },
+      downloads:          { type: Boolean, default: true  },
+      continueWatching:   { type: Boolean, default: true },
+      subscriptionAlerts: { type: Boolean, default: true  },
+      promotionalOffers:  { type: Boolean, default: true  },
+    },
   },
   {
     timestamps: true,

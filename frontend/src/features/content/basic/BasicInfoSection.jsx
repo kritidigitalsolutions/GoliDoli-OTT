@@ -10,6 +10,7 @@ import {
   Rocket,
   Lock,
   ArrowUpCircle,
+  Flame,
 } from "lucide-react";
 
 export default function BasicInfoSection({
@@ -307,6 +308,28 @@ export default function BasicInfoSection({
           <span style={{ color: "var(--primary)" }}>
             <Lock size={16} style={{ marginRight: 8 }} />
             Premium Content
+          </span>
+        </label>
+
+        <label
+          className="checkbox-row"
+          style={{
+            flex: 1,
+            minWidth: "200px",
+            background: "rgba(255, 140, 0, 0.1)",
+            borderColor: "rgba(255, 140, 0, 0.2)",
+          }}
+        >
+          <input
+            type="checkbox"
+            name="isPopular"
+            onChange={ch}
+            checked={form.isPopular || false}
+          />
+
+          <span style={{ color: "#ff8c00" }}>
+            <Flame size={16} style={{ marginRight: 8 }} />
+            Popular Content
           </span>
         </label>
 

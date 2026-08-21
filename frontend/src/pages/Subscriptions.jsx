@@ -62,11 +62,21 @@ export default function SubscriptionPage() {
     if (statusFilter === "expired" && !isExpired) return false;
 
     const userName = (sub.user?.name || "").toLowerCase();
+    const userEmail = (sub.user?.email || "").toLowerCase();
+    const userPhone = (sub.user?.phone || "").toLowerCase();
     const planName = (sub.plan?.name || sub.plan || "").toLowerCase();
     const voucher = (sub.voucherCode || "").toLowerCase();
     const promo = (sub.promoCode || "").toLowerCase();
-    const q = searchQuery.toLowerCase();
-    return userName.includes(q) || planName.includes(q) || voucher.includes(q) || promo.includes(q);
+    const q = searchQuery.toLowerCase().trim();
+    
+    return (
+      userName.includes(q) ||
+      userEmail.includes(q) ||
+      userPhone.includes(q) ||
+      planName.includes(q) ||
+      voucher.includes(q) ||
+      promo.includes(q)
+    );
   });
 
   const totalPages = Math.ceil(filteredSubs.length / ITEMS_PER_PAGE);
@@ -122,7 +132,7 @@ export default function SubscriptionPage() {
                 fontSize: "0.9rem",
                 outline: "none"
               }}
-              placeholder="Search by User, Plan, or Code..."
+              placeholder="Search by name, email, phone, plan or code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -169,7 +179,12 @@ export default function SubscriptionPage() {
 
               return (
                 <tr key={sub._id}>
-                  <td>{sub.user?.name || "-"}</td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{sub.user?.name || "User"}</div>
+                    <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                      {sub.user?.email || sub.user?.phone || "-"}
+                    </div>
+                  </td>
 
                   <td className="plan">{sub.plan?.name || sub.plan || "-"}</td>
 
@@ -263,6 +278,10 @@ export default function SubscriptionPage() {
                 <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
                   <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Subscriber Email</span>
                   <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{viewSub.user?.email || "-"}</span>
+                </div>
+                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
+                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Subscriber Phone</span>
+                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{viewSub.user?.phone || "-"}</span>
                 </div>
                 <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
                   <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Plan Name</span>

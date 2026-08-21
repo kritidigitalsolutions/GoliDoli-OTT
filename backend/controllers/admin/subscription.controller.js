@@ -346,7 +346,7 @@ exports.getAllSubscriptions =
         await Subscription.find()
           .populate(
             "user",
-            "name email"
+            "name email phone profileImage"
           )
           .populate("plan")
           .sort({

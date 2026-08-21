@@ -15,7 +15,7 @@ const watchlistSchema = new mongoose.Schema(
     itemModel: {
       type: String,
       required: true,
-      enum: ['Movie', 'Series']
+      enum: ['Movie', 'Series', 'TvShow']
     }
   },
   { timestamps: true }

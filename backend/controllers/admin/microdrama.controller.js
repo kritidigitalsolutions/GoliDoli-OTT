@@ -156,6 +156,8 @@ const addMicrodrama = async (
         isComingSoon:
           req.body.isComingSoon === "true",
 
+        isPopular: req.body.isPopular === "true" || req.body.isPopular === true,
+
         status:
           req.body.status ||
           "ongoing",
@@ -323,6 +325,10 @@ const updateMicrodrama =
 
       if (req.body.isPublished !== undefined) {
         drama.isPublished = req.body.isPublished === "true" || req.body.isPublished === true;
+      }
+
+      if (req.body.isPopular !== undefined) {
+        drama.isPopular = req.body.isPopular === "true" || req.body.isPopular === true;
       }
 
       if (req.body.isPremium !== undefined) {

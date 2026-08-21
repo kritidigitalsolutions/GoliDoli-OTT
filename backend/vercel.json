@@ -12,7 +12,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://mirchi-admin-panel.vercel.app"
+          "value": "https://golidoli-admin-panel.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",

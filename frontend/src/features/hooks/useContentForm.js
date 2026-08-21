@@ -16,6 +16,7 @@ const EMPTY_FORM = {
   banner: "",
   isPremium: false,
   isComingSoon: false,
+  isPopular: false,
   isPublished: true,
   releaseDate: "",
   priority: 0,

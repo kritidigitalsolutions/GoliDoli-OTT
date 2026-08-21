@@ -1,4 +1,7 @@
 const Category = require("../../models/category.model");
+const Movie = require("../../models/movie.model");
+const Series = require("../../models/series.model");
+const TvShow = require("../../models/microdrama.model");
 
 // ========================================
 // ADD CATEGORY
@@ -17,7 +20,7 @@ const addCategory = async (req, res) => {
       // Shift up priorities >= inputPriority
       await Category.updateMany({ priority: { $gte: inputPriority } }, { $inc: { priority: 1 } });
       finalPriority = inputPriority;
-    } else {
+    } else {                                                                                                              
       // Auto-assign first available priority >= 1 to fill any gaps
       const existingPriorities = await Category.find().distinct("priority");
       finalPriority = 1;
@@ -97,7 +100,38 @@ const updateCategory = async (req, res) => {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    if (name !== undefined) category.name = name;
+    let nameChanged = false;
+    let oldCategoryName = "";
+    let newCategoryName = "";
+
+    if (name !== undefined && name !== category.name) {
+      oldCategoryName = category.name.toLowerCase();
+      newCategoryName = name.toLowerCase();
+      if (oldCategoryName !== newCategoryName) {
+        nameChanged = true;
+      }
+      category.name = name;
+    }
+
+    if (nameChanged) {
+      await Promise.all([
+        Movie.updateMany(
+          { category: oldCategoryName },
+          { $set: { "category.$[elem]": newCategoryName } },
+          { arrayFilters: [{ elem: oldCategoryName }] }
+        ),
+        TvShow.updateMany(
+          { category: oldCategoryName },
+          { $set: { "category.$[elem]": newCategoryName } },
+          { arrayFilters: [{ elem: oldCategoryName }] }
+        ),
+        Series.updateMany(
+          { category: oldCategoryName },
+          { $set: { "category.$[elem]": newCategoryName } },
+          { arrayFilters: [{ elem: oldCategoryName }] }
+        )
+      ]);
+    }
     if (isActive !== undefined) category.isActive = isActive;
 
     if (priority !== undefined) {

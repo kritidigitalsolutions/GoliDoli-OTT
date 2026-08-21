@@ -19,7 +19,7 @@ const isAuth = async (
         message: "Unauthorized",
       });
     }
-    console.log("Incoming Token:", token);
+    // console.log("Incoming Token:", token);
 
     const TokenBlacklist = require("../models/tokenBlacklist.model");
     const isBlacklisted = await TokenBlacklist.findOne({ token });

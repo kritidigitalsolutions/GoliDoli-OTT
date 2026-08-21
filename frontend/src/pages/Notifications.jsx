@@ -1,50 +1,67 @@
 import { useState, useEffect, useCallback } from "react";
-import { Bell, Send, X, Trash2, Eye, RefreshCw } from "lucide-react";
+import { Bell, Send, X, Trash2, Eye, RefreshCw, Film, Tv, Video, CreditCard } from "lucide-react";
 import API from "../api/axios";
 import "./Dashboard.css";
 import "./Notifications.css";
 
 // ── Type badge colours ─────────────────────────────────────────────────────
 const TYPE_COLORS = {
-  GENERAL:     { bg: "rgba(100,116,139,0.15)", color: "#94a3b8" },
-  SYSTEM:      { bg: "rgba(59,130,246,0.15)",  color: "#3b82f6" },
-  PLAN:        { bg: "rgba(139,92,246,0.15)",  color: "#8b5cf6" },
-  PROMOTIONAL: { bg: "rgba(245,158,11,0.15)",  color: "#f59e0b" },
+  GENERAL: { bg: "rgba(100,116,139,0.15)", color: "#94a3b8" },
+  SYSTEM: { bg: "rgba(59,130,246,0.15)", color: "#3b82f6" },
+  PLAN: { bg: "rgba(139,92,246,0.15)", color: "#8b5cf6" },
+  PROMOTIONAL: { bg: "rgba(245,158,11,0.15)", color: "#f59e0b" },
 };
 
 const EMPTY_FORM = {
-  title:      "",
-  message:    "",
-  type:       "GENERAL",
-  sendTo:     "All Users",
+  title: "",
+  message: "",
+  type: "GENERAL",
+  sendTo: "All Users",
   userSearch: "",
-  actionUrl:  "",
+  actionUrl: "",
+  imageUrl: "",
 };
 
 // ── sendTo value → backend targetUserType mapping ─────────────────────────
 const SEND_TO_MAP = {
-  "All Users":       "ALL",
-  "Subscribers Only":"SUBSCRIBERS",
-  "Specific User":   "SPECIFIC_USER",
+  "All Users": "ALL",
+  "Subscribers Only": "SUBSCRIBERS",
+  "Non-Subscribers": "NON_SUBSCRIBERS",
+  "Expiring Soon": "EXPIRING_SOON",
+  "Specific User": "SPECIFIC_USER",
 };
 
 // ── Helper: resolve display target from a notification doc ─────────────────
 const resolveTarget = (n) => {
-  if (n.targetUser)       return n.targetUser?.name || n.targetUser?.email || "Specific User";
-  if (n.targetUserType)   return n.targetUserType === "ALL" ? "All Users" : n.targetUserType;
+  if (n.targetUser) return n.targetUser?.name || n.targetUser?.email || "Specific User";
+  if (n.targetUserType) return n.targetUserType === "ALL" ? "All Users" : n.targetUserType;
   return "All Users";
 };
 
 export default function NotificationsPage() {
-  const [form, setForm]               = useState(EMPTY_FORM);
-  const [loading, setLoading]         = useState(false);
-  const [fetching, setFetching]       = useState(true);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [notifications, setNotifications] = useState([]);
-  const [users, setUsers]             = useState([]);
-  const [userDropOpen, setUserDropOpen]   = useState(false);
-  const [selectedUser, setSelectedUser]   = useState(null);
-  const [toast, setToast]             = useState(null);
-  const [viewNotif, setViewNotif]     = useState(null); // the notification being viewed
+  const [users, setUsers] = useState([]);
+  const [userDropOpen, setUserDropOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [viewNotif, setViewNotif] = useState(null); // the notification being viewed
+
+  // ── Attachment state ──────────────────────────────────────────────────
+  const [attachmentType, setAttachmentType] = useState("none"); // "none" | "content" | "plan"
+  const [linkContentType, setLinkContentType] = useState("movie"); // "movie" | "series" | "microdrama"
+  const [contentSearch, setContentSearch] = useState("");
+  const [contentDropOpen, setContentDropOpen] = useState(false);
+  const [selectedContent, setSelectedContent] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  // ── Resource lists ───────────────────────────────────────────────────
+  const [movies, setMovies] = useState([]);
+  const [seriesList, setSeriesList] = useState([]);
+  const [microdramas, setMicrodramas] = useState([]);
+  const [plans, setPlans] = useState([]);
 
   // ── Toast helper ──────────────────────────────────────────────────────
   const showToast = (msg, type = "success") => {
@@ -75,10 +92,38 @@ export default function NotificationsPage() {
     }
   }, []);
 
+  // ── Fetch media content & plans for attachments ───────────────────────
+  const fetchResources = useCallback(async () => {
+    try {
+      const [movRes, serRes, micRes, planRes] = await Promise.allSettled([
+        API.get("/admin/movies?limit=1000"),
+        API.get("/admin/series?limit=1000"),
+        API.get("/admin/microdramas?limit=1000"),
+        API.get("/admin/plan"),
+      ]);
+
+      if (movRes.status === "fulfilled") {
+        setMovies(movRes.value.data.movies || []);
+      }
+      if (serRes.status === "fulfilled") {
+        setSeriesList(serRes.value.data.series || []);
+      }
+      if (micRes.status === "fulfilled") {
+        setMicrodramas(micRes.value.data.microdramas || micRes.value.data.tvShows || []);
+      }
+      if (planRes.status === "fulfilled") {
+        setPlans(planRes.value.data.plans || planRes.value.data.data || []);
+      }
+    } catch {
+      // Non-critical
+    }
+  }, []);
+
   useEffect(() => {
     fetchNotifications();
     fetchUsers();
-  }, [fetchNotifications, fetchUsers]);
+    fetchResources();
+  }, [fetchNotifications, fetchUsers, fetchResources]);
 
   // ── Form input change ─────────────────────────────────────────────────
   const ch = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -86,9 +131,21 @@ export default function NotificationsPage() {
   // ── Filtered user list ────────────────────────────────────────────────
   const filteredUsers = users.filter(
     (u) =>
-      (u.name  || "").toLowerCase().includes(form.userSearch.toLowerCase()) ||
+      (u.name || "").toLowerCase().includes(form.userSearch.toLowerCase()) ||
       (u.email || "").toLowerCase().includes(form.userSearch.toLowerCase()) ||
       (u.phone || "").includes(form.userSearch)
+  );
+
+  // ── Filtered content list based on linkContentType ────────────────────
+  const getActiveContentList = () => {
+    if (linkContentType === "movie") return movies;
+    if (linkContentType === "series") return seriesList;
+    if (linkContentType === "microdrama") return microdramas;
+    return [];
+  };
+
+  const filteredContent = getActiveContentList().filter((item) =>
+    (item.title || "").toLowerCase().includes(contentSearch.toLowerCase())
   );
 
   // ── Send notification ─────────────────────────────────────────────────
@@ -103,15 +160,45 @@ export default function NotificationsPage() {
       showToast("Please select a specific user.", "error");
       return;
     }
+    if (attachmentType === "content" && !selectedContent) {
+      showToast("Please select the content to link.", "error");
+      return;
+    }
+    if (attachmentType === "plan" && !selectedPlan) {
+      showToast("Please select the subscription plan.", "error");
+      return;
+    }
 
     setLoading(true);
     try {
+      let resolvedActionUrl = form.actionUrl.trim() || undefined;
+      let resolvedImageUrl = form.imageUrl.trim() || undefined;
+
+      if (attachmentType === "content" && selectedContent) {
+        if (!resolvedActionUrl) {
+          const prefix = linkContentType === "movie" ? "movies" : linkContentType === "series" ? "series" : "microdramas";
+          resolvedActionUrl = `golidoli://${prefix}/id/${selectedContent._id}`;
+        }
+        if (!resolvedImageUrl) {
+          resolvedImageUrl = selectedContent.poster || selectedContent.banner || undefined;
+        }
+      } else if (attachmentType === "plan" && selectedPlan) {
+        if (!resolvedActionUrl) {
+          resolvedActionUrl = `golidoli://plans/id/${selectedPlan._id}`;
+        }
+      }
+
       const payload = {
-        title:      form.title.trim(),
-        message:    form.message.trim(),
-        type:       form.type,
-        sendTo:     SEND_TO_MAP[form.sendTo] || "ALL",
-        actionUrl:  form.actionUrl.trim() || undefined,
+        title: form.title.trim(),
+        message: form.message.trim(),
+        type: form.type,
+        sendTo: SEND_TO_MAP[form.sendTo] || "ALL",
+        actionUrl: resolvedActionUrl,
+        imageUrl: resolvedImageUrl,
+        attachmentType,
+        contentType: attachmentType === "content" ? linkContentType : (attachmentType === "plan" ? "plan" : undefined),
+        contentId: attachmentType === "content" && selectedContent ? selectedContent._id : undefined,
+        planId: attachmentType === "plan" && selectedPlan ? selectedPlan._id : undefined,
         ...(form.sendTo === "Specific User" && selectedUser
           ? { targetUser: selectedUser._id || selectedUser.id }
           : {}),
@@ -120,8 +207,7 @@ export default function NotificationsPage() {
       await API.post("/admin/notifications/send", payload);
 
       showToast("Notification sent successfully! 🎉");
-      setForm(EMPTY_FORM);
-      setSelectedUser(null);
+      handleClear();
       fetchNotifications(); // refresh table
     } catch (err) {
       showToast(err.response?.data?.message || "Failed to send notification.", "error");
@@ -134,6 +220,11 @@ export default function NotificationsPage() {
   const handleClear = () => {
     setForm(EMPTY_FORM);
     setSelectedUser(null);
+    setAttachmentType("none");
+    setSelectedContent(null);
+    setSelectedPlan(null);
+    setContentSearch("");
+    setContentDropOpen(false);
   };
 
   // ── Delete notification ───────────────────────────────────────────────
@@ -231,6 +322,37 @@ export default function NotificationsPage() {
             />
           </div>
 
+          {/* Image URL (Optional - Auto-resolved if Content attached) */}
+          <div className="notif-field-group">
+            <label className="notif-label">
+              Image URL <span className="notif-optional">(Optional - Auto-resolved if Content attached)</span>
+            </label>
+            <input
+              className="form-input-styled notif-input"
+              name="imageUrl"
+              placeholder="https://example.com/image.jpg or poster URL"
+              value={form.imageUrl}
+              onChange={ch}
+            />
+          </div>
+
+          {/* Image Preview if provided or from selected content */}
+          {(form.imageUrl || (selectedContent && (selectedContent.poster || selectedContent.banner))) && (
+            <div className="notif-field-group" style={{ marginTop: "-6px", marginBottom: "16px" }}>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "6px" }}>
+                {form.imageUrl ? "Custom Image Preview:" : "Auto-attached Content Poster:"}
+              </div>
+              <div style={{ maxWidth: "220px", maxHeight: "120px", borderRadius: "8px", overflow: "hidden", border: "1px solid var(--border)" }}>
+                <img
+                  src={form.imageUrl || selectedContent.poster || selectedContent.banner}
+                  alt="Notification Preview"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  onError={(e) => { e.target.style.display = "none"; }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Type + Send To */}
           <div className="notif-2col">
             <div className="notif-field-group">
@@ -261,8 +383,10 @@ export default function NotificationsPage() {
                 }}
               >
                 <option value="All Users">All Users</option>
-                <option value="Specific User">Specific User</option>
                 <option value="Subscribers Only">Subscribers Only</option>
+                <option value="Non-Subscribers">Non-Subscribers</option>
+                <option value="Expiring Soon">Expiring Soon (Next 7 Days)</option>
+                <option value="Specific User">Specific User</option>
               </select>
             </div>
           </div>
@@ -328,19 +452,171 @@ export default function NotificationsPage() {
             </div>
           )}
 
-          {/* Action URL */}
+          {/* ════════════ ATTACHMENT TYPE ════════════ */}
           <div className="notif-field-group">
-            <label className="notif-label">
-              Action URL <span className="notif-optional">(optional)</span>
-            </label>
-            <input
-              className="form-input-styled notif-input"
-              name="actionUrl"
-              placeholder="/plans"
-              value={form.actionUrl}
-              onChange={ch}
-            />
+            <label className="notif-label">Attachment Type</label>
+            <div className="notif-radio-row">
+              <label className="notif-radio-label">
+                <input
+                  type="radio"
+                  name="attachmentType"
+                  value="none"
+                  checked={attachmentType === "none"}
+                  onChange={() => {
+                    setAttachmentType("none");
+                    setSelectedContent(null);
+                    setSelectedPlan(null);
+                  }}
+                />
+                None
+              </label>
+
+              <label className="notif-radio-label">
+                <input
+                  type="radio"
+                  name="attachmentType"
+                  value="content"
+                  checked={attachmentType === "content"}
+                  onChange={() => {
+                    setAttachmentType("content");
+                    setSelectedPlan(null);
+                  }}
+                />
+                Content
+              </label>
+
+              <label className="notif-radio-label">
+                <input
+                  type="radio"
+                  name="attachmentType"
+                  value="plan"
+                  checked={attachmentType === "plan"}
+                  onChange={() => {
+                    setAttachmentType("plan");
+                    setSelectedContent(null);
+                  }}
+                />
+                Subscription Plan
+              </label>
+            </div>
           </div>
+
+          {/* ── Content Attachment Controls (When Content is chosen) ── */}
+          {attachmentType === "content" && (
+            <div className="notif-fade-in" style={{ marginBottom: "18px" }}>
+              <div className="notif-field-group">
+                <label className="notif-label">Link to Content</label>
+                <select
+                  className="form-input-styled notif-input notif-select"
+                  value={linkContentType}
+                  onChange={(e) => {
+                    setLinkContentType(e.target.value);
+                    setSelectedContent(null);
+                    setContentSearch("");
+                  }}
+                >
+                  <option value="movie">Movie</option>
+                  <option value="series">Series</option>
+                  <option value="microdrama">Microdrama</option>
+                </select>
+              </div>
+
+              {/* Search Movie / Series / Microdrama */}
+              <div className="notif-field-group">
+                <label className="notif-label">
+                  Search {linkContentType === "movie" ? "Movie" : linkContentType === "series" ? "Series" : "Microdrama"}
+                </label>
+                <div className="notif-user-search-wrap">
+                  <input
+                    className="form-input-styled notif-input"
+                    placeholder={`Search ${linkContentType} name...`}
+                    value={selectedContent ? selectedContent.title : contentSearch}
+                    onChange={(e) => {
+                      if (selectedContent) setSelectedContent(null);
+                      setContentSearch(e.target.value);
+                      setContentDropOpen(true);
+                    }}
+                    onFocus={() => setContentDropOpen(true)}
+                    autoComplete="off"
+                  />
+                  {selectedContent && (
+                    <button
+                      type="button"
+                      className="notif-user-clear"
+                      onClick={() => {
+                        setSelectedContent(null);
+                        setContentSearch("");
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+
+                  {contentDropOpen && !selectedContent && (
+                    <div className="notif-user-dropdown">
+                      {filteredContent.length === 0 ? (
+                        <div className="notif-user-empty">No matching {linkContentType} found</div>
+                      ) : (
+                        filteredContent.map((item) => (
+                          <div
+                            key={item._id}
+                            className="notif-user-option"
+                            onMouseDown={() => {
+                              setSelectedContent(item);
+                              setContentDropOpen(false);
+                              setContentSearch(item.title);
+                            }}
+                          >
+                            {item.poster || item.banner ? (
+                              <img
+                                src={item.poster || item.banner}
+                                alt={item.title}
+                                className="notif-content-thumb"
+                                onError={(e) => { e.target.style.display = "none"; }}
+                              />
+                            ) : (
+                              <div className="notif-user-avatar">
+                                {linkContentType === "movie" ? <Film size={16} /> : <Tv size={16} />}
+                              </div>
+                            )}
+                            <div>
+                              <div className="notif-user-name">{item.title}</div>
+                              <div className="notif-user-meta">
+                                {item.releaseYear ? `${item.releaseYear} · ` : ""}
+                                {item.genre && Array.isArray(item.genre) ? item.genre.join(", ") : ""}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Plan Attachment Controls (When Plan is chosen) ── */}
+          {attachmentType === "plan" && (
+            <div className="notif-field-group notif-fade-in">
+              <label className="notif-label">Select Subscription Plan</label>
+              <select
+                className="form-input-styled notif-input notif-select"
+                value={selectedPlan ? selectedPlan._id : ""}
+                onChange={(e) => {
+                  const p = plans.find((pl) => pl._id === e.target.value);
+                  setSelectedPlan(p || null);
+                }}
+              >
+                <option value="">-- Choose Plan --</option>
+                {plans.map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {p.name} (₹{p.price || 0} / {p.duration || "month"})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Buttons */}
           <div className="notif-btn-row">
@@ -376,24 +652,23 @@ export default function NotificationsPage() {
 
           {/* Refresh button */}
           <button
-            className="icon-btn view"
-            title="Refresh"
-            onClick={fetchNotifications}
-            style={{ marginLeft: "auto" }}
             type="button"
+            className="notif-refresh-btn"
+            onClick={fetchNotifications}
+            title="Refresh list"
+            disabled={fetching}
           >
-            <RefreshCw size={14} className={fetching ? "notif-spin-icon" : ""} />
+            <RefreshCw size={13} className={fetching ? "notif-spin" : ""} />
           </button>
         </h3>
 
-        <div className="tbl-wrap">
-          {fetching ? (
-            <div className="empty-state">
-              <span className="notif-spinner" style={{ margin: "0 auto" }} />
-              <p style={{ marginTop: 14 }}>Loading notifications…</p>
-            </div>
-          ) : (
-            <table className="tbl">
+        {fetching ? (
+          <div className="notif-loading">
+            <span className="notif-spinner" /> Loading notifications...
+          </div>
+        ) : (
+          <div className="custom-table-container">
+            <table className="custom-table">
               <thead>
                 <tr>
                   <th>Title</th>
@@ -401,154 +676,162 @@ export default function NotificationsPage() {
                   <th>Target</th>
                   <th>Date</th>
                   <th>Status</th>
-                  <th style={{ textAlign: "center" }}>Actions</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {notifications.length === 0 ? (
                   <tr>
-                    <td colSpan={6}>
-                      <div className="empty-state">
-                        <div style={{ fontSize: "2rem" }}>🔔</div>
-                        <p>No notifications sent yet</p>
-                      </div>
+                    <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px" }}>
+                      No notifications sent yet.
                     </td>
                   </tr>
                 ) : (
-                  notifications.map((n) => (
-                    <tr key={n._id} style={{ opacity: n.isRead ? 0.75 : 1, background: !n.isRead ? "rgba(255,255,255,0.02)" : "transparent" }}>
-                      <td>
-                        <span className="notif-row-title" style={{ fontWeight: !n.isRead ? "bold" : "normal" }}>{n.title}</span>
-                      </td>
-
-                      <td>
-                        <span
-                          className="badge"
-                          style={{
-                            background: TYPE_COLORS[n.type]?.bg  || TYPE_COLORS.GENERAL.bg,
-                            color:      TYPE_COLORS[n.type]?.color || TYPE_COLORS.GENERAL.color,
-                          }}
-                        >
-                          {n.type || "GENERAL"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span className="notif-target">{resolveTarget(n)}</span>
-                      </td>
-
-                      <td>
-                        <span className="notif-date">
-                          {new Date(n.createdAt || n.sentAt).toLocaleDateString("en-IN", {
-                            day: "2-digit", month: "short", year: "numeric",
-                          })}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span className={`badge ${n.isRead ? "" : "badge-active"}`} style={{ 
-                          background: n.isRead ? "rgba(100,116,139,0.15)" : "rgba(16, 185, 129, 0.15)",
-                          color: n.isRead ? "#94a3b8" : "#10b981"
-                        }}>
-                          {n.isRead ? "Read" : "Unread"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="tbl-actions" style={{ justifyContent: "center" }}>
-                          <button 
-                            className="icon-btn view" 
-                            title="View Details"
-                            type="button"
-                            onClick={() => handleView(n)}
+                  notifications.map((n) => {
+                    const badge = TYPE_COLORS[n.type] || TYPE_COLORS.GENERAL;
+                    return (
+                      <tr key={n._id}>
+                        <td>
+                          <span className="notif-row-title">{n.title}</span>
+                        </td>
+                        <td>
+                          <span
+                            className="badge"
+                            style={{ background: badge.bg, color: badge.color }}
                           >
-                            <Eye size={15} />
-                          </button>
-                          <button
-                            className="icon-btn del"
-                            title="Delete"
-                            type="button"
-                            onClick={() => handleDelete(n._id)}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            {n.type || "GENERAL"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="notif-target">{resolveTarget(n)}</span>
+                        </td>
+                        <td>
+                          <span className="notif-date">
+                            {n.createdAt
+                              ? new Date(n.createdAt).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
+                              : "—"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge ${n.isRead ? "b-green" : "b-yellow"}`}>
+                            {n.isRead ? "READ" : "UNREAD"}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <button
+                              className="action-btn"
+                              title="View details"
+                              onClick={() => handleView(n)}
+                            >
+                              <Eye size={15} />
+                            </button>
+                            <button
+                              className="action-btn text-danger"
+                              title="Delete notification"
+                              onClick={() => handleDelete(n._id)}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* ── View Detail Modal ── */}
+      {/* ═══════════════════════ VIEW MODAL ═══════════════════════ */}
       {viewNotif && (
-        <div className="profile-overlay" onClick={() => setViewNotif(null)}>
-          <div className="profile-card notif-view-modal" onClick={e => e.stopPropagation()} style={{ width: "420px", padding: 0 }}>
-            <div className="profile-header" style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
-              <h2 style={{ fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px" }}>
-                🔔 Notification Details
-              </h2>
-              <button className="close-btn" onClick={() => setViewNotif(null)}>
-                <X size={18} />
+        <div className="notif-modal-backdrop" onClick={() => setViewNotif(null)}>
+          <div
+            className="notif-modal-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="notif-modal-header">
+              <h3>
+                <span className="notif-card-icon"><Bell size={16} /></span>
+                Notification Details
+              </h3>
+              <button
+                className="notif-modal-close"
+                onClick={() => setViewNotif(null)}
+              >
+                <X size={16} />
               </button>
             </div>
-            
-            <div className="profile-body" style={{ padding: "20px", textAlign: "left", marginTop: 0 }}>
-              <div style={{ marginBottom: "16px" }}>
-                <span className="badge" style={{
-                  background: TYPE_COLORS[viewNotif.type]?.bg || TYPE_COLORS.GENERAL.bg,
-                  color: TYPE_COLORS[viewNotif.type]?.color || TYPE_COLORS.GENERAL.color,
-                  marginBottom: "8px",
-                  display: "inline-block"
-                }}>
-                  {viewNotif.type || "GENERAL"}
+
+            <div className="notif-modal-body">
+              <div className="notif-modal-chip-row">
+                <span
+                  className="badge"
+                  style={{
+                    background: (TYPE_COLORS[viewNotif.type] || TYPE_COLORS.GENERAL).bg,
+                    color: (TYPE_COLORS[viewNotif.type] || TYPE_COLORS.GENERAL).color,
+                  }}
+                >
+                  {viewNotif.type}
                 </span>
-                <h3 style={{ fontSize: "1.2rem", margin: "4px 0", lineHeight: 1.3 }}>{viewNotif.title}</h3>
-                <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "4px" }}>
-                  Sent on {new Date(viewNotif.createdAt || viewNotif.sentAt).toLocaleString("en-IN", {
-                    day: "2-digit", month: "short", year: "numeric",
-                    hour: "2-digit", minute: "2-digit"
-                  })}
-                </p>
+                {viewNotif.category && (
+                  <span className="badge b-purple">{viewNotif.category}</span>
+                )}
               </div>
 
-              <div style={{ 
-                background: "var(--bg)", 
-                padding: "12px", 
-                borderRadius: "8px", 
-                border: "1px solid var(--border)",
-                color: "var(--text)",
-                fontSize: "0.95rem",
-                lineHeight: 1.5,
-                whiteSpace: "pre-wrap",
-                marginBottom: "20px"
-              }}>
-                {viewNotif.message}
-              </div>
+              <h4 className="notif-modal-title">{viewNotif.title}</h4>
+              <p className="notif-modal-date">
+                Sent on{" "}
+                {viewNotif.createdAt
+                  ? new Date(viewNotif.createdAt).toLocaleString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                  : "—"}
+              </p>
 
-              <div className="notif-detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <div>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Target User(s)</span>
-                  <div style={{ fontSize: "0.9rem", marginTop: "2px" }}>{resolveTarget(viewNotif)}</div>
+              {viewNotif.imageUrl && (
+                <div className="notif-modal-img-wrap">
+                  <img
+                    src={viewNotif.imageUrl}
+                    alt={viewNotif.title}
+                    onError={(e) => { e.target.style.display = "none"; }}
+                  />
                 </div>
+              )}
+
+              <div className="notif-modal-msg">{viewNotif.message}</div>
+
+              <div className="notif-modal-meta-grid">
                 <div>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Action URL</span>
-                  <div style={{ fontSize: "0.9rem", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {viewNotif.metadata?.actionUrl ? (
-                      <a href={viewNotif.metadata.actionUrl} target="_blank" rel="noreferrer" style={{ color: "var(--primary)" }}>
-                        {viewNotif.metadata.actionUrl}
-                      </a>
-                    ) : "—"}
+                  <label>TARGET USER(S)</label>
+                  <span>{resolveTarget(viewNotif)}</span>
+                </div>
+                {viewNotif.metadata?.actionUrl && (
+                  <div>
+                    <label>ACTION URL</label>
+                    <span className="notif-modal-url">{viewNotif.metadata.actionUrl}</span>
                   </div>
-                </div>
+                )}
               </div>
             </div>
-            
-            <div style={{ padding: "16px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
-              <button className="btn" onClick={() => setViewNotif(null)}>Close</button>
+
+            <div className="notif-modal-footer">
+              <button
+                className="btn btn-sm notif-clear-btn"
+                onClick={() => setViewNotif(null)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

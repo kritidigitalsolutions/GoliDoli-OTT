@@ -105,18 +105,18 @@ const addMovie = async (req, res) => {
     // ========================================
     // CREATE MOVIE
     // ========================================
-console.log("MOVIE CREATE PAYLOAD");
-console.log({
-  title: req.body.title,
-  poster: req.body.poster,
-  banner: req.body.banner,
-  trailerUrl: req.body.trailerUrl,
-  videoUrl: req.body.videoUrl,
-  cast,
-  genre,
-  category,
-  language: req.body.language,
-});
+    console.log("MOVIE CREATE PAYLOAD");
+    console.log({
+      title: req.body.title,
+      poster: req.body.poster,
+      banner: req.body.banner,
+      trailerUrl: req.body.trailerUrl,
+      videoUrl: req.body.videoUrl,
+      cast,
+      genre,
+      category,
+      language: req.body.language,
+    });
     const movie = await Movie.create({
 
       title: req.body.title,
@@ -143,6 +143,10 @@ console.log({
       isComingSoon:
         req.body.isComingSoon === "true",
 
+
+      isPopular: req.body.isPopular === "true" || req.body.isPopular === true,
+
+
       releaseDate:
         req.body.releaseDate || null,
 
@@ -167,31 +171,31 @@ console.log({
     });
 
   } catch (error) {
-  console.error("================================");
-  console.error("ADD MOVIE ERROR");
-  console.error(error);
-  console.error(error.message);
+    console.error("================================");
+    console.error("ADD MOVIE ERROR");
+    console.error(error);
+    console.error(error.message);
 
-  if (error.errors) {
-    Object.keys(error.errors).forEach((key) => {
-      console.error(
-        "VALIDATION:",
-        key,
-        error.errors[key]?.message
-      );
+    if (error.errors) {
+      Object.keys(error.errors).forEach((key) => {
+        console.error(
+          "VALIDATION:",
+          key,
+          error.errors[key]?.message
+        );
+      });
+    }
+
+    console.error("REQUEST BODY:");
+    console.log(req.body);
+
+    console.error("================================");
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
-
-  console.error("REQUEST BODY:");
-  console.log(req.body);
-
-  console.error("================================");
-
-  return res.status(500).json({
-    success: false,
-    message: error.message,
-  });
-}
 };
 
 // ========================================
@@ -378,6 +382,10 @@ const updateMovie = async (req, res) => {
 
     if (req.body.isComingSoon !== undefined) {
       movie.isComingSoon = req.body.isComingSoon === "true" || req.body.isComingSoon === true;
+    }
+
+    if(req.body.isPopular !== undefined) {
+      movie.isPopular = req.body.isPopular === "true" || req.body.isPopular === true;
     }
 
     if (req.body.isPremium !== undefined) {

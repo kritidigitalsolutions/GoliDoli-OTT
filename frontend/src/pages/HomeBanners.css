@@ -227,3 +227,23 @@
   border-color: #FF7A1A;
   color: #fff;
 }
+
+/* Custom scrollbar for modal content to ensure visibility */
+.modal-table-container::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-table-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+.modal-table-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.modal-table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}

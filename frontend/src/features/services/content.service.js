@@ -55,11 +55,11 @@ export const createContent = async ({
   // 4. Upload Trailer directly to Bunny CDN
   let trailerUrl = form.trailerUrl || "";
   if (trailerFile) {
-  trailerUrl = await uploadToBunny(trailerFile, typeFolder, "trailers", (percent) => {
-    const scaledPercent = 25 + Math.round(percent * 0.15); // maps to 25%→40% range
-    if (onTrailerProgress) onTrailerProgress(scaledPercent);
-  });
-}
+    trailerUrl = await uploadToBunny(trailerFile, typeFolder, "trailers", (percent) => {
+      const scaledPercent = 25 + Math.round(percent * 0.15); // maps to 25%→40% range
+      if (onTrailerProgress) onTrailerProgress(scaledPercent);
+    });
+  }
 
   // 5. Upload the movie video directly to Bunny CDN
   let videoUrl = form.videoUrl || "";
@@ -87,6 +87,7 @@ export const createContent = async ({
   formData.append("duration", form.duration);
   formData.append("isPremium", String(form.isPremium));
   formData.append("isComingSoon", String(form.isComingSoon));
+  formData.append("isPopular", String(form.isPopular));
   formData.append("isPublished", String(form.isPublished !== false));
   formData.append("releaseDate", form.releaseDate || "");
   formData.append("priority", Number(form.priority) || 0);
@@ -116,13 +117,13 @@ export const createContent = async ({
   formData.append("cast", JSON.stringify(updatedCast));
 
   console.log("POSTING CONTENT DATA");
-console.log({
-  posterUrl,
-  bannerUrl,
-  trailerUrl,
-  videoUrl,
-  cast: updatedCast,
-});
+  console.log({
+    posterUrl,
+    bannerUrl,
+    trailerUrl,
+    videoUrl,
+    cast: updatedCast,
+  });
 
   // Post meta to the backend (Express backend will save to DB instantly!)
   const response = await API.post(endpoint, formData, {
@@ -132,7 +133,7 @@ console.log({
   });
 
   console.log("CONTENT CREATED");
-console.log(response.data);
+  console.log(response.data);
 
   // 7. Upload individual episodes for series and microdramas.
   if (!isMovie && form.seasons.length > 0) {

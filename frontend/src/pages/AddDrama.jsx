@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./Dashboard.css";
 import API from "../api/axios";
 import { uploadToBunny } from "../features/services/bunnyUpload";
@@ -33,6 +33,22 @@ const EMPTY_FORM = {
 export default function AddDrama() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await API.get("/admin/categories");
+        if (res.data.success) {
+          const list = (res.data.categories || []).filter(c => c.isActive !== false);
+          setCategories(list);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Media files
   const [posterFile, setPosterFile] = useState(null);
@@ -288,9 +304,11 @@ export default function AddDrama() {
               <label className="form-label"><Layers size={14} style={{ marginRight: 4 }} />Category</label>
               <select className="form-input-styled" name="category" onChange={ch} value={form.category}>
                 <option value="">Select Category</option>
-                <option value="trending">Trending</option>
-                <option value="top10">Top 10</option>
-                <option value="recommended">Recommended</option>
+                {categories.map((c) => (
+                  <option key={c._id} value={c.name.toLowerCase()}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="form-row">

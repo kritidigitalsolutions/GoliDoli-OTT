@@ -5,7 +5,7 @@ import "./Content.css";
 import {
   Eye, Edit2, Trash2, X, Play, Film,
   Search, Plus, User, Video, ChevronDown, ChevronRight,
-  Upload, Image, Lock, Globe, Tag, Layers, Star,
+  Upload, Image, Lock, Globe, Tag, Layers, Star, Flame,
 } from "lucide-react";
 
 export default function Drama() {
@@ -30,6 +30,7 @@ export default function Drama() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [editData, setEditData] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   // Upload state
   const [uploadData, setUploadData] = useState({ poster: null, banner: null, trailer: null });
@@ -64,6 +65,21 @@ export default function Drama() {
     setSearchQuery("");
     setSearchResults(null);
   }, [currentPage]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await API.get("/admin/categories");
+        if (res.data.success) {
+          const list = (res.data.categories || []).filter(c => c.isActive !== false);
+          setCategories(list);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -186,7 +202,7 @@ export default function Drama() {
       }
 
       const formData = new FormData();
-      ["title", "description", "language", "isPremium", "status", "priority"].forEach(k => {
+      ["title", "description", "language", "isPremium", "isPopular", "status", "priority"].forEach(k => {
         if (editData[k] !== undefined) formData.append(k, editData[k]);
       });
       if (editData.genre) formData.append("genre", JSON.stringify(Array.isArray(editData.genre) ? editData.genre : editData.genre.split(",").map(s => s.trim()).filter(Boolean)));
@@ -652,9 +668,11 @@ export default function Drama() {
                     <label className="form-label"><Layers size={14} /> Category</label>
                     <select className="form-input-styled" value={Array.isArray(editData.category) ? editData.category[0] || "" : editData.category || ""} onChange={e => setEditData(p => ({ ...p, category: [e.target.value].filter(Boolean) }))}>
                       <option value="">Select</option>
-                      <option value="trending">Trending</option>
-                      <option value="top10">Top 10</option>
-                      <option value="recommended">Recommended</option>
+                      {categories.map((c) => (
+                        <option key={c._id} value={c.name.toLowerCase()}>
+                          {c.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -680,6 +698,10 @@ export default function Drama() {
                   <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                     <input type="checkbox" checked={!!editData.isPremium} onChange={e => setEditData(p => ({ ...p, isPremium: e.target.checked }))} />
                     <Lock size={14} /> Premium
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: "#ff8c00" }}>
+                    <input type="checkbox" checked={!!editData.isPopular} onChange={e => setEditData(p => ({ ...p, isPopular: e.target.checked }))} />
+                    <Flame size={14} /> Popular
                   </label>
                 </div>
 

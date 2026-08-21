@@ -37,9 +37,7 @@ categorySchema.pre("save", function () {
       .toLowerCase()
       .trim()
       .replace(/\s+/g, "-")
-      .replace(/[^\w-]+/g, "") +
-      "-" +
-      Date.now();
+      .replace(/[^\w-]+/g, "");
   }
 });
 
