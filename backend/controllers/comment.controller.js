@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const Comment = require("../models/comment.model");
-const Reel = require("../models/reel.model");
+
 
 // ========================================
 // ADD COMMENT

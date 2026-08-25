@@ -4,7 +4,7 @@ const Watchlist = require("../../models/watchlist.model");
 const SupportTicket = require("../../models/supportTicket.model");
 const SupportMessage = require("../../models/supportMessage.model");
 const Rating = require("../../models/rating.model");
-const Reel = require("../../models/reel.model");
+
 const Comment = require("../../models/comment.model");
 const Interaction = require("../../models/interaction.model");
 const Notification = require("../../models/notification.model");
@@ -180,14 +180,7 @@ exports.deleteUser = async (
         // Interactions (likes, dislikes, follows, bookmarks)
         await Interaction.deleteMany({ user: userId });
 
-        // Reels created by the user (and comments/interactions on those reels)
-        const userReels = await Reel.find({ user: userId });
-        const reelIds = userReels.map(r => r._id);
-        if (reelIds.length > 0) {
-            await Comment.deleteMany({ reel: { $in: reelIds } });
-            await Interaction.deleteMany({ contentId: { $in: reelIds }, contentType: "reel" });
-            await Reel.deleteMany({ user: userId });
-        }
+
 
         // Notifications
         await Notification.deleteMany({ targetUser: userId });

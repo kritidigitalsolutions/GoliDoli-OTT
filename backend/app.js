@@ -361,9 +361,6 @@ const userSupportRoutes = require(
 const adminSupportRoutes = require(
   "./routes/admin/support.routes"
 );
-// const adminReelRoutes = require(
-//   "./routes/admin/reel.routes"
-// );
 
 app.use(
   "/api/support",
@@ -403,26 +400,6 @@ app.use(
   "/api/home-banners",
   homeBannerRoutes
 );
-
-// app.use(
-//   "/api/admin/reels",
-//   adminReelRoutes
-// );
-
-// const reelRoutes = require(
-//   "./routes/user/reel.routes"
-// );
-// const commentRoutes = require(
-//   "./routes/user/comment.routes"
-// );
-// app.use(
-//   "/api/reels",
-//   reelRoutes
-// );
-// app.use(
-//   "/api/comments",
-//   commentRoutes
-// );
 // ========================================
 // EXPORT
 // ========================================

@@ -433,7 +433,6 @@ exports.getProfileStats = async (req, res) => {
     }
 
     const User = require("../models/user.model");
-    const Reel = require("../models/reel.model");
     const Interaction = require("../models/interaction.model");
 
     const user = await User.findById(userId);
@@ -444,46 +443,8 @@ exports.getProfileStats = async (req, res) => {
       });
     }
 
-    // 1. totalReels: count active reels uploaded by user
-    const totalReels = await Reel.countDocuments({
-      user: userId,
-      status: "ACTIVE",
-    });
 
-    // Find all active reel IDs for this user
-    const reels = await Reel.find({
-      user: userId,
-      status: "ACTIVE",
-    }).select("_id").lean();
-    const reelIds = reels.map(r => r._id);
 
-    // 2. totalLikes: likes received on user's reels
-    // 3. totalDislikes: dislikes received on user's reels
-    let totalLikes = 0;
-    let totalDislikes = 0;
-
-    if (reelIds.length > 0) {
-      const counts = await Interaction.aggregate([
-        {
-          $match: {
-            contentId: { $in: reelIds },
-            contentType: "reel",
-            type: { $in: ["like", "dislike"] },
-          },
-        },
-        {
-          $group: {
-            _id: "$type",
-            count: { $sum: 1 },
-          },
-        },
-      ]);
-
-      counts.forEach(c => {
-        if (c._id === "like") totalLikes = c.count;
-        if (c._id === "dislike") totalDislikes = c.count;
-      });
-    }
 
     // 4. followers: follow interactions targetting this userId
     const followers = await Interaction.countDocuments({
@@ -501,10 +462,6 @@ exports.getProfileStats = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      totalReels,
-      totalLikes,
-      totallLikes: totalLikes, // support double-l typo from client spec
-      totalDislikes,
       followers,
       following,
     });

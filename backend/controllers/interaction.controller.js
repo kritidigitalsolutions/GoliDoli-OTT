@@ -21,7 +21,7 @@ exports.toggleLike = async (
     }
 
     // Dynamic detection of contentType
-    const Reel = require("../models/reel.model");
+    
     const Movie = require("../models/movie.model");
     const Series = require("../models/series.model");
     const Microdrama = require("../models/microdrama.model");
@@ -134,7 +134,7 @@ exports.toggleDislike = async (
     }
 
     // Dynamic detection of contentType
-    const Reel = require("../models/reel.model");
+    
     const Movie = require("../models/movie.model");
     const Series = require("../models/series.model");
     const Microdrama = require("../models/microdrama.model");
@@ -303,7 +303,7 @@ exports.getContentInteractions = async (req, res) => {
     }
 
     // Dynamic detection of contentType
-    const Reel = require("../models/reel.model");
+    
     const Movie = require("../models/movie.model");
     const Series = require("../models/series.model");
     const Microdrama = require("../models/microdrama.model");
@@ -560,7 +560,7 @@ let contentType = req.params.contentType || null;
 
 console.log("Bookmark Params:", req.params);
 console.log("Bookmark Body:", req.body);
-    const Reel = require("../models/reel.model");
+    
     const Movie = require("../models/movie.model");
     const Series = require("../models/series.model");
     const Microdrama = require("../models/microdrama.model");
@@ -713,7 +713,7 @@ exports.getBookmarks = async (req, res) => {
     }
 
     // Models dictionary
-    const Reel = require("../models/reel.model");
+    
     const Movie = require("../models/movie.model");
     const Series = require("../models/series.model");
     const Microdrama = require("../models/microdrama.model");
