@@ -1,6 +1,5 @@
 const audioStoryService = require("../../services/audioStory.service");
-const { uploadMulterFileToBunny } = require("../../cdn/bunnyCDN");
-const { deleteMedia } = require("../../utils/mediaUrl");
+const { getMediaUrl, deleteMedia } = require("../../utils/mediaUrl");
 const AudioEpisode = require("../../models/audioEpisode.model");
 
 const addStory = async (req, res) => {
@@ -8,21 +7,12 @@ const addStory = async (req, res) => {
     let coverImage = req.body.coverImage || "";
     let bannerImage = req.body.bannerImage || "";
 
-    // Upload files to Bunny CDN if present
     if (req.files?.coverImage?.[0]) {
-      const uploadResult = await uploadMulterFileToBunny(
-        req.files.coverImage[0],
-        "audiostories/covers"
-      );
-      coverImage = uploadResult.url;
+      coverImage = getMediaUrl(req.files.coverImage[0]);
     }
 
     if (req.files?.bannerImage?.[0]) {
-      const uploadResult = await uploadMulterFileToBunny(
-        req.files.bannerImage[0],
-        "audiostories/banners"
-      );
-      bannerImage = uploadResult.url;
+      bannerImage = getMediaUrl(req.files.bannerImage[0]);
     }
 
     const storyData = {
@@ -107,22 +97,14 @@ const updateStory = async (req, res) => {
       if (story.coverImage) {
         await deleteMedia(story.coverImage);
       }
-      const uploadResult = await uploadMulterFileToBunny(
-        req.files.coverImage[0],
-        "audiostories/covers"
-      );
-      updateData.coverImage = uploadResult.url;
+      updateData.coverImage = getMediaUrl(req.files.coverImage[0]);
     }
 
     if (req.files?.bannerImage?.[0]) {
       if (story.bannerImage) {
         await deleteMedia(story.bannerImage);
       }
-      const uploadResult = await uploadMulterFileToBunny(
-        req.files.bannerImage[0],
-        "audiostories/banners"
-      );
-      updateData.bannerImage = uploadResult.url;
+      updateData.bannerImage = getMediaUrl(req.files.bannerImage[0]);
     }
 
     const updatedStory = await audioStoryService.updateStory(id, updateData);

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { isAdmin } = require("../../middlewares/admin.middleware");
-const audioUpload = require("../../middlewares/audioUpload.middleware");
+const upload = require("../../middlewares/upload.middleware");
 const { validateAudioEpisode } = require("../../validators/audio.validator");
 const {
   addEpisode,
@@ -13,7 +13,7 @@ const {
 
 router.use(isAdmin);
 
-const episodeFiles = audioUpload.fields([
+const episodeFiles = upload.fields([
   { name: "audio", maxCount: 1 },
   { name: "thumbnail", maxCount: 1 },
 ]);

@@ -8,24 +8,30 @@ const getUploadInfo = (req, file) => {
   let type = "movies";
 
   if (req.originalUrl.includes("/series")) type = "series";
-  if (req.originalUrl.includes("/episodes")) type = "episodes";
+  if (req.originalUrl.includes("/episodes") && !req.originalUrl.includes("/audio-episodes")) type = "episodes";
   if (req.originalUrl.includes("/drama-episodes")) type = "dramaepisodes";
   if (req.originalUrl.includes("/shortdramas")) type = "shortdramas";
   if (req.originalUrl.includes("/user")) type = "profile";
   if (req.originalUrl.includes("/support")) type = "support";
+  if (req.originalUrl.includes("/audio-stories")) type = "audiostories";
+  if (req.originalUrl.includes("/audio-episodes")) type = "audiostories";
 
   let subfolder = "others";
 
-if (file.fieldname === "poster" || file.fieldname === "posterUrl") {
+  if (file.fieldname === "poster" || file.fieldname === "posterUrl") {
     subfolder = "posters";
   } else if (file.fieldname === "thumbnail" || file.fieldname === "thumbnailUrl") { 
     subfolder = "posters";
-  } else if (file.fieldname === "banner" || file.fieldname === "bannerUrl") {
+  } else if (file.fieldname === "banner" || file.fieldname === "bannerUrl" || file.fieldname === "bannerImage") {
     subfolder = "banners";
   } else if (file.fieldname === "video" || file.fieldname === "videoUrl") {
     subfolder = "videos";
   } else if (file.fieldname === "trailer" || file.fieldname === "trailerUrl") {
     subfolder = "trailers";
+  } else if (file.fieldname === "coverImage") {
+    subfolder = "covers";
+  } else if (file.fieldname === "audio") {
+    subfolder = "episodes";
   } else if (file.fieldname.startsWith("castImage_")) {
     subfolder = "cast";
   } else if (file.fieldname === "attachments") {
@@ -125,6 +131,14 @@ const fileFilter = (req, file, cb) => {
     "video/mkv",
     "video/webm",
     "video/quicktime",
+    "audio/mpeg",
+    "audio/mp3",
+    "audio/wav",
+    "audio/x-wav",
+    "audio/ogg",
+    "audio/aac",
+    "audio/m4a",
+    "audio/x-m4a",
   ];
 
   if (req.originalUrl && req.originalUrl.includes("/support")) {

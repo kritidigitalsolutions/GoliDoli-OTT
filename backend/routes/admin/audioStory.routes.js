@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { isAdmin } = require("../../middlewares/admin.middleware");
-const audioUpload = require("../../middlewares/audioUpload.middleware");
+const upload = require("../../middlewares/upload.middleware");
 const { validateAudioStory } = require("../../validators/audio.validator");
 const {
   addStory,
@@ -13,7 +13,7 @@ const {
 
 router.use(isAdmin);
 
-const storyFiles = audioUpload.fields([
+const storyFiles = upload.fields([
   { name: "coverImage", maxCount: 1 },
   { name: "bannerImage", maxCount: 1 },
 ]);

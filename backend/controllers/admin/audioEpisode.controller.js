@@ -1,27 +1,18 @@
 const audioEpisodeService = require("../../services/audioEpisode.service");
-const { uploadMulterFileToBunny, getClientUploadConfig } = require("../../cdn/bunnyCDN");
-const { deleteMedia } = require("../../utils/mediaUrl");
+const { getClientUploadConfig } = require("../../cdn/bunnyCDN");
+const { getMediaUrl, deleteMedia } = require("../../utils/mediaUrl");
 
 const addEpisode = async (req, res) => {
   try {
     let audioUrl = req.body.audioUrl || "";
     let thumbnail = req.body.thumbnail || "";
 
-    // Upload files to Bunny CDN if present
     if (req.files?.audio?.[0]) {
-      const uploadResult = await uploadMulterFileToBunny(
-        req.files.audio[0],
-        "audiostories/episodes"
-      );
-      audioUrl = uploadResult.url;
+      audioUrl = getMediaUrl(req.files.audio[0]);
     }
 
     if (req.files?.thumbnail?.[0]) {
-      const uploadResult = await uploadMulterFileToBunny(
-        req.files.thumbnail[0],
-        "audiostories/episodes"
-      );
-      thumbnail = uploadResult.url;
+      thumbnail = getMediaUrl(req.files.thumbnail[0]);
     }
 
     if (!audioUrl) {
@@ -109,22 +100,14 @@ const updateEpisode = async (req, res) => {
       if (episode.audioUrl) {
         await deleteMedia(episode.audioUrl);
       }
-      const uploadResult = await uploadMulterFileToBunny(
-        req.files.audio[0],
-        "audiostories/episodes"
-      );
-      updateData.audioUrl = uploadResult.url;
+      updateData.audioUrl = getMediaUrl(req.files.audio[0]);
     }
 
     if (req.files?.thumbnail?.[0]) {
       if (episode.thumbnail) {
         await deleteMedia(episode.thumbnail);
       }
-      const uploadResult = await uploadMulterFileToBunny(
-        req.files.thumbnail[0],
-        "audiostories/episodes"
-      );
-      updateData.thumbnail = uploadResult.url;
+      updateData.thumbnail = getMediaUrl(req.files.thumbnail[0]);
     }
 
     const updatedEpisode = await audioEpisodeService.updateEpisode(id, updateData);
