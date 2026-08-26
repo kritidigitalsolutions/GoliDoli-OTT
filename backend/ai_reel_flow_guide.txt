@@ -1,0 +1,73 @@
+========================================================================
+AI REEL MODULE - FLOW GUIDE (HINGLISH)
+========================================================================
+
+AI Reel Module ek short-video system hai (jaise TikTok ya Instagram Reels) jo highly optimized recommendation aur feed rotation logic par chalta hai. Niche iska detailed flow simple Hinglish me samjhaya gaya hai.
+
+------------------------------------------------------------------------
+1. DATABASE SECTIONS (Models Kya Karte Hain?)
+------------------------------------------------------------------------
+* aiReel (aiReel.model.js):
+  - Isme original Reel ki info save hoti hai (Title, description, videoUrl, thumbnail, priority, total views, total likes aur total shares).
+
+* AIReelWatch (aiReelWatch.model.js):
+  - Jab koi user kisi Reel ko watch karta hai, toh is model me entry hoti hai.
+  - Isme save hota hai: user id, reel id, completed status (true/false) aur watchDuration.
+  - Isse system ko pata chalta hai ki user ne kaunse reels pehle se dekh liye hain (unhe repeat hone se bachane ke liye).
+
+* AIReelFeedSession (aiReelFeedSession.model.js):
+  - Ek single scrolling session ke duplicate videos ko block karta hai.
+  - Isme servedReels ka ek array hota hai. Ek baar jo reel is session me serve ho chuki hai, wo dobara nahi dikhegi.
+  - Yeh session document 6 ghante baad auto-expire ho jata hai database se (TTL index se).
+
+* AIReelUserState (aiReelUserState.model.js):
+  - User ki preferences ko save karta hai, jaise 'replayEnabled' (ki kya user saare videos khatam hone par purane videos dobara dekhna chahta hai ya nahi).
+
+------------------------------------------------------------------------
+2. ADMIN FLOW (Admin Panel Se Kya Hoga?)
+------------------------------------------------------------------------
+* Reel Upload karna:
+  - Admin panel se video aur thumbnail upload honge. Local file storage middleware (/uploads/aireels) me path create karega.
+  - Admin priority set kar sakta hai (higher priority videos upar aane ke zyada chance hote hain).
+
+* Update/Delete karna:
+  - Admin title, description, priority update kar sakta hai.
+  - Agar admin kisi video ko "Draft" (unpublished) se "Published" me change karega, toh backend uski `publishedAt` date ko reset kar dega. Isse feed query ko lagta hai ki ye ek naya/fresh video hai aur wo user ko dikhaya jata hai.
+  - Agar admin reel delete karta hai, toh local uploads folder se video aur thumbnail file bhi clean ho jati hain automatically (Storage space bachane ke liye).
+
+------------------------------------------------------------------------
+3. USER FLOW & API CALLS (Mobile/Web Client App Kaise Work Karega?)
+------------------------------------------------------------------------
+
+User App par reels scroll karne ka complete sequence:
+
+Step 1: Reels Feed Fetch Karna (GET /api/ai-reels)
+--------------------------------------------------
+- Client app start hote hi `/api/ai-reels?limit=10` call karega.
+- Backend sabse pehle check karega ki user ne kaunse reels abhi tak nahi dekhe (unseen reels).
+- Unseen reels me se MongoDB ka `$sample` aggregation use karke random reels ka batch select hota hai (isse feed boring nahi lagti, har baar random combinations aate hain).
+- Agar unseen reels khatam ho chuki hain, aur user ka `replayEnabled` true hai, toh system pehle se dekhi hui reels ko mix karke serve karega, par duplicate se bachne ke liye session ke servedReels ko track karega.
+
+Step 2: Video Playback & Views Counter (POST /api/ai-reels/:id/view)
+--------------------------------------------------------------------
+- Jaise hi koi video screen par play hona shuru hoga, mobile/web client backend ko is endpoint par call karega.
+- Backend database me views count ko `$inc` operator se 1 increment kar dega.
+
+Step 3: Reel Completion/Skipping (POST /api/ai-reels/:id/complete)
+--------------------------------------------------------------------
+- Jab user kisi video ko poora dekh leta hai (complete) ya swipe karke aage badh jata hai, toh app is endpoint ko body data `{ watchDuration: 12 }` ke saath call karega.
+- Backend `AIReelWatch` me entry banayega ki ye video "watched" ho chuka hai, taaki agle feed fetch me ye video firse repeat na ho.
+
+Step 4: Replay Preference Set Karna (POST /api/ai-reels/replay)
+---------------------------------------------------------------
+- User feed screen par settings/toggle tap karke replay select kar sakta hai (body: `{ replay: true }` or `{ replay: false }`).
+- Agar true hoga, toh saare videos dekhe jaane ke baad purane videos repeat hona shuru ho jayenge. Agar false hoga, toh blank feed ke badle limit/message aayega.
+
+Step 5: Like Toggle (POST /api/interaction/toggle/like/aiReel/:id)
+-------------------------------------------------------------------
+- User video par heart/like tap karega. Backend interaction system handle karega aur reel document ke `like` counter ko realtime sync karega.
+
+Step 6: Share Increment (POST /api/ai-reels/:id/share)
+-------------------------------------------------------------------
+- Jab user share button click karke WhatsApp/Instagram aadi par share karega, toh Flutter app is API par hit karegi.
+- Backend database document me `shares` counter ko 1 increment kar dega, jo admin dashboard par dynamically update hoga.

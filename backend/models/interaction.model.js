@@ -20,11 +20,11 @@ const interactionSchema = new mongoose.Schema(
       enum: [
         "movie",
         "series",
-        "reel",
         "user",
         "microdrama",
         "microdramaEpisode",
         "episode",
+        "aiReel",
       ],
       required: true,
     },

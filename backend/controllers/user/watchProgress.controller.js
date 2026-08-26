@@ -2,8 +2,8 @@ const WatchProgress = require("../../models/watchProgress.model");
 const Movie = require("../../models/movie.model");
 const Series = require("../../models/series.model");
 const Episode = require("../../models/episode.model");
-const TvShow = require("../../models/microdrama.model");
-const TvShowsEpisode = require("../../models/microdramaEpisode.model");
+const Microdrama = require("../../models/microdrama.model");
+const MicrodramaEpisode = require("../../models/microdramaEpisode.model");
 
 /**
  * Auto-detect content & episode models and type
@@ -41,13 +41,13 @@ const resolveContentDetails = async (contentId, episodeId, providedType) => {
 
   // 3. Microdrama check
   if (!contentType || contentType === "microdrama" || contentType === "tvshow") {
-    const isTvShow = await TvShow.exists({ _id: contentId });
+    const isTvShow = await Microdrama.exists({ _id: contentId });
     if (isTvShow) {
-      contentModel = "TvShow";
+      contentModel = "Microdrama";
       contentType = "microdrama";
       if (episodeId) {
-        const isEp = await TvShowsEpisode.exists({ _id: episodeId });
-        if (isEp) episodeModel = "TvShowsEpisode";
+        const isEp = await MicrodramaEpisode.exists({ _id: episodeId });
+        if (isEp) episodeModel = "MicrodramaEpisode";
       }
       return { contentModel, contentType, episodeId, episodeModel };
     }
@@ -67,14 +67,14 @@ const resolveContentDetails = async (contentId, episodeId, providedType) => {
         }
       }
     } else {
-      const isTvEp = await TvShowsEpisode.exists({ _id: episodeId });
+      const isTvEp = await MicrodramaEpisode.exists({ _id: episodeId });
       if (isTvEp) {
-        episodeModel = "TvShowsEpisode";
+        episodeModel = "MicrodramaEpisode";
         if (!contentModel) {
-          const epDoc = await TvShowsEpisode.findById(episodeId).select("tvShowId");
+          const epDoc = await MicrodramaEpisode.findById(episodeId).select("microdramaId");
           if (epDoc) {
-            contentId = epDoc.tvShowId;
-            contentModel = "TvShow";
+            contentId = epDoc.microdramaId;
+            contentModel = "Microdrama";
             contentType = "microdrama";
           }
         }

@@ -64,19 +64,15 @@ const seriesSchema = new mongoose.Schema(
     cast: [castSchema],
 
     category: [String],
-    likes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    likes: {
+      type: Number,
+      default: 0
+    },
 
-    dislikes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    dislikes: {
+      type: Number,
+      default: 0
+    },
 
     totalSeasons: {
   type: Number,

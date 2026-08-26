@@ -844,8 +844,8 @@ export default function HomeBannersPage() {
               <img
                 src={getImageUrl(
                   previewBanner.contentId?.banner ||
-                    previewBanner.contentId?.poster ||
-                    ""
+                  previewBanner.contentId?.poster ||
+                  ""
                 )}
                 alt={previewBanner.contentId?.title || "Banner"}
                 style={{

@@ -44,6 +44,16 @@ const episodeSchema = new mongoose.Schema(
     duration: {
       type: String,
       default: ""
+    },
+
+    likes: {
+      type: Number,
+      default: 0
+    },
+
+    dislikes: {
+      type: Number,
+      default: 0
     }
   },
   {

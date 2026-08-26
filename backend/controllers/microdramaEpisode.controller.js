@@ -1,8 +1,8 @@
-const TvShowsEpisode = require(
+const MicrodramaEpisode = require(
   "../models/microdramaEpisode.model"
 );
 
-const TvShow = require(
+const Microdrama = require(
   "../models/microdrama.model"
 );
 
@@ -17,15 +17,15 @@ const getMicrodramaEpisodes =
     try {
 
       const {
-        microdramaId: tvShowId,
+        microdramaId,
       } = req.params;
 
       const episodes =
-        await TvShowsEpisode.find({
-          tvShowId,
+        await MicrodramaEpisode.find({
+          microdramaId,
         }).sort({
           episodeNumber: 1,
-        });
+        }).lean();  
 
       return res.json({
         success: true,
@@ -53,15 +53,15 @@ const searchMicrodramaEpisodes =
     try {
 
       const {
-        microdramaId: tvShowId,
+        microdramaId,
       } = req.params;
 
       const { q } = req.query;
 
       const episodes =
-        await TvShowsEpisode.find({
+        await MicrodramaEpisode.find({
 
-          tvShowId,
+          microdramaId,
 
           title: {
             $regex: q || "",

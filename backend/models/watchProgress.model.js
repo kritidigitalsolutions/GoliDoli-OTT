@@ -21,7 +21,7 @@ const watchProgressSchema = new mongoose.Schema(
     },
     contentModel: {
       type: String,
-      enum: ["Movie", "Series", "TvShow"],
+      enum: ["Movie", "Series", "Microdrama"],
       required: true,
     },
     episodeId: {
@@ -32,7 +32,7 @@ const watchProgressSchema = new mongoose.Schema(
     },
     episodeModel: {
       type: String,
-      enum: ["Episode", "TvShowsEpisode"],
+      enum: ["Episode", "MicrodramaEpisode"],
       default: null,
     },
     progressSeconds: {

@@ -1,48 +1,216 @@
 .subscription-page {
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
+/* Header Row */
+.sub-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Stats Grid */
+.sub-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.sub-stat-card {
+  background: #11151F; /* Dark bg like screenshot */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.sub-stat-card.highlight-card {
+  border-color: rgba(192, 132, 252, 0.4);
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.15);
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.bg-green { background: rgba(16, 185, 129, 0.15); }
+.text-green { color: #10b981; }
+
+.bg-blue { background: rgba(59, 130, 246, 0.15); }
+.text-blue { color: #3b82f6; }
+
+.bg-purple { background: rgba(192, 132, 252, 0.15); }
+
+.stat-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.stat-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-time {
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  font-weight: 600;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.badge-dark {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.stat-desc {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+/* Filter Row */
+.sub-filter-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sub-search {
+  position: relative;
+  flex: 1;
+  min-width: 300px;
+}
+
+.sub-search input {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #11151F;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s;
+}
+.sub-search input:focus {
+  border-color: rgba(255,255,255,0.2);
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
+.sub-select {
+  padding: 14px 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #11151F;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  outline: none;
+  min-width: 160px;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+}
+.sub-select:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* Table styling (updated) */
 .subscription-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
 }
 
-/* Header */
 .subscription-table thead {
-  background: rgba(255,255,255,0.05);
+  background: #161B26; /* Darker header */
 }
 
 .subscription-table th {
   text-align: left;
-  padding: 12px;
-  font-size: 0.9rem;
+  padding: 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Rows */
 .subscription-table td {
-  padding: 12px;
-  border-top: 1px solid var(--border);
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   font-size: 0.9rem;
 }
 
-/* Hover effect */
+.subscription-table tr:last-child td {
+  border-bottom: none;
+}
+
 .subscription-table tr:hover {
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.02);
 }
 
 /* Plan styling */
 .plan {
   text-transform: capitalize;
+  font-weight: 600;
+  color: #c084fc; /* light purple matching the screenshot */
 }
 
 /* Status */
 .status {
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .status.active {

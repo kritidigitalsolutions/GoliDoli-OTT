@@ -15,6 +15,7 @@ const getUploadInfo = (req, file) => {
   if (req.originalUrl.includes("/support")) type = "support";
   if (req.originalUrl.includes("/audio-stories")) type = "audiostories";
   if (req.originalUrl.includes("/audio-episodes")) type = "audiostories";
+  if (req.originalUrl.includes("/ai-reels")) type = "aireels";
 
   let subfolder = "others";
 

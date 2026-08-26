@@ -234,13 +234,17 @@ exports.getIncomeStats =
                       ],
                     },
                   },
+                  subsCount: { $sum: 1 },
+                  users: { $addToSet: "$user" }
                 },
               },
             ]);
 
-          return (
-            result[0]?.total || 0
-          );
+          return {
+            total: result[0]?.total || 0,
+            subsCount: result[0]?.subsCount || 0,
+            usersCount: result[0]?.users?.length || 0
+          };
         };
 
       const baseMatch = {

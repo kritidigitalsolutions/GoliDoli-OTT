@@ -117,7 +117,7 @@ microdramaSchema.pre(
 
     if (show) {
       await MicrodramaEpisode.deleteMany({
-        tvShowId: show._id,
+        microdramaId: show._id,
       });
     }
   }
@@ -128,7 +128,7 @@ microdramaSchema.pre(
   { document: true, query: false },
   async function () {
     await MicrodramaEpisode.deleteMany({
-      tvShowId: this._id,
+      microdramaId: this._id,
     });
   }
 );
@@ -140,8 +140,7 @@ microdramaSchema.index({
   description: "text"
 });
 
-// Keep the historical model and collection names so existing data remains available.
 module.exports = mongoose.model(
-  "TvShow",
+  "Microdrama",
   microdramaSchema
 );

@@ -1,7 +1,7 @@
 const Category = require("../../models/category.model");
 const Movie = require("../../models/movie.model");
 const Series = require("../../models/series.model");
-const TvShow = require("../../models/microdrama.model");
+const Microdrama = require("../../models/microdrama.model");
 
 // ========================================
 // ADD CATEGORY
@@ -120,7 +120,7 @@ const updateCategory = async (req, res) => {
           { $set: { "category.$[elem]": newCategoryName } },
           { arrayFilters: [{ elem: oldCategoryName }] }
         ),
-        TvShow.updateMany(
+        Microdrama.updateMany(
           { category: oldCategoryName },
           { $set: { "category.$[elem]": newCategoryName } },
           { arrayFilters: [{ elem: oldCategoryName }] }

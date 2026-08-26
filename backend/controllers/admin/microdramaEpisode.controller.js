@@ -1,8 +1,8 @@
-const TvShowsEpisode = require(
+const MicrodramaEpisode = require(
   "../../models/microdramaEpisode.model"
 );
 
-const TvShow = require(
+const Microdrama = require(
   "../../models/microdrama.model"
 );
 
@@ -13,15 +13,15 @@ const { getMediaUrl, deleteMedia } = require("../../utils/mediaUrl");
 // UPDATE TOTAL EPISODES
 // ========================================
 const updateMicrodramaStats =
-  async (tvShowId) => {
+  async (microdramaId) => {
 
     const totalEpisodes =
-      await TvShowsEpisode.countDocuments({
-        microdramaId: tvShowId,
+      await MicrodramaEpisode.countDocuments({
+        microdramaId: microdramaId,
       });
 
-    await TvShow.findByIdAndUpdate(
-      tvShowId,
+    await Microdrama.findByIdAndUpdate(
+      microdramaId,
       {
         totalEpisodes,
       }
@@ -37,12 +37,12 @@ const addMicrodramaEpisode =
     try {
 
       const {
-        microdramaId: tvShowId,
+        microdramaId: microdramaId,
       } = req.params;
 
       const existingEpisode =
-        await TvShowsEpisode.findOne({
-          tvShowId,
+        await MicrodramaEpisode.findOne({
+          microdramaId,
 
           episodeNumber:
             req.body.episodeNumber,
@@ -63,9 +63,9 @@ const addMicrodramaEpisode =
         req.files?.thumbnail?.[0] || req.files?.thumbnailUrl?.[0];
 
       const episode =
-        await TvShowsEpisode.create({
+        await MicrodramaEpisode.create({
 
-          tvShowId,
+          microdramaId,
 
           episodeNumber:
             Number(
@@ -101,7 +101,7 @@ const addMicrodramaEpisode =
         });
 
       await updateMicrodramaStats(
-        tvShowId
+        microdramaId
       );
 
       return res.status(201).json({
@@ -135,12 +135,12 @@ const getMicrodramaEpisodes =
     try {
 
       const {
-        microdramaId: tvShowId,
+        microdramaId: microdramaId,
       } = req.params;
 
       const episodes =
-        await TvShowsEpisode.find({
-          tvShowId,
+        await MicrodramaEpisode.find({
+          microdramaId,
         }).sort({
           episodeNumber: 1,
         });
@@ -171,7 +171,7 @@ const updateMicrodramaEpisode =
     try {
 
       const episode =
-        await TvShowsEpisode.findById(
+        await MicrodramaEpisode.findById(
           req.params.id
         );
 
@@ -189,9 +189,9 @@ const updateMicrodramaEpisode =
       ) {
 
         const existingEpisode =
-          await TvShowsEpisode.findOne({
-            tvShowId:
-              episode.tvShowId,
+          await MicrodramaEpisode.findOne({
+            microdramaId:
+              episode.microdramaId,
 
             episodeNumber:
               req.body.episodeNumber,
@@ -304,7 +304,7 @@ const deleteMicrodramaEpisode =
     try {
 
       const episode =
-        await TvShowsEpisode.findById(
+        await MicrodramaEpisode.findById(
           req.params.id
         );
 
@@ -324,12 +324,12 @@ const deleteMicrodramaEpisode =
         episode.thumbnail
       );
 
-      await TvShowsEpisode.findByIdAndDelete(
+      await MicrodramaEpisode.findByIdAndDelete(
         req.params.id
       );
 
       await updateMicrodramaStats(
-        episode.tvShowId
+        episode.microdramaId
       );
 
       return res.json({
@@ -359,15 +359,15 @@ const searchMicrodramaEpisodes =
     try {
 
       const {
-        tvShowId,
+        microdramaId,
       } = req.params;
 
       const { q } = req.query;
 
       const episodes =
-        await TvShowsEpisode.find({
+        await MicrodramaEpisode.find({
 
-          tvShowId,
+          microdramaId,
 
           title: {
             $regex: q || "",

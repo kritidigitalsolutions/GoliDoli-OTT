@@ -218,13 +218,13 @@ exports.getPreferredContent = async (req, res) => {
         : Promise.resolve({}),
       microdramas.length > 0
         ? MicrodramaEpisode.find({
-            tvShowId: { $in: microdramas.map((m) => m._id) },
+            microdramaId: { $in: microdramas.map((m) => m._id) },
           })
             .sort({ episodeNumber: 1 })
             .lean()
             .then((eps) =>
               eps.reduce((map, ep) => {
-                const key = ep.tvShowId.toString();
+                const key = ep.microdramaId.toString();
                 if (!map[key]) map[key] = [];
                 map[key].push(ep);
                 return map;

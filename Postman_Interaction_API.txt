@@ -1,0 +1,108 @@
+=========================================================
+      INTERACTION MODULE - POSTMAN API ENDPOINTS
+=========================================================
+
+Base URL: http://localhost:4000/api/interaction
+
+* NOTE: 
+- For POST requests (Like, Dislike, Follow), you MUST pass the Authorization Header:
+  Authorization: Bearer <your_jwt_token_here>
+
+- `:contentId` refers to the `_id` of the Movie, Series, Microdrama, or Episode you want to interact with.
+- `:userId` refers to the `_id` of the User you want to follow.
+
+=========================================================
+1. TOGGLE LIKE (Auth Required)
+=========================================================
+Endpoint: POST /toggle/like/:contentId
+URL Example: http://localhost:4000/api/interaction/toggle/like/60f7a...
+
+Expected Request Body:
+None required.
+
+Expected Response (200 OK):
+{
+    "success": true,
+    "message": "Like added", // OR "Like removed" OR "Changed to like"
+    "totalLikes": 15,
+    "totalDislikes": 2,
+    "contentType": "movie"
+}
+
+
+=========================================================
+2. TOGGLE DISLIKE (Auth Required)
+=========================================================
+Endpoint: POST /toggle/dislike/:contentId
+URL Example: http://localhost:4000/api/interaction/toggle/dislike/60f7a...
+
+Expected Request Body:
+None required.
+
+Expected Response (200 OK):
+{
+    "success": true,
+    "message": "Dislike added", // OR "Dislike removed" OR "Changed to dislike"
+    "totalLikes": 14,
+    "totalDislikes": 3,
+    "contentType": "movie"
+}
+
+
+=========================================================
+3. TOGGLE FOLLOW USER (Auth Required)
+=========================================================
+Endpoint: POST /toggle/follow/:userId
+URL Example: http://localhost:4000/api/interaction/toggle/follow/5f9d4...
+
+Expected Request Body:
+None required.
+
+Expected Response (200 OK):
+{
+    "success": true,
+    "message": "Successfully followed user", // OR "Successfully unfollowed user"
+    "totalFollowers": 250,
+    "totalFollowing": 10
+}
+
+
+=========================================================
+4. GET CONTENT STATS (No Auth Required)
+=========================================================
+Endpoint: GET /stats/:contentId
+URL Example: http://localhost:4000/api/interaction/stats/60f7a...
+
+* Note: If you pass an Authorization token, it will also return your personal interaction status ("userInteraction" and "isBookmarked").
+
+Expected Request Body:
+None required.
+
+Expected Response (200 OK):
+{
+    "success": true,
+    "totalLikes": 15,
+    "totalDislikes": 3,
+    "userInteraction": "like", // Can be "like", "dislike", or null
+    "isBookmarked": false
+}
+
+
+=========================================================
+5. GET USER FOLLOW STATS (No Auth Required)
+=========================================================
+Endpoint: GET /follow/:userId
+URL Example: http://localhost:4000/api/interaction/follow/5f9d4...
+
+* Note: If you pass an Authorization token, it will also return if you are currently following them.
+
+Expected Request Body:
+None required.
+
+Expected Response (200 OK):
+{
+    "success": true,
+    "totalFollowers": 250,
+    "totalFollowing": 10,
+    "isFollowing": true // true if you follow them, false otherwise
+}

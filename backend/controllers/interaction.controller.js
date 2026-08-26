@@ -25,24 +25,35 @@ exports.toggleLike = async (
     const Movie = require("../models/movie.model");
     const Series = require("../models/series.model");
     const Microdrama = require("../models/microdrama.model");
+    const Episode = require("../models/episode.model");
+    const MicrodramaEpisode = require("../models/microdramaEpisode.model");
+    const AIReel = require("../models/aiReel.model");
 
-    const [reel, movie, series, microdrama] = await Promise.all([
-      Reel.findById(contentId),
+    const [movie, series, microdrama, episode, microdramaEpisode, aiReel] = await Promise.all([
       Movie.findById(contentId),
       Series.findById(contentId),
-      Microdrama.findById(contentId)
+      Microdrama.findById(contentId),
+      Episode.findById(contentId),
+      MicrodramaEpisode.findById(contentId),
+      AIReel.findById(contentId)
     ]);
 
-    let contentType = null;
+    let contentType = req.params.contentType || null;
 
-    if (reel && reel.status !== "DELETED") {
-      contentType = "reel";
-    } else if (movie && movie.status !== "DELETED") {
-      contentType = "movie";
-    } else if (series && series.status !== "DELETED") {
-      contentType = "series";
-    } else if (microdrama) {
-      contentType = "microdrama";
+    if (!contentType) {
+      if (movie && movie.status !== "DELETED") {
+        contentType = "movie";
+      } else if (series && series.status !== "DELETED") {
+        contentType = "series";
+      } else if (microdrama) {
+        contentType = "microdrama";
+      } else if (episode) {
+        contentType = "episode";
+      } else if (microdramaEpisode) {
+        contentType = "microdramaEpisode";
+      } else if (aiReel) {
+        contentType = "aiReel";
+      }
     }
 
     if (!contentType) {
@@ -98,6 +109,26 @@ exports.toggleLike = async (
       type: "dislike",
     });
 
+    const updateModel = contentType === "movie" ? Movie 
+                      : contentType === "series" ? Series 
+                      : contentType === "microdrama" ? Microdrama 
+                      : contentType === "episode" ? Episode
+                      : contentType === "microdramaEpisode" ? MicrodramaEpisode
+                      : contentType === "aiReel" ? AIReel
+                      : null;
+    if (updateModel) {
+      if (contentType === "aiReel") {
+        await updateModel.findByIdAndUpdate(contentId, {
+          like: totalLikes,
+        });
+      } else {
+        await updateModel.findByIdAndUpdate(contentId, {
+          likes: totalLikes,
+          dislikes: totalDislikes
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message,
@@ -138,24 +169,42 @@ exports.toggleDislike = async (
     const Movie = require("../models/movie.model");
     const Series = require("../models/series.model");
     const Microdrama = require("../models/microdrama.model");
+    const Episode = require("../models/episode.model");
+    const MicrodramaEpisode = require("../models/microdramaEpisode.model");
+    const AIReel = require("../models/aiReel.model");
 
-    const [reel, movie, series, microdrama] = await Promise.all([
-      Reel.findById(contentId),
+    const [movie, series, microdrama, episode, microdramaEpisode, aiReel] = await Promise.all([
       Movie.findById(contentId),
       Series.findById(contentId),
-      Microdrama.findById(contentId)
+      Microdrama.findById(contentId),
+      Episode.findById(contentId),
+      MicrodramaEpisode.findById(contentId),
+      AIReel.findById(contentId)
     ]);
 
-    let contentType = null;
+    let contentType = req.params.contentType || null;
 
-    if (reel && reel.status !== "DELETED") {
-      contentType = "reel";
-    } else if (movie && movie.status !== "DELETED") {
-      contentType = "movie";
-    } else if (series && series.status !== "DELETED") {
-      contentType = "series";
-    } else if (microdrama) {
-      contentType = "microdrama";
+    if (!contentType) {
+      if (movie && movie.status !== "DELETED") {
+        contentType = "movie";
+      } else if (series && series.status !== "DELETED") {
+        contentType = "series";
+      } else if (microdrama) {
+        contentType = "microdrama";
+      } else if (episode) {
+        contentType = "episode";
+      } else if (microdramaEpisode) {
+        contentType = "microdramaEpisode";
+      } else if (aiReel) {
+        contentType = "aiReel";
+      }
+    }
+
+    if (contentType === "aiReel") {
+      return res.status(400).json({
+        success: false,
+        message: "Disliking AI Reels is not supported",
+      });
     }
 
     if (!contentType) {
@@ -210,6 +259,19 @@ exports.toggleDislike = async (
       contentType,
       type: "dislike",
     });
+
+    const updateModel = contentType === "movie" ? Movie 
+                      : contentType === "series" ? Series 
+                      : contentType === "microdrama" ? Microdrama 
+                      : contentType === "episode" ? Episode
+                      : contentType === "microdramaEpisode" ? MicrodramaEpisode
+                      : null;
+    if (updateModel) {
+      await updateModel.findByIdAndUpdate(contentId, {
+        likes: totalLikes,
+        dislikes: totalDislikes
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -307,24 +369,35 @@ exports.getContentInteractions = async (req, res) => {
     const Movie = require("../models/movie.model");
     const Series = require("../models/series.model");
     const Microdrama = require("../models/microdrama.model");
+    const Episode = require("../models/episode.model");
+    const MicrodramaEpisode = require("../models/microdramaEpisode.model");
+    const AIReel = require("../models/aiReel.model");
 
-    const [reel, movie, series, microdrama] = await Promise.all([
-      Reel.findById(contentId),
+    const [movie, series, microdrama, episode, microdramaEpisode, aiReel] = await Promise.all([
       Movie.findById(contentId),
       Series.findById(contentId),
-      Microdrama.findById(contentId)
+      Microdrama.findById(contentId),
+      Episode.findById(contentId),
+      MicrodramaEpisode.findById(contentId),
+      AIReel.findById(contentId)
     ]);
 
-    let contentType = null;
+    let contentType = req.params.contentType || null;
 
-    if (reel && reel.status !== "DELETED") {
-      contentType = "reel";
-    } else if (movie && movie.status !== "DELETED") {
-      contentType = "movie";
-    } else if (series && series.status !== "DELETED") {
-      contentType = "series";
-    } else if (microdrama) {
-      contentType = "microdrama";
+    if (!contentType) {
+      if (movie && movie.status !== "DELETED") {
+        contentType = "movie";
+      } else if (series && series.status !== "DELETED") {
+        contentType = "series";
+      } else if (microdrama) {
+        contentType = "microdrama";
+      } else if (episode) {
+        contentType = "episode";
+      } else if (microdramaEpisode) {
+        contentType = "microdramaEpisode";
+      } else if (aiReel) {
+        contentType = "aiReel";
+      }
     }
 
     if (!contentType) {
@@ -570,8 +643,7 @@ console.log("Bookmark Body:", req.body);
 
     if (!contentType) {
       // Parallel execution to find the document in any valid model
-      const [reel, movie, series, microdrama, microdramaEpisode, episode, user] = await Promise.all([
-        Reel.findById(contentId),
+      const [movie, series, microdrama, microdramaEpisode, episode, user] = await Promise.all([
         Movie.findById(contentId),
         Series.findById(contentId),
         Microdrama.findById(contentId),
@@ -580,9 +652,7 @@ console.log("Bookmark Body:", req.body);
         User.findById(contentId)
       ]);
 
-      if (reel && reel.status !== "DELETED") {
-        contentType = "reel";
-      } else if (movie && movie.status !== "DELETED") {
+      if (movie && movie.status !== "DELETED") {
         contentType = "movie";
       } else if (series && series.status !== "DELETED") {
         contentType = "series";
@@ -597,7 +667,7 @@ console.log("Bookmark Body:", req.body);
       }
     } else {
       // Validate content type is allowed
-      const allowedContentTypes = ["movie", "series", "reel", "user", "microdrama", "microdramaEpisode", "episode"];
+      const allowedContentTypes = ["movie", "series", "user", "microdrama", "microdramaEpisode", "episode"];
       if (!allowedContentTypes.includes(contentType)) {
         return res.status(400).json({
           success: false,
@@ -607,10 +677,7 @@ console.log("Bookmark Body:", req.body);
 
       // Check if document exists for the given contentType
       let exists = false;
-      if (contentType === "reel") {
-        const doc = await Reel.findById(contentId);
-        exists = doc && doc.status !== "DELETED";
-      } else if (contentType === "movie") {
+      if (contentType === "movie") {
         const doc = await Movie.findById(contentId);
         exists = doc && doc.status !== "DELETED";
       } else if (contentType === "series") {
@@ -722,7 +789,6 @@ exports.getBookmarks = async (req, res) => {
     const User = require("../models/user.model");
 
     const models = {
-      reel: Reel,
       movie: Movie,
       series: Series,
       microdrama: Microdrama,

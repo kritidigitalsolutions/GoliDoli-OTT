@@ -1,31 +1,44 @@
 import { useEffect, useState } from "react";
-import { Search, Eye, Trash2, Ban, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Eye, Trash2, Ban, X, ChevronLeft, ChevronRight, RefreshCw, Calendar, TrendingUp } from "lucide-react";
 import API from "../api/axios";
 import "./Subscription.css";
 
 export default function SubscriptionPage() {
   const [subs, setSubs] = useState([]);
+  const [stats, setStats] = useState({
+    todayIncome: { total: 0, subsCount: 0, usersCount: 0 },
+    yesterdayIncome: { total: 0, subsCount: 0, usersCount: 0 },
+    totalIncome: { total: 0, subsCount: 0, usersCount: 0 },
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [viewSub, setViewSub] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState("all"); // "all" | "active" | "expired"
+  const [statusFilter, setStatusFilter] = useState("all"); 
+  const [dateFilter, setDateFilter] = useState("all");
   const ITEMS_PER_PAGE = 10;
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchSubs();
+    fetchData();
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter, dateFilter]);
 
-  const fetchSubs = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await API.get("/admin/subscription/all");
-      setSubs(res.data.subscriptions || []);
+      const [resSubs, resStats] = await Promise.all([
+        API.get("/admin/subscription/all"),
+        API.get("/admin/subscription/income-stats")
+      ]);
+      setSubs(resSubs.data.subscriptions || []);
+      setStats(resStats.data.data || {});
     } catch (err) {
       console.error(err);
     }
+    setLoading(false);
   };
 
   const handleCancel = async (id) => {
@@ -33,7 +46,7 @@ export default function SubscriptionPage() {
     try {
       await API.patch(`/admin/subscription/${id}/cancel`);
       alert("Subscription cancelled successfully.");
-      fetchSubs();
+      fetchData();
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || "Failed to cancel subscription.");
@@ -45,7 +58,7 @@ export default function SubscriptionPage() {
     try {
       await API.delete(`/admin/subscription/${id}`);
       alert("Subscription deleted successfully.");
-      fetchSubs();
+      fetchData();
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || "Failed to delete subscription.");
@@ -84,174 +97,192 @@ export default function SubscriptionPage() {
 
   return (
     <div className="subscription-page">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
-        <h2 style={{ margin: 0 }}>💳 Subscriptions</h2>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          
-          <div className="sub-filter-toggle" style={{ display: "flex", gap: 6, background: "var(--bg3)", padding: 4, borderRadius: 10, border: "1px solid var(--border)" }}>
-            <button
-              className={`btn ${statusFilter === "all" ? "btn-primary" : "btn-ghost"}`}
-              style={{ padding: "6px 12px", borderRadius: 8, fontSize: "0.8rem", height: "auto" }}
-              onClick={() => { setStatusFilter("all"); setCurrentPage(1); }}
-            >
-              All
-            </button>
-            <button
-              className={`btn ${statusFilter === "active" ? "btn-primary" : "btn-ghost"}`}
-              style={{ padding: "6px 12px", borderRadius: 8, fontSize: "0.8rem", height: "auto" }}
-              onClick={() => { setStatusFilter("active"); setCurrentPage(1); }}
-            >
-              Active
-            </button>
-            <button
-              className={`btn ${statusFilter === "expired" ? "btn-primary" : "btn-ghost"}`}
-              style={{ padding: "6px 12px", borderRadius: 8, fontSize: "0.8rem", height: "auto" }}
-              onClick={() => { setStatusFilter("expired"); setCurrentPage(1); }}
-            >
-              Expired
-            </button>
-            <button
-              className={`btn ${statusFilter === "cancelled" ? "btn-primary" : "btn-ghost"}`}
-              style={{ padding: "6px 12px", borderRadius: 8, fontSize: "0.8rem", height: "auto" }}
-              onClick={() => { setStatusFilter("cancelled"); setCurrentPage(1); }}
-            >
-              Cancelled
-            </button>
-          </div>
+      {/* Header */}
+      <div className="sub-header-row">
+        <div>
+          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.6rem' }}>
+            <span style={{ fontSize: '1.4rem' }}>💳</span> Subscriptions
+          </h2>
+          <p style={{ color: "var(--text-muted)", margin: "6px 0 0 0", fontSize: "0.95rem" }}>
+            Search, manage, and review subscriber access.
+          </p>
+        </div>
+        <button className="btn btn-ghost" onClick={fetchData} style={{ borderRadius: '8px', padding: '8px 16px' }}>
+          <RefreshCw size={16} className={loading ? "spin" : ""} /> Refresh
+        </button>
+      </div>
 
-          <div style={{ position: "relative", width: "260px" }}>
-            <input
-              type="text"
-              style={{
-                width: "100%",
-                padding: "10px 16px 10px 40px",
-                borderRadius: "10px",
-                border: "1px solid var(--border)",
-                background: "rgba(255,255,255,0.05)",
-                color: "var(--text)",
-                fontSize: "0.9rem",
-                outline: "none"
-              }}
-              placeholder="Search by name, email, phone, plan or code..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Search
-              size={18}
-              style={{
-                position: "absolute",
-                left: "14px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-muted)",
-                pointerEvents: "none"
-              }}
-            />
+      {/* Stats Cards */}
+      <div className="sub-stats-grid">
+        <div className="sub-stat-card">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper bg-green">
+              <TrendingUp size={20} className="text-green" />
+            </div>
+            <div className="stat-titles">
+              <div className="stat-label-row">
+                <span className="stat-label">TODAY <br/>(IST)</span>
+                <span className="stat-time">12 AM - 11:59<br/>PM</span>
+              </div>
+            </div>
+          </div>
+          <div className="stat-value">₹{(stats.todayIncome?.total || 0).toLocaleString('en-IN')}</div>
+          <div className="stat-desc">
+            <span className="text-muted">👥 {stats.todayIncome?.subsCount || 0} subs ({stats.todayIncome?.usersCount || 0} users)</span>
+          </div>
+        </div>
+
+        <div className="sub-stat-card">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper bg-blue">
+              <Calendar size={20} className="text-blue" />
+            </div>
+            <div className="stat-titles">
+              <div className="stat-label-row">
+                <span className="stat-label">YESTERDAY <br/>(IST)</span>
+                <span className="stat-time">12 AM - 11:59<br/>PM</span>
+              </div>
+            </div>
+          </div>
+          <div className="stat-value">₹{(stats.yesterdayIncome?.total || 0).toLocaleString('en-IN')}</div>
+          <div className="stat-desc">
+            <span className="text-muted">👥 {stats.yesterdayIncome?.subsCount || 0} subs ({stats.yesterdayIncome?.usersCount || 0} users)</span>
+          </div>
+        </div>
+
+        <div className="sub-stat-card highlight-card">
+          <div className="stat-header">
+            <div className="stat-icon-wrapper bg-purple">
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc' }}>₹</span>
+            </div>
+            <div className="stat-titles" style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <span className="stat-label">TOTAL REVENUE</span>
+              <span className="stat-time badge-dark">All Time</span>
+            </div>
+          </div>
+          <div className="stat-value">₹{(stats.totalIncome?.total || 0).toLocaleString('en-IN')}</div>
+          <div className="stat-desc">
+            <span className="text-muted">👥 {stats.totalIncome?.subsCount || 0} subs</span>
           </div>
         </div>
       </div>
 
-      <table className="subscription-table">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Plan</th>
-            <th>Status</th>
-            <th>Amount</th>
-            <th>Promo/Voucher</th>
-            <th>Expiry</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+      {/* Filter Row */}
+      <div className="sub-filter-row">
+        <div className="sub-search">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search by user name, email, or number..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        
+        <select 
+          className="sub-select" 
+          value={dateFilter} 
+          onChange={(e) => setDateFilter(e.target.value)}
+        >
+          <option value="all">All Dates</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="this_month">This Month</option>
+        </select>
 
-        <tbody>
-          {paginatedSubs.length === 0 ? (
+        <select 
+          className="sub-select" 
+          value={statusFilter} 
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">All statuses</option>
+          <option value="active">Active</option>
+          <option value="expired">Expired</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <div className="tbl-wrap">
+        <table className="subscription-table">
+          <thead>
             <tr>
-              <td colSpan="7" style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px" }}>
-                Not Found
-              </td>
+              <th>USER</th>
+              <th>PLAN</th>
+              <th>STATUS</th>
+              <th>AMOUNT</th>
+              <th>EXPIRY</th>
+              <th>ACTIONS</th>
             </tr>
-          ) : (
-            paginatedSubs.map((sub) => {
-              const isActive =
-                sub.status === "active" &&
-                new Date(sub.endDate) > new Date();
+          </thead>
 
-              return (
-                <tr key={sub._id}>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{sub.user?.name || "User"}</div>
-                    <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                      {sub.user?.email || sub.user?.phone || "-"}
-                    </div>
-                  </td>
+          <tbody>
+            {paginatedSubs.length === 0 ? (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px" }}>
+                  Not Found
+                </td>
+              </tr>
+            ) : (
+              paginatedSubs.map((sub) => {
+                const isActive = sub.status === "active" && new Date(sub.endDate) > new Date();
 
-                  <td className="plan">{sub.plan?.name || sub.plan || "-"}</td>
+                return (
+                  <tr key={sub._id}>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--text)' }}>{sub.user?.name || "User"}</div>
+                      <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                        {sub.user?.phone || sub.user?.email || "-"}
+                      </div>
+                    </td>
 
-                  <td>
-                    <span className={isActive ? "status active" : "status expired"}>
-                      {sub.status === "active" ? "Active" : sub.status === "cancelled" ? "Cancelled" : "Expired"}
-                    </span>
-                  </td>
+                    <td className="plan">{sub.plan?.name || sub.plan || "-"}</td>
 
-                  <td>₹{sub.amount || 0}</td>
-
-                  <td>
-                    {sub.voucherCode ? (
-                      <span className="badge badge-pub" style={{ background: '#4f46e5', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
-                        🎟️ {sub.voucherCode}
+                    <td>
+                      <span className={isActive ? "status active" : "status expired"}>
+                        {sub.status === "active" ? "Active" : sub.status === "cancelled" ? "Cancelled" : "Expired"}
                       </span>
-                    ) : sub.promoCode ? (
-                      <span className="badge badge-pub" style={{ background: '#ec4899', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
-                        🏷️ {sub.promoCode}
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>-</span>
-                    )}
-                  </td>
+                    </td>
 
-                  <td>
-                    {sub.endDate
-                      ? new Date(sub.endDate).toLocaleDateString()
-                      : "-"}
-                  </td>
+                    <td style={{ color: 'var(--text)' }}>₹{sub.amount || 0}</td>
 
-                  <td className="actions">
-                    <button
-                      className="icon-btn view"
-                      onClick={() => setViewSub(sub)}
-                      title="View Details"
-                      style={{ cursor: "pointer", marginRight: "8px" }}
-                    >
-                      <Eye size={16} />
-                    </button>
+                    <td style={{ color: 'var(--text-muted)' }}>
+                      {sub.endDate ? new Date(sub.endDate).toLocaleDateString('en-GB') : "-"}
+                    </td>
 
-                    {isActive && (
+                    <td className="actions">
                       <button
-                        className="icon-btn edit"
-                        onClick={() => handleCancel(sub._id)}
-                        title="Cancel Subscription"
-                        style={{ cursor: "pointer", marginRight: "8px", color: "var(--warning)" }}
+                        className="icon-btn view"
+                        onClick={() => setViewSub(sub)}
+                        title="View Details"
                       >
-                        <Ban size={16} />
+                        <Eye size={16} />
                       </button>
-                    )}
 
-                    <button
-                      className="icon-btn delete"
-                      onClick={() => handleDelete(sub._id)}
-                      title="Delete"
-                      style={{ cursor: "pointer", color: "var(--danger)" }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
+                      {isActive && (
+                        <button
+                          className="icon-btn btn-warning-outline"
+                          onClick={() => handleCancel(sub._id)}
+                          title="Cancel Subscription"
+                        >
+                          <Ban size={14} style={{ marginRight: '4px' }}/> Cancel
+                        </button>
+                      )}
+
+                      <button
+                        className="icon-btn delete"
+                        onClick={() => handleDelete(sub._id)}
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <Pagination
         currentPage={currentPage}
@@ -263,68 +294,73 @@ export default function SubscriptionPage() {
       {/* ================= VIEW MODAL ================= */}
       {viewSub && (
         <div className="modal-overlay" onClick={() => setViewSub(null)}>
-          <div className="modal-box modal-box-view" onClick={e => e.stopPropagation()}>
-            <div className="modal-head">
-              <h3>💳 Subscription Details</h3>
-              <button className="modal-close" onClick={() => setViewSub(null)}><X size={24} /></button>
+          <div className="modal-box modal-box-view" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-head" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(135deg, rgba(192,132,252,0.1), transparent)' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', margin: 0 }}>
+                <span style={{ fontSize: '1.4rem' }}>🧾</span> Subscription Details
+              </h3>
+              <button className="modal-close" onClick={() => setViewSub(null)}><X size={20} /></button>
             </div>
             
-            <div className="modal-body p-0">
-              <div className="profile-details-grid" style={{ padding: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Subscriber</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{viewSub.user?.name || "-"}</span>
-                </div>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Subscriber Email</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{viewSub.user?.email || "-"}</span>
-                </div>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Subscriber Phone</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{viewSub.user?.phone || "-"}</span>
-                </div>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Plan Name</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{viewSub.plan?.name || viewSub.plan || "-"}</span>
-                </div>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Amount Paid</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>₹{viewSub.amount || 0}</span>
-                </div>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Start Date</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{viewSub.startDate ? new Date(viewSub.startDate).toLocaleDateString() : "-"}</span>
-                </div>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Expiry Date</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{viewSub.endDate ? new Date(viewSub.endDate).toLocaleDateString() : "-"}</span>
-                </div>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Status</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>
-                    <span className={`status ${viewSub.status === 'active' && new Date(viewSub.endDate) > new Date() ? 'active' : 'expired'}`}>
-                      {viewSub.status === 'active' && new Date(viewSub.endDate) > new Date() ? 'Active' : viewSub.status === 'cancelled' ? 'Cancelled' : 'Expired'}
+            <div className="modal-body" style={{ padding: 0, overflowY: 'auto', maxHeight: '75vh' }}>
+              <div className="profile-details-grid" style={{ padding: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                
+                {[
+                  { label: "Subscriber", value: viewSub.user?.name || "-" },
+                  { label: "Email Address", value: viewSub.user?.email || "-" },
+                  { label: "Phone Number", value: viewSub.user?.phone || "-" },
+                  { label: "Plan Name", value: viewSub.plan?.name || viewSub.plan || "-" },
+                  { label: "Amount Paid", value: `₹${viewSub.amount || 0}`, highlight: true },
+                  { label: "Start Date", value: viewSub.startDate ? new Date(viewSub.startDate).toLocaleDateString('en-GB') : "-" },
+                  { label: "Expiry Date", value: viewSub.endDate ? new Date(viewSub.endDate).toLocaleDateString('en-GB') : "-" },
+                  { 
+                    label: "Status", 
+                    value: (
+                      <span className={`status ${viewSub.status === 'active' && new Date(viewSub.endDate) > new Date() ? 'active' : 'expired'}`} style={{ padding: '6px 14px' }}>
+                        {viewSub.status === 'active' && new Date(viewSub.endDate) > new Date() ? 'Active' : viewSub.status === 'cancelled' ? 'Cancelled' : 'Expired'}
+                      </span>
+                    )
+                  },
+                  { label: "Promo / Voucher", value: viewSub.voucherCode ? `🎟️ ${viewSub.voucherCode}` : viewSub.promoCode ? `🏷️ ${viewSub.promoCode}` : "-" }
+                ].map((item, idx) => (
+                  <div key={idx} style={{ 
+                    background: item.highlight ? 'linear-gradient(135deg, rgba(192, 132, 252, 0.1), transparent)' : 'rgba(255,255,255,0.02)', 
+                    border: item.highlight ? '1px solid rgba(192, 132, 252, 0.2)' : '1px solid rgba(255,255,255,0.05)',
+                    padding: '20px', 
+                    borderRadius: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: item.highlight ? '#c084fc' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {item.label}
                     </span>
-                  </span>
-                </div>
-                <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px' }}>
-                  <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Promo/Voucher Used</span>
-                  <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem' }}>
-                    {viewSub.voucherCode ? `Voucher: ${viewSub.voucherCode}` : viewSub.promoCode ? `Promo: ${viewSub.promoCode}` : "None"}
-                  </span>
-                </div>
-                {viewSub.subscriptionId && (
-                  <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px', gridColumn: '1 / -1' }}>
-                    <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Razorpay Order ID</span>
-                    <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem', wordBreak: 'break-all' }}>{viewSub.subscriptionId}</span>
+                    <span style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--text)', wordBreak: 'break-all' }}>
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+
+                {(viewSub.subscriptionId || viewSub.paymentId) && (
+                  <div style={{ gridColumn: '1 / -1', borderTop: '1px solid rgba(255,255,255,0.05)', margin: '8px 0', padding: '16px 0 0 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>Payment Gateway Details</h4>
+                    
+                    {viewSub.subscriptionId && (
+                      <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Razorpay Order ID</span>
+                        <span style={{ fontWeight: 500, fontSize: '0.95rem', fontFamily: 'monospace', color: 'var(--text-soft)', wordBreak: 'break-all' }}>{viewSub.subscriptionId}</span>
+                      </div>
+                    )}
+                    
+                    {viewSub.paymentId && (
+                      <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Razorpay Payment ID</span>
+                        <span style={{ fontWeight: 500, fontSize: '0.95rem', fontFamily: 'monospace', color: 'var(--text-soft)', wordBreak: 'break-all' }}>{viewSub.paymentId}</span>
+                      </div>
+                    )}
                   </div>
                 )}
-                {viewSub.paymentId && (
-                  <div className="p-detail-card" style={{ background: 'var(--bg-card-soft)', padding: '16px', borderRadius: '8px', gridColumn: '1 / -1' }}>
-                    <span className="p-detail-label" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Razorpay Payment ID</span>
-                    <span className="p-detail-value" style={{ fontWeight: 600, fontSize: '1.1rem', wordBreak: 'break-all' }}>{viewSub.paymentId}</span>
-                  </div>
-                )}
+                
               </div>
             </div>
           </div>
@@ -336,25 +372,24 @@ export default function SubscriptionPage() {
 
 // ===================== PAGINATION COMPONENT =====================
 const Pagination = ({ currentPage, totalPages, totalItems, onPageChange }) => {
-  if (totalPages <= 1) return null;
   return (
     <div className="pagination" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 16, marginTop: 24, padding: "12px 0" }}>
       <button
         className="btn btn-ghost"
-        disabled={currentPage === 1}
+        disabled={currentPage <= 1}
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", color: "var(--text)" }}
+        style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)" }}
       >
         <ChevronLeft size={16} /> Previous
       </button>
       <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>
-        Page <strong style={{ color: "var(--primary)" }}>{currentPage}</strong> of <strong>{totalPages}</strong> ({totalItems} total)
+        Page <strong style={{ color: "#fff" }}>{currentPage}</strong> of <strong style={{ color: "#fff" }}>{Math.max(1, totalPages)}</strong> ({totalItems} total)
       </span>
       <button
         className="btn btn-ghost"
-        disabled={currentPage === totalPages}
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-        style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", color: "var(--text)" }}
+        disabled={currentPage >= totalPages || totalPages === 0}
+        onClick={() => onPageChange(Math.min(Math.max(1, totalPages), currentPage + 1))}
+        style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)" }}
       >
         Next <ChevronRight size={16} />
       </button>

@@ -161,20 +161,23 @@ const getLandingContent = async (req, res) => {
       Movie.find({ isPublished: true })
         .select(contentProjection)
         .sort({ priority: -1, createdAt: -1 })
+        .limit(20)
         .lean(),
       Series.find({ isPublished: true })
         .select(contentProjection)
         .sort({ priority: -1, createdAt: -1 })
+        .limit(20)
         .lean(),
       Microdrama.find({ isPublished: true })
         .select(contentProjection)
         .sort({ priority: -1, createdAt: -1 })
+        .limit(20)
         .lean(),
     ]);
 
     const [episodesBySeries, episodesByMicrodrama] = await Promise.all([
       getEpisodesByParent(Episode, "seriesId", series, { seasonNumber: 1, episodeNumber: 1 }, episodeProjection),
-      getEpisodesByParent(MicrodramaEpisode, "tvShowId", microdramas, { episodeNumber: 1 }, episodeProjection),
+      getEpisodesByParent(MicrodramaEpisode, "microdramaId", microdramas, { episodeNumber: 1 }, episodeProjection),
     ]);
 
     const content = [
@@ -254,7 +257,7 @@ const getHomeContent = async (req, res) => {
       seriesFilter ? Series.find(seriesFilter, "totalEpisodes").lean() : Promise.resolve([]),
       microdramaFilter ? Microdrama.find(microdramaFilter, "totalEpisodes").lean() : Promise.resolve([]),
       seriesFilter && series.length > 0 ? getEpisodesByParent(Episode, "seriesId", series, { seasonNumber: 1, episodeNumber: 1 }) : Promise.resolve({}),
-      microdramaFilter && microdramas.length > 0 ? getEpisodesByParent(MicrodramaEpisode, "tvShowId", microdramas, { episodeNumber: 1 }) : Promise.resolve({}),
+      microdramaFilter && microdramas.length > 0 ? getEpisodesByParent(MicrodramaEpisode, "microdramaId", microdramas, { episodeNumber: 1 }) : Promise.resolve({}),
     ]);
 
     const formattedMovies = movies.map((movie) => ({
@@ -316,7 +319,7 @@ const searchContent = async (req, res) => {
 
     const [episodesBySeries, episodesByMicrodrama] = await Promise.all([
       seriesFilter && series.length > 0 ? getEpisodesByParent(Episode, "seriesId", series, { seasonNumber: 1, episodeNumber: 1 }) : Promise.resolve({}),
-      microdramaFilter && microdramas.length > 0 ? getEpisodesByParent(MicrodramaEpisode, "tvShowId", microdramas, { episodeNumber: 1 }) : Promise.resolve({}),
+      microdramaFilter && microdramas.length > 0 ? getEpisodesByParent(MicrodramaEpisode, "microdramaId", microdramas, { episodeNumber: 1 }) : Promise.resolve({}),
     ]);
 
     const results = [
@@ -350,7 +353,7 @@ const getContentById = async (req, res) => {
 
     const microdrama = await Microdrama.findOne({ _id: contentId, isPublished: true }).lean();
     if (microdrama) {
-      const episodes = await MicrodramaEpisode.find({ tvShowId: contentId }).sort({ episodeNumber: 1 }).lean();
+      const episodes = await MicrodramaEpisode.find({ microdramaId: contentId }).sort({ episodeNumber: 1 }).lean();
       return res.json({ success: true, content: { ...microdrama, type: "microdrama", episodes } });
     }
 

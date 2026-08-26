@@ -1,8 +1,8 @@
-const TvShow = require(
+const Microdrama = require(
   "../../models/microdrama.model"
 );
 
-const TvShowsEpisode = require(
+const MicrodramaEpisode = require(
   "../../models/microdramaEpisode.model"
 );
 
@@ -92,14 +92,14 @@ const addMicrodrama = async (
 
     if (inputPriority > 0) {
       // Shift up existing microdramas with priority >= inputPriority.
-      await TvShow.updateMany(
+      await Microdrama.updateMany(
         { priority: { $gte: inputPriority } },
         { $inc: { priority: 1 } }
       );
       priority = inputPriority;
     } else {
       // Auto-assign: maxPriority + 1
-      const maxShow = await TvShow.findOne().sort("-priority");
+      const maxShow = await Microdrama.findOne().sort("-priority");
       priority =
         maxShow && maxShow.priority
           ? maxShow.priority + 1
@@ -110,8 +110,8 @@ const addMicrodrama = async (
     // CREATE MICRODRAMA
     // ========================================
 
-    const tvShow =
-      await TvShow.create({
+    const microdrama =
+      await Microdrama.create({
 
         title: req.body.title,
 
@@ -174,7 +174,7 @@ const addMicrodrama = async (
       success: true,
       message:
         "Microdrama added successfully",
-      microdrama: tvShow,
+      microdrama: microdrama,
     });
 
   } catch (error) {
@@ -203,17 +203,17 @@ const getAllMicrodramas =
       const limit = Number(req.query.limit) || 10;
       const skip = (page - 1) * limit;
 
-      const [tvShows, total] = await Promise.all([
-        TvShow.find()
+      const [microdramas, total] = await Promise.all([
+        Microdrama.find()
           .sort({ priority: -1, createdAt: -1 })
           .skip(skip)
           .limit(limit),
-        TvShow.countDocuments(),
+        Microdrama.countDocuments(),
       ]);
 
       return res.json({
         success: true,
-        microdramas: tvShows,
+        microdramas: microdramas,
         total,
         pages: Math.ceil(total / limit),
         page,
@@ -238,12 +238,12 @@ const getMicrodramaById =
   async (req, res) => {
     try {
 
-      const tvShow =
-        await TvShow.findById(
+      const microdrama =
+        await Microdrama.findById(
           req.params.id
         );
 
-      if (!tvShow) {
+      if (!microdrama) {
         return res.status(404).json({
           success: false,
           message:
@@ -253,7 +253,7 @@ const getMicrodramaById =
 
       return res.json({
         success: true,
-        microdrama: tvShow,
+        microdrama: microdrama,
       });
 
     } catch (error) {
@@ -276,7 +276,7 @@ const updateMicrodrama =
     try {
 
       const drama =
-        await TvShow.findById(
+        await Microdrama.findById(
           req.params.id
         );
 
@@ -409,7 +409,7 @@ const updateMicrodrama =
         if (newPriority !== oldPriority) {
           // Step 1: Remove show from its old slot
           if (oldPriority > 0) {
-            await TvShow.updateMany(
+            await Microdrama.updateMany(
               { _id: { $ne: drama._id }, priority: { $gt: oldPriority } },
               { $inc: { priority: -1 } }
             );
@@ -417,7 +417,7 @@ const updateMicrodrama =
 
           // Step 2: Insert show into its new slot
           if (newPriority > 0) {
-            await TvShow.updateMany(
+            await Microdrama.updateMany(
               { _id: { $ne: drama._id }, priority: { $gte: newPriority } },
               { $inc: { priority: 1 } }
             );
@@ -460,7 +460,7 @@ const deleteMicrodrama =
     try {
 
       const drama =
-        await TvShow.findById(
+        await Microdrama.findById(
           req.params.id
         );
 
@@ -489,8 +489,8 @@ const deleteMicrodrama =
 
       // DELETE EPISODES
       const episodes =
-        await TvShowsEpisode.find({
-          tvShowId:
+        await MicrodramaEpisode.find({
+          microdramaId:
             drama._id,
         });
 
@@ -499,18 +499,18 @@ const deleteMicrodrama =
         deleteMedia(ep.thumbnail);
       });
 
-      await TvShowsEpisode.deleteMany({
-        tvShowId:
+      await MicrodramaEpisode.deleteMany({
+        microdramaId:
           drama._id,
       });
 
-      await TvShow.findByIdAndDelete(
+      await Microdrama.findByIdAndDelete(
         req.params.id
       );
 
       // Shift down priorities of all shows with priority > targetPriority
       if (targetPriority > 0) {
-        await TvShow.updateMany(
+        await Microdrama.updateMany(
           { priority: { $gt: targetPriority } },
           { $inc: { priority: -1 } }
         );
@@ -544,7 +544,7 @@ const searchMicrodramas =
       const { q } = req.query;
 
       const dramas =
-        await TvShow.find({
+        await Microdrama.find({
           title: {
             $regex: q,
             $options: "i",

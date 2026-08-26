@@ -190,6 +190,9 @@ app.use(
   microdramasEpisodeAdminRoutes
 );
 
+const adminAIReelRoutes = require("./routes/admin/aiReel.routes");
+app.use("/api/admin/ai-reels", adminAIReelRoutes);
+
 app.use(
   "/api/microdramas",
   microdramaUserRoutes
@@ -345,9 +348,12 @@ const userNotificationRoutes = require("./routes/user/notification.routes");
 app.use("/api/admin/notifications", adminNotificationRoutes);
 app.use("/api/notifications", userNotificationRoutes);
 
-// //interactions routes
-// const interactionRoutes = require("./routes/user/interation.routes");
-// app.use("/api/interaction", interactionRoutes);
+//interactions routes
+const interactionRoutes = require("./routes/user/interation.routes");
+app.use("/api/interaction", interactionRoutes);
+
+const userAIReelRoutes = require("./routes/user/aiReel.routes");
+app.use("/api/ai-reels", userAIReelRoutes);
 
 // ================Razor Pay===============
 const paymentRoutes = require("./routes/user/payment.routes");

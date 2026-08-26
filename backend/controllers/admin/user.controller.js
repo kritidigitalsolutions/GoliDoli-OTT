@@ -5,7 +5,6 @@ const SupportTicket = require("../../models/supportTicket.model");
 const SupportMessage = require("../../models/supportMessage.model");
 const Rating = require("../../models/rating.model");
 
-const Comment = require("../../models/comment.model");
 const Interaction = require("../../models/interaction.model");
 const Notification = require("../../models/notification.model");
 const Voucher = require("../../models/voucher.model");
@@ -174,8 +173,7 @@ exports.deleteUser = async (
         // Ratings
         await Rating.deleteMany({ user: userId });
 
-        // Comments
-        await Comment.deleteMany({ user: userId });
+
 
         // Interactions (likes, dislikes, follows, bookmarks)
         await Interaction.deleteMany({ user: userId });

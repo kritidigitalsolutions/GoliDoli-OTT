@@ -45,18 +45,7 @@ router.post(
   toggleDislike
 );
 
-// Backward Compatibility for Reels
-router.post(
-  "/toggle/like/:reelId",
-  isAuth,
-  toggleLike
-);
 
-router.post(
-  "/toggle/dislike/:reelId",
-  isAuth,
-  toggleDislike
-);
 
 // ========================================
 // FOLLOW / UNFOLLOW
@@ -84,11 +73,7 @@ router.get(
   getContentInteractions
 );
 
-// Backward Compatibility for Reels
-router.get(
-  "/reel/:reelId",
-  getContentInteractions
-);
+
 
 // ========================================
 // FOLLOW DETAILS

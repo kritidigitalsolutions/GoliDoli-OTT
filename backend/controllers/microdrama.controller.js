@@ -1,8 +1,8 @@
-const TvShow = require(
+const Microdrama = require(
   "../models/microdrama.model"
 );
 
-const TvShowsEpisode = require(
+const MicrodramaEpisode = require(
   "../models/microdramaEpisode.model"
 );
 
@@ -20,19 +20,58 @@ const getSearchFilter = (search) => {
 const getAllMicrodramas =
   async (req, res) => {
     try {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
 
+      const filter = { isPublished: true, ...getSearchFilter(req.query.search) };
       const dramas =
-        await TvShow.find({ isPublished: true, ...getSearchFilter(req.query.search) })
+        await Microdrama.find(filter)
           .sort({
             priority: -1,
             createdAt: -1,
-          });
+          })
+          .skip(skip)
+          .limit(limit)
+          .lean();
 
-      return res.json({
+      const total = await Microdrama.countDocuments(filter);
+
+      const dramaIds = dramas.map(
+        (d) => d._id
+      );
+
+      const episodes =
+        await MicrodramaEpisode.find({
+          microdramaId: {
+            $in: dramaIds,
+          },
+        })
+          .sort({ episodeNumber: 1 })
+          .lean();
+
+      const formattedDramas =
+        dramas.map((drama) => {
+          const dramaEpisodes =
+            episodes.filter(
+              (ep) =>
+                ep.microdramaId.toString() ===
+                drama._id.toString()
+            );
+
+          return {
+            ...drama,
+            episodes: dramaEpisodes,
+          };
+        });
+
+      return res.status(200).json({
         success: true,
-        microdramas: dramas,
+        total,
+        page,
+        pages: Math.ceil(total / limit),
+        microdramas: formattedDramas,
       });
-
     } catch (error) {
 
       return res.status(500).json({
@@ -49,13 +88,13 @@ const getMicrodramaById =
   async (req, res) => {
     try {
 
-      const tvShow =
-        await TvShow.findOne({
+      const microdrama =
+        await Microdrama.findOne({
           _id: req.params.id,
           isPublished: true,
         });
 
-      if (!tvShow) {
+      if (!microdrama) {
         return res.status(404).json({
           success: false,
           message:
@@ -65,7 +104,7 @@ const getMicrodramaById =
 
       return res.json({
         success: true,
-        microdrama: tvShow,
+        microdrama: microdrama,
       });
 
     } catch (error) {
@@ -86,9 +125,9 @@ const searchMicrodramas =
       const { q } = req.query;
 
       const dramas =
-        await TvShow.find({
+        await Microdrama.find({
           title: {
-            $regex: q,
+            $regex: q || "",
             $options: "i",
           },
           isPublished: true,

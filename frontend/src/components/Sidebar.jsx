@@ -11,6 +11,7 @@ const NAV = [
   { id: "home-banners", label: "Home Banners", icon: ImageIcon, color: "#FF7A1A" },
   { id: "add-content", label: "Add Content", icon: Plus, color: "#10b981" },
   { id: "content", label: "Content Library", icon: Film, color: "#f59e0b" },
+  { id: "ai-reels", label: "AI Reels", icon: Clapperboard, color: "#8b5cf6" },
   // { id: "add-drama", label: "Add Short Drama", icon: Plus, color: "#a78bfa" },
   // { id: "dramas", label: "Short Dramas", icon: Clapperboard, color: "#8b5cf6" },
   // { id: "ratings", label: "Ratings", icon: Star, color: "#facc15" },
