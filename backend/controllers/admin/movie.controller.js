@@ -164,6 +164,8 @@ const addMovie = async (req, res) => {
       isPublished: req.body.isPublished !== undefined ? req.body.isPublished === "true" || req.body.isPublished === true : true,
     });
 
+    console.log(`✅ Success: Movie "${movie.title}" uploaded and saved successfully!`);
+
     return res.status(201).json({
       success: true,
       message: "Movie added successfully",
@@ -171,6 +173,7 @@ const addMovie = async (req, res) => {
     });
 
   } catch (error) {
+    console.error(`❌ Error: Failed to upload movie -> ${error.message}`);
     console.error("================================");
     console.error("ADD MOVIE ERROR");
     console.error(error);

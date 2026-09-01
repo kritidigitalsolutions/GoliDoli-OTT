@@ -170,6 +170,8 @@ const addMicrodrama = async (
         isPublished: req.body.isPublished !== undefined ? req.body.isPublished === "true" || req.body.isPublished === true : true,
       });
 
+    console.log(`✅ Success: Microdrama "${microdrama.title}" uploaded and saved successfully!`);
+
     return res.status(201).json({
       success: true,
       message:
@@ -178,7 +180,7 @@ const addMicrodrama = async (
     });
 
   } catch (error) {
-
+    console.error(`❌ Error: Failed to upload microdrama -> ${error.message}`);
     console.error("ADD MICRODRAMA ERROR:", error);
 
     return res.status(500).json({

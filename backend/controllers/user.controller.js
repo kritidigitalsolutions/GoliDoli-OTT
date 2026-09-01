@@ -164,7 +164,7 @@ exports.completeProfile = async (
 
     // handle profile image
     if (req.file) {
-      user.profileImage = req.file.path.replace(/\\/g, "/");
+      user.profileImage = req.file.cdnUrl || req.file.path;
     } else {
       user.profileImage = user.profileImage || "";
     }
@@ -327,7 +327,7 @@ exports.updateProfile = async (req, res) => {
     // UPDATE PROFILE IMAGE
     // ========================================
     if (req.file) {
-      user.profileImage = req.file.path.replace(/\\/g, "/");
+      user.profileImage = req.file.cdnUrl || req.file.path;
     }
 
     await user.save();

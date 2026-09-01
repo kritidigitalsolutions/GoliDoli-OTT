@@ -58,13 +58,15 @@ export default function MediaAssetsStep({
           onFileChange={handleBannerFileChange}
         />
 
-        <TrailerUploader
-          file={trailerFile}
-          value={form.trailerUrl}
-          onUrlChange={ch}
-          inputRef={trailerInputRef}
-          onFileChange={handleTrailerFileChange}
-        />
+        {type !== "microdrama" && (
+          <TrailerUploader
+            file={trailerFile}
+            value={form.trailerUrl}
+            onUrlChange={ch}
+            inputRef={trailerInputRef}
+            onFileChange={handleTrailerFileChange}
+          />
+        )}
 
         {(type === "movie") && !isComingSoon && (
           <VideoUploader

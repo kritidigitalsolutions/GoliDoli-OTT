@@ -21,19 +21,33 @@
 }
 
 .sub-stat-card {
-  background: #11151F; /* Dark bg like screenshot */
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg2, #11151F);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.05));
   border-radius: 12px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-sm, 0 4px 20px rgba(0,0,0,0.2));
+  transition: all 0.25s ease;
+}
+
+body.light .sub-stat-card,
+.light .sub-stat-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
 }
 
 .sub-stat-card.highlight-card {
   border-color: rgba(192, 132, 252, 0.4);
   box-shadow: 0 0 20px rgba(192, 132, 252, 0.15);
+}
+
+body.light .sub-stat-card.highlight-card,
+.light .sub-stat-card.highlight-card {
+  border-color: rgba(192, 132, 252, 0.5);
+  background: #ffffff;
 }
 
 .stat-header {
@@ -97,11 +111,22 @@
   font-size: 0.75rem;
 }
 
+body.light .badge-dark,
+.light .badge-dark {
+  background: #f1f5f9;
+  color: #475569;
+}
+
 .stat-value {
   font-size: 2.2rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text, #fff);
   line-height: 1;
+}
+
+body.light .stat-value,
+.light .stat-value {
+  color: #0f172a;
 }
 
 .stat-desc {
@@ -127,15 +152,34 @@
   width: 100%;
   padding: 14px 16px 14px 44px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: #11151F;
+  border: 1px solid var(--border2, rgba(255,255,255,0.08));
+  background: var(--bg2, #11151F);
   color: var(--text);
   font-size: 0.95rem;
   outline: none;
   transition: all 0.2s;
 }
+
+.sub-search input::placeholder {
+  color: var(--text-muted);
+}
+
 .sub-search input:focus {
-  border-color: rgba(255,255,255,0.2);
+  border-color: var(--primary, rgba(255,255,255,0.2));
+  box-shadow: 0 0 0 3px var(--primary-dim);
+}
+
+body.light .sub-search input,
+.light .sub-search input {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+body.light .sub-search input::placeholder,
+.light .sub-search input::placeholder {
+  color: #64748b;
 }
 
 .search-icon {
@@ -146,12 +190,17 @@
   color: var(--text-muted);
 }
 
+body.light .search-icon,
+.light .search-icon {
+  color: #64748b;
+}
+
 .sub-select {
   padding: 14px 20px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: #11151F;
-  color: #fff;
+  border: 1px solid var(--border2, rgba(255,255,255,0.08));
+  background: var(--bg2, #11151F);
+  color: var(--text, #fff);
   font-size: 0.9rem;
   font-weight: 500;
   outline: none;
@@ -160,8 +209,23 @@
   transition: all 0.2s;
   appearance: none;
 }
+
 .sub-select:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--bg3, rgba(255,255,255,0.05));
+}
+
+body.light .sub-select,
+.light .sub-select {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+body.light .sub-select option,
+.light .sub-select option {
+  background: #ffffff;
+  color: #0f172a;
 }
 
 /* Table styling (updated) */
@@ -171,7 +235,12 @@
 }
 
 .subscription-table thead {
-  background: #161B26; /* Darker header */
+  background: var(--bg3, #161B26);
+}
+
+body.light .subscription-table thead,
+.light .subscription-table thead {
+  background: #f8fafc;
 }
 
 .subscription-table th {
@@ -184,18 +253,30 @@
   letter-spacing: 0.5px;
 }
 
-.subscription-table td {
-  padding: 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  font-size: 0.9rem;
+body.light .subscription-table th,
+.light .subscription-table th {
+  color: #64748b;
 }
 
-.subscription-table tr:last-child td {
-  border-bottom: none;
+.subscription-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.05));
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+body.light .subscription-table td,
+.light .subscription-table td {
+  border-bottom-color: #e2e8f0;
 }
 
 .subscription-table tr:hover {
   background: rgba(255,255,255,0.02);
+}
+
+body.light .subscription-table tr:hover,
+.light .subscription-table tr:hover {
+  background: #f1f5f9;
 }
 
 /* Plan styling */

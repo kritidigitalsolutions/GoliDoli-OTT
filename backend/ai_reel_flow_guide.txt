@@ -69,5 +69,6 @@ Step 5: Like Toggle (POST /api/interaction/toggle/like/aiReel/:id)
 
 Step 6: Share Increment (POST /api/ai-reels/:id/share)
 -------------------------------------------------------------------
-- Jab user share button click karke WhatsApp/Instagram aadi par share karega, toh Flutter app is API par hit karegi.
+- Jab user share button click kar
+ke WhatsApp/Instagram aadi par share karega, toh Flutter app is API par hit karegi.
 - Backend database document me `shares` counter ko 1 increment kar dega, jo admin dashboard par dynamically update hoga.

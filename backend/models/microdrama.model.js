@@ -138,7 +138,7 @@ microdramaSchema.index({ createdAt: -1 });
 microdramaSchema.index({
   title: "text",
   description: "text"
-});
+}, { language_override: "dummyTextLanguage" });
 
 module.exports = mongoose.model(
   "Microdrama",

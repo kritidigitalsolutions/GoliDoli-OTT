@@ -25,10 +25,10 @@ if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
 //   })
 // );
 
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
-);
+
+// BunnyCDN handles all file serving — no local /uploads static route needed
+
+
 
 const frontendUrls = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",").map(url => url.trim().replace(/\/$/, ""))

@@ -115,12 +115,15 @@ const addSeries = async (req, res) => {
       isPublished: req.body.isPublished !== undefined ? req.body.isPublished === "true" || req.body.isPublished === true : true,
     });
 
+    console.log(`✅ Success: TV Series "${series.title}" uploaded and saved successfully!`);
+
     return res.status(201).json({
       success: true,
       message: "Series added successfully",
       series,
     });
   } catch (error) {
+    console.error(`❌ Error: Failed to upload series -> ${error.message}`);
     console.error("ADD SERIES ERROR:", error);
     return res.status(500).json({ success: false, message: "Failed to add series", error: error.message });
   }

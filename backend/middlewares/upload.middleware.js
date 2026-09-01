@@ -1,41 +1,98 @@
 const multer = require("multer");
 const path = require("path");
-// const {
-//   uploadStreamToBunny,
-// } = require("../cdn/bunnyCDN");
 
+const {
+  uploadStreamToBunny,
+} = require("../cdn/bunnyCDN");
+
+/**
+ * Decide Bunny folder based on API route + field name.
+ */
 const getUploadInfo = (req, file) => {
+  const url = String(req.originalUrl || "").toLowerCase();
+
   let type = "movies";
 
-  if (req.originalUrl.includes("/series")) type = "series";
-  if (req.originalUrl.includes("/episodes") && !req.originalUrl.includes("/audio-episodes")) type = "episodes";
-  if (req.originalUrl.includes("/drama-episodes")) type = "dramaepisodes";
-  if (req.originalUrl.includes("/shortdramas")) type = "shortdramas";
-  if (req.originalUrl.includes("/user")) type = "profile";
-  if (req.originalUrl.includes("/support")) type = "support";
-  if (req.originalUrl.includes("/audio-stories")) type = "audiostories";
-  if (req.originalUrl.includes("/audio-episodes")) type = "audiostories";
-  if (req.originalUrl.includes("/ai-reels")) type = "aireels";
+  if (url.includes("/series")) {
+    type = "series";
+  } else if (
+    url.includes("/drama-episodes")
+  ) {
+    type = "dramaepisodes";
+  } else if (
+    url.includes("/shortdramas")
+  ) {
+    type = "shortdramas";
+  } else if (
+    url.includes("/audio-episodes")
+  ) {
+    type = "audiostories";
+  } else if (
+    url.includes("/audio-stories")
+  ) {
+    type = "audiostories";
+  } else if (
+    url.includes("/ai-reels")
+  ) {
+    type = "aireels";
+  } else if (
+    url.includes("/episodes")
+  ) {
+    type = "episodes";
+  } else if (
+    url.includes("/user")
+  ) {
+    type = "profile";
+  } else if (
+    url.includes("/support")
+  ) {
+    type = "support";
+  }
 
   let subfolder = "others";
 
-  if (file.fieldname === "poster" || file.fieldname === "posterUrl") {
+  const fieldName = String(
+    file.fieldname || ""
+  );
+
+  if (
+    fieldName === "poster" ||
+    fieldName === "posterUrl" ||
+    fieldName === "thumbnail" ||
+    fieldName === "thumbnailUrl"
+  ) {
     subfolder = "posters";
-  } else if (file.fieldname === "thumbnail" || file.fieldname === "thumbnailUrl") { 
-    subfolder = "posters";
-  } else if (file.fieldname === "banner" || file.fieldname === "bannerUrl" || file.fieldname === "bannerImage") {
+  } else if (
+    fieldName === "banner" ||
+    fieldName === "bannerUrl" ||
+    fieldName === "bannerImage"
+  ) {
     subfolder = "banners";
-  } else if (file.fieldname === "video" || file.fieldname === "videoUrl") {
+  } else if (
+    fieldName === "video" ||
+    fieldName === "videoUrl"
+  ) {
     subfolder = "videos";
-  } else if (file.fieldname === "trailer" || file.fieldname === "trailerUrl") {
+  } else if (
+    fieldName === "trailer" ||
+    fieldName === "trailerUrl"
+  ) {
     subfolder = "trailers";
-  } else if (file.fieldname === "coverImage") {
+  } else if (
+    fieldName === "coverImage"
+  ) {
     subfolder = "covers";
-  } else if (file.fieldname === "audio") {
+  } else if (
+    fieldName === "audio"
+  ) {
     subfolder = "episodes";
-  } else if (file.fieldname.startsWith("castImage_")) {
+  } else if (
+    fieldName.startsWith("castImage_")
+  ) {
     subfolder = "cast";
-  } else if (file.fieldname === "attachments") {
+  } else if (
+    fieldName === "attachments"
+  ) {
     subfolder = "attachments";
   }
 
@@ -46,151 +103,251 @@ const getUploadInfo = (req, file) => {
   };
 };
 
+/**
+ * Custom multer storage.
+ *
+ * IMPORTANT:
+ * Nothing is saved to local /uploads.
+ * The incoming stream goes directly to Bunny Storage.
+ */
 const storage = {
   _handleFile: async (req, file, cb) => {
     try {
-      const uploadInfo = getUploadInfo(req, file);
-      const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      const ext = path.extname(file.originalname).toLowerCase();
+      const uploadInfo =
+        getUploadInfo(req, file);
 
-      const filename = `${uniqueName}${ext}`;
+      /**
+       * Keep the original extension.
+       *
+       * Example:
+       * movie.mp4 -> 172...-839....mp4
+       */
+      const ext =
+        path.extname(
+          file.originalname || ""
+        ).toLowerCase();
 
-     // console.log("================================");
-console.log("UPLOAD START");
-console.log("FIELD:", file.fieldname);
-console.log("NAME:", file.originalname);
-console.log("TYPE:", file.mimetype);
-console.log("REMOTE PATH:", `${uploadInfo.remoteFolder}/${filename}`);
+      const uniqueName =
+        `${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}`;
 
-const fs = require("fs");
+      const filename =
+        `${uniqueName}${ext}`;
 
-const uploadDir = path.join(
-  __dirname,
-  "../uploads",
-  uploadInfo.remoteFolder
-);
+      const remotePath =
+        `${uploadInfo.remoteFolder}/${filename}`;
 
-fs.mkdirSync(uploadDir, { recursive: true });
+      console.log(
+        "========================================"
+      );
 
-const filePath = path.join(uploadDir, filename);
+      console.log("BUNNY UPLOAD START");
+      console.log(
+        "FIELD:",
+        file.fieldname
+      );
+      console.log(
+        "ORIGINAL NAME:",
+        file.originalname
+      );
+      console.log(
+        "MIME TYPE:",
+        file.mimetype
+      );
+      console.log(
+        "REMOTE PATH:",
+        remotePath
+      );
 
-const writeStream = fs.createWriteStream(filePath);
+      /**
+       * Upload directly from multer stream.
+       */
+      const result =
+        await uploadStreamToBunny({
+          stream: file.stream,
+          remotePath,
+          contentType: file.mimetype,
+        });
 
-file.stream.pipe(writeStream);
+      console.log(
+        "BUNNY UPLOAD SUCCESS"
+      );
 
-writeStream.on("finish", () => {
-  cb(null, {
-    filename,
-    destination: uploadDir,
-    path: `/uploads/${uploadInfo.remoteFolder}/${filename}`,
-    cdnUrl: `/uploads/${uploadInfo.remoteFolder}/${filename}`,
-  });
-});
+      console.log(
+        "CDN URL:",
+        result.url
+      );
 
-writeStream.on("error", cb);
+      console.log(
+        "========================================"
+      );
 
-return;
-// const result = await uploadStreamToBunny({
-//   stream: file.stream,
-//   remotePath: `${uploadInfo.remoteFolder}/${filename}`,
-//   contentType: file.mimetype,
-// });
+      /**
+       * Multer file object.
+       *
+       * Controllers can use:
+       *
+       * req.file.path
+       * req.file.cdnUrl
+       * req.file.remotePath
+       */
+      cb(null, {
+        filename,
+        destination:
+          uploadInfo.remoteFolder,
 
-// console.log("BUNNY RESPONSE:", result);
-// console.log("================================");
+        path: result.url,
 
-      // cb(null, {
-      //   filename,
-      //   destination: uploadInfo.remoteFolder,
-      //   path: result.url,
-      //   cdnUrl: result.url,
-      //   remotePath: result.path,
-      // });
+        cdnUrl: result.url,
+
+        remotePath: result.path,
+
+        size: file.size,
+      });
     } catch (error) {
-  console.error("BUNNY/LocAL UPLOAD ERROR");
-  console.error(error);
-  console.error(error.message);
+      console.error(
+        "========================================"
+      );
 
-  cb(error);
-}
+      console.error(
+        "BUNNY UPLOAD ERROR"
+      );
+
+      console.error(
+        error
+      );
+
+      console.error(
+        error.message
+      );
+
+      console.error(
+        "========================================"
+      );
+
+      cb(error);
+    }
   },
 
+  /**
+   * Nothing to delete locally because
+   * we don't create a local file.
+   */
   _removeFile: (req, file, cb) => {
     cb(null);
   },
 };
 
+/**
+ * Allowed normal upload MIME types.
+ */
+const allowedMimeTypes = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/gif",
+
+  "video/mp4",
+  "video/mkv",
+  "video/webm",
+  "video/quicktime",
+
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/ogg",
+  "audio/aac",
+  "audio/m4a",
+  "audio/x-m4a",
+];
+
+/**
+ * Support-ticket attachments.
+ */
+const allowedSupportTypes = [
+  "application/pdf",
+
+  "application/msword",
+
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+
+  "application/vnd.ms-excel",
+
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+  "text/plain",
+
+  "application/zip",
+
+  "application/x-zip-compressed",
+
+  "application/octet-stream",
+];
+
 const fileFilter = (req, file, cb) => {
-  const allowedMimeTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "image/avif",
-    "image/gif",
-    "video/mp4",
-    "video/mkv",
-    "video/webm",
-    "video/quicktime",
-    "audio/mpeg",
-    "audio/mp3",
-    "audio/wav",
-    "audio/x-wav",
-    "audio/ogg",
-    "audio/aac",
-    "audio/m4a",
-    "audio/x-m4a",
-  ];
+  const url = String(
+    req.originalUrl || ""
+  ).toLowerCase();
 
-  if (req.originalUrl && req.originalUrl.includes("/support")) {
-    const allowedSupportTypes = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "text/plain",
-      "application/zip",
-      "application/x-zip-compressed",
-      "application/octet-stream",
-    ];
+  const isSupportRoute =
+    url.includes("/support");
 
-    if (
-      allowedMimeTypes.includes(file.mimetype) ||
-      allowedSupportTypes.includes(file.mimetype)
-    ) {
-      return cb(null, true);
-    }
-  } else {
-    if (allowedMimeTypes.includes(file.mimetype)) {
-      return cb(null, true);
-    }
+  if (
+    allowedMimeTypes.includes(
+      file.mimetype
+    )
+  ) {
+    return cb(null, true);
   }
 
-  cb(new Error("Invalid file type"), false);
+  if (
+    isSupportRoute &&
+    allowedSupportTypes.includes(
+      file.mimetype
+    )
+  ) {
+    return cb(null, true);
+  }
+
+  return cb(
+    new Error(
+      `Invalid file type: ${file.mimetype}`
+    ),
+    false
+  );
 };
 
-// Replace the multer instantiation block
+/**
+ * Upload limit MUST come from .env.
+ */
+const MAX_UPLOAD_SIZE = Number(
+  process.env.MAX_UPLOAD_SIZE
+);
 
-const MAX_UPLOAD_SIZE = Number(process.env.MAX_UPLOAD_SIZE);
-if (!MAX_UPLOAD_SIZE) {
-  throw new Error("MAX_UPLOAD_SIZE env variable is not set — check your .env file");
+if (
+  !Number.isFinite(MAX_UPLOAD_SIZE) ||
+  MAX_UPLOAD_SIZE <= 0
+) {
+  throw new Error(
+    "MAX_UPLOAD_SIZE env variable is not set or invalid"
+  );
 }
 
+/**
+ * Multer configuration.
+ */
 const upload = multer({
   storage,
+
   fileFilter,
+
   limits: {
-    fileSize: MAX_UPLOAD_SIZE,  // driven entirely by .env, no hardcoded fallback
+    fileSize: MAX_UPLOAD_SIZE,
   },
 });
-
-// const upload = multer({
-//   storage,
-//   fileFilter,
-//   limits: {
-//     fileSize: Number(process.env.MAX_UPLOAD_SIZE) || 500 * 1024 * 1024,
-//   },
-// });
 
 module.exports = upload;

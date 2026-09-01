@@ -74,6 +74,26 @@ export default function SubscriptionPage() {
     if (statusFilter === "cancelled" && !isCancelled) return false;
     if (statusFilter === "expired" && !isExpired) return false;
 
+    if (dateFilter !== "all") {
+      const targetDate = sub.createdAt || sub.startDate ? new Date(sub.createdAt || sub.startDate) : null;
+      if (!targetDate || isNaN(targetDate.getTime())) return false;
+      const now = new Date();
+
+      if (dateFilter === "today") {
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        if (targetDate < startOfToday || targetDate > endOfToday) return false;
+      } else if (dateFilter === "yesterday") {
+        const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        const endOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+        if (targetDate < startOfYesterday || targetDate > endOfYesterday) return false;
+      } else if (dateFilter === "this_month") {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        if (targetDate < startOfMonth || targetDate > endOfMonth) return false;
+      }
+    }
+
     const userName = (sub.user?.name || "").toLowerCase();
     const userEmail = (sub.user?.email || "").toLowerCase();
     const userPhone = (sub.user?.phone || "").toLowerCase();
@@ -378,18 +398,18 @@ const Pagination = ({ currentPage, totalPages, totalItems, onPageChange }) => {
         className="btn btn-ghost"
         disabled={currentPage <= 1}
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)" }}
+        style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)" }}
       >
         <ChevronLeft size={16} /> Previous
       </button>
       <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>
-        Page <strong style={{ color: "#fff" }}>{currentPage}</strong> of <strong style={{ color: "#fff" }}>{Math.max(1, totalPages)}</strong> ({totalItems} total)
+        Page <strong style={{ color: "var(--text)" }}>{currentPage}</strong> of <strong style={{ color: "var(--text)" }}>{Math.max(1, totalPages)}</strong> ({totalItems} total)
       </span>
       <button
         className="btn btn-ghost"
         disabled={currentPage >= totalPages || totalPages === 0}
         onClick={() => onPageChange(Math.min(Math.max(1, totalPages), currentPage + 1))}
-        style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text)" }}
+        style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)" }}
       >
         Next <ChevronRight size={16} />
       </button>
