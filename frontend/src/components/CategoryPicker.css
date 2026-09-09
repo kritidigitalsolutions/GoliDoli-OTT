@@ -1,0 +1,82 @@
+/* ── CategoryPicker Chips Selection ── */
+
+.category-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+  width: 100%;
+}
+
+.category-chip-btn {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 9px 22px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-chip-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.category-chip-btn.active {
+  background: rgba(229, 9, 20, 0.1); /* Subtle red background */
+  border-color: var(--primary); /* Red border */
+  color: var(--primary); /* Red text */
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.15);
+  transform: translateY(-1px);
+}
+
+.category-chip-btn.active:hover {
+  background: rgba(229, 9, 20, 0.15);
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.2);
+}
+
+.category-chips-empty {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 10px 0;
+}
+
+/* ── Light Mode Overrides ── */
+body.light .category-chip-btn {
+  background: #f1f5f9;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  color: #374151;
+}
+
+body.light .category-chip-btn:hover {
+  background: #e2e8f0;
+  border-color: rgba(0, 0, 0, 0.22);
+  color: #0f172a;
+}
+
+body.light .category-chip-btn.active {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: #d4af37;
+  color: #92700a;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.18);
+}
+
+body.light .category-chip-btn.active:hover {
+  background: rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.25);
+}
+
+body.light .category-chips-empty {
+  color: #64748b;
+}

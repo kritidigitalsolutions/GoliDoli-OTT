@@ -1,0 +1,54 @@
+/* ── Category Page ── */
+
+.modal-body .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* Expanded curation row */
+.expanded-row td {
+  padding: 0 !important;
+}
+
+/* Priority input inside table */
+input[type="number"]:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.15);
+  outline: none;
+}
+
+/* Tab filter bar */
+.tab-bar {
+  display: flex;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px;
+  gap: 2px;
+}
+
+.tab-bar-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-bar-btn.active {
+  background: var(--primary);
+  color: #fff;
+}

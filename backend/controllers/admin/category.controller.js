@@ -1,218 +1,218 @@
 const Category = require("../../models/category.model");
-const Movie = require("../../models/movie.model");
-const Series = require("../../models/series.model");
-const Microdrama = require("../../models/microdrama.model");
 
 // ========================================
-// ADD CATEGORY
+// CREATE CATEGORY
 // ========================================
-const addCategory = async (req, res) => {
+exports.createCategory = async (req, res) => {
   try {
     const { name, priority, isActive } = req.body;
+
     if (!name) {
       return res.status(400).json({ success: false, message: "Category name is required" });
     }
 
-    const inputPriority = priority !== undefined ? Number(priority) : 0;
-    let finalPriority = 0;
-
-    if (inputPriority > 0) {
-      // Shift up priorities >= inputPriority
-      await Category.updateMany({ priority: { $gte: inputPriority } }, { $inc: { priority: 1 } });
-      finalPriority = inputPriority;
-    } else {                                                                                                              
-      // Auto-assign first available priority >= 1 to fill any gaps
-      const existingPriorities = await Category.find().distinct("priority");
-      finalPriority = 1;
-      while (existingPriorities.includes(finalPriority)) {
-        finalPriority++;
-      }
+    const existing = await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, "i") } });
+    if (existing) {
+      return res.status(409).json({ success: false, message: "Category with this name already exists" });
     }
 
-    const category = await Category.create({
-      name,
-      priority: finalPriority,
-      isActive: isActive !== undefined ? isActive : true
-    });
+    let newPriority = parseInt(priority, 10);
+    const maxCat = await Category.findOne().sort({ priority: -1 });
+    const maxPriority = maxCat && maxCat.priority ? maxCat.priority : 0;
+
+    if (isNaN(newPriority) || newPriority < 1) {
+      newPriority = maxPriority + 1;
+    } else if (newPriority <= maxPriority) {
+      await Category.updateMany(
+        { priority: { $gte: newPriority } },
+        { $inc: { priority: 1 } }
+      );
+    } else if (newPriority > maxPriority + 1) {
+      newPriority = maxPriority + 1;
+    }
+
+    const categoryData = { name, priority: newPriority };
+    if (isActive !== undefined) categoryData.isActive = isActive === true || isActive === "true";
+    
+    const category = await Category.create(categoryData);
 
     return res.status(201).json({
       success: true,
-      message: "Category added successfully",
-      category
+      message: "Category created successfully",
+      data: {
+        _id: category._id,
+        name: category.name,
+        slug: category.slug,
+        priority: category.priority,
+        isActive: category.isActive,
+        createdAt: category.createdAt
+      }
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error("CREATE CATEGORY ERROR:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // ========================================
-// GET ALL CATEGORIES (ADMIN)
+// GET ALL CATEGORIES (Admin)
 // ========================================
-const getAllCategories = async (req, res) => {
+exports.getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ priority: 1, createdAt: -1 });
-    return res.json({
+    const categories = await Category.find().select("_id name slug priority isActive createdAt curatedContent").sort({ priority: 1, name: 1 });
+
+    return res.status(200).json({
       success: true,
-      categories
+      count: categories.length,
+      total: categories.length,
+      data: categories,
+      categories: categories
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error("GET ALL CATEGORIES ERROR:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // ========================================
-// GET CATEGORY BY ID
+// GET CATEGORY BY ID (Admin)
 // ========================================
-const getCategoryById = async (req, res) => {
+exports.getCategoryById = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
-    return res.json({
+
+    return res.status(200).json({
       success: true,
-      category
+      data: category
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error("GET CATEGORY BY ID ERROR:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // ========================================
 // UPDATE CATEGORY
 // ========================================
-const updateCategory = async (req, res) => {
+exports.updateCategory = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, priority, isActive } = req.body;
+    const { name, isActive, priority } = req.body;
 
-    const category = await Category.findById(id);
+    const category = await Category.findById(req.params.id);
     if (!category) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    let nameChanged = false;
-    let oldCategoryName = "";
-    let newCategoryName = "";
-
-    if (name !== undefined && name !== category.name) {
-      oldCategoryName = category.name.toLowerCase();
-      newCategoryName = name.toLowerCase();
-      if (oldCategoryName !== newCategoryName) {
-        nameChanged = true;
-      }
-      category.name = name;
-    }
-
-    if (nameChanged) {
-      await Promise.all([
-        Movie.updateMany(
-          { category: oldCategoryName },
-          { $set: { "category.$[elem]": newCategoryName } },
-          { arrayFilters: [{ elem: oldCategoryName }] }
-        ),
-        Microdrama.updateMany(
-          { category: oldCategoryName },
-          { $set: { "category.$[elem]": newCategoryName } },
-          { arrayFilters: [{ elem: oldCategoryName }] }
-        ),
-        Series.updateMany(
-          { category: oldCategoryName },
-          { $set: { "category.$[elem]": newCategoryName } },
-          { arrayFilters: [{ elem: oldCategoryName }] }
-        )
-      ]);
-    }
-    if (isActive !== undefined) category.isActive = isActive;
+    if (name) category.name = name;
+    if (isActive !== undefined) category.isActive = isActive === true || isActive === "true";
 
     if (priority !== undefined) {
-      const newPriority = Number(priority) || 0;
-      const oldPriority = category.priority || 0;
+      let newPriority = parseInt(priority, 10);
+      let oldPriority = category.priority;
+      if (!isNaN(newPriority) && newPriority !== oldPriority && newPriority > 0) {
+        const maxCat = await Category.findOne().sort({ priority: -1 });
+        const maxPriority = maxCat && maxCat.priority ? maxCat.priority : 0;
+        if (newPriority > maxPriority) newPriority = maxPriority;
 
-      if (newPriority !== oldPriority) {
-        // Step 1: Remove category from its old slot by shifting down priorities above oldPriority
-        if (oldPriority > 0) {
+        if (newPriority < oldPriority) {
           await Category.updateMany(
-            { _id: { $ne: category._id }, priority: { $gt: oldPriority } },
+            { priority: { $gte: newPriority, $lt: oldPriority } },
+            { $inc: { priority: 1 } }
+          );
+        } else if (newPriority > oldPriority) {
+          await Category.updateMany(
+            { priority: { $gt: oldPriority, $lte: newPriority } },
             { $inc: { priority: -1 } }
           );
         }
-
-        // Step 2: Insert category into its new slot
-        if (newPriority > 0) {
-          await Category.updateMany(
-            { _id: { $ne: category._id }, priority: { $gte: newPriority } },
-            { $inc: { priority: 1 } }
-          );
-          category.priority = newPriority;
-        } else {
-          category.priority = 0;
-        }
+        category.priority = newPriority;
       }
     }
+    if (isActive !== undefined) category.isActive = isActive === true || isActive === "true";
 
     await category.save();
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       message: "Category updated successfully",
-      category
+      data: {
+        _id: category._id,
+        name: category.name,
+        slug: category.slug,
+        priority: category.priority,
+        isActive: category.isActive,
+        createdAt: category.createdAt
+      }
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error("UPDATE CATEGORY ERROR:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // ========================================
 // DELETE CATEGORY
 // ========================================
-const deleteCategory = async (req, res) => {
+exports.deleteCategory = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    const targetPriority = category.priority || 0;
-
+    const deletedPriority = category.priority;
     await Category.findByIdAndDelete(req.params.id);
 
-    // Shift down priorities of categories above deleted category
-    if (targetPriority > 0) {
+    if (deletedPriority) {
       await Category.updateMany(
-        { priority: { $gt: targetPriority } },
+        { priority: { $gt: deletedPriority } },
         { $inc: { priority: -1 } }
       );
     }
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       message: "Category deleted successfully"
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error("DELETE CATEGORY ERROR:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-module.exports = {
-  addCategory,
-  getAllCategories,
-  getCategoryById,
-  updateCategory,
-  deleteCategory
+// ========================================
+// SAVE CURATED CONTENT FOR CATEGORY
+// ========================================
+exports.saveCuratedContent = async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: "Category not found" });
+    }
+
+    const { items } = req.body; // [{ contentType: "Movie"|"Series", contentId: "..." }]
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ success: false, message: "items must be an array" });
+    }
+
+    category.curatedContent = items.map((i, index) => ({
+      contentType: i.contentType,
+      contentId: i.contentId,
+      position: index + 1
+    }));
+
+    await category.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Curated content saved successfully",
+      count: category.curatedContent.length
+    });
+  } catch (error) {
+    console.error("SAVE CURATED CONTENT ERROR:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };

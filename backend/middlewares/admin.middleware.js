@@ -50,4 +50,16 @@ const isAdmin = async (
   }
 };
 
-module.exports = { isAdmin };
+/**
+ * Permission guard middleware factory.
+ * Pass the permission key (e.g. "categories") to protect a route.
+ * Currently all verified admins have full access; extend this logic
+ * when granular sub-admin roles are introduced.
+ */
+const hasPermission = (permission) => (req, res, next) => {
+  // req.user is already set by isAdmin at this point.
+  // Future: check req.user.permissions.includes(permission)
+  next();
+};
+
+module.exports = { isAdmin, hasPermission };
