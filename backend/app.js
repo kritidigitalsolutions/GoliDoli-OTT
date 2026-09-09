@@ -40,7 +40,8 @@ const adminUrls = process.env.ADMIN_URL
 const defaultAllowed = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://golidoli.netlify.app"
+  "https://golidoli.netlify.app",
+  "https://goli-doli-ott-admin-panel.vercel.app"
 ];
 
 const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...defaultAllowed])];
