@@ -35,6 +35,23 @@ const createAIReel = async (req, res) => {
     const videoUrl = getMediaUrl(video, req.body.videoUrl || "");
     const thumbnailUrl = getMediaUrl(thumbnail, req.body.thumbnailUrl || req.body.thumbnail || "");
 
+    // PRIORITY ALGORITHM
+    const inputPriority = priority !== undefined ? Number(priority) : 0;
+    let finalPriority = 0;
+
+    if (inputPriority > 0) {
+      // Shift up existing reels with priority >= inputPriority
+      await AIReel.updateMany(
+        { priority: { $gte: inputPriority } },
+        { $inc: { priority: 1 } }
+      );
+      finalPriority = inputPriority;
+    } else {
+      // Auto-assign: maxPriority + 1
+      const maxReel = await AIReel.findOne().sort("-priority");
+      finalPriority = maxReel && maxReel.priority ? maxReel.priority + 1 : 1;
+    }
+
     const aiReel = await AIReel.create({
       title,
       description: description || "",
@@ -42,7 +59,7 @@ const createAIReel = async (req, res) => {
       thumbnail: thumbnailUrl,
       videoUrl,
       isPublished: isPublished === "true" || isPublished === true,
-      priority: Number(priority) || 0,
+      priority: finalPriority,
     });
 
     return res.status(201).json({
@@ -161,6 +178,33 @@ const updateAIReel = async (req, res) => {
       updates.thumbnail = req.body.thumbnailUrl || req.body.thumbnail;
     }
 
+    // PRIORITY ALGORITHM FOR UPDATE
+    if (priority !== undefined) {
+      const newPriority = Number(priority) || 0;
+      const oldPriority = existing.priority || 0;
+
+      if (newPriority !== oldPriority) {
+        // Step 1: Remove from old slot
+        if (oldPriority > 0) {
+          await AIReel.updateMany(
+            { _id: { $ne: existing._id }, priority: { $gt: oldPriority } },
+            { $inc: { priority: -1 } }
+          );
+        }
+
+        // Step 2: Insert into new slot
+        if (newPriority > 0) {
+          await AIReel.updateMany(
+            { _id: { $ne: existing._id }, priority: { $gte: newPriority } },
+            { $inc: { priority: 1 } }
+          );
+          updates.priority = newPriority;
+        } else {
+          updates.priority = 0;
+        }
+      }
+    }
+
     const updated = await AIReel.findByIdAndUpdate(id, updates, { new: true });
 
     return res.status(200).json({
@@ -195,7 +239,17 @@ const deleteAIReel = async (req, res) => {
     await deleteMedia(aiReel.videoUrl);
     await deleteMedia(aiReel.thumbnail);
 
+    const targetPriority = aiReel.priority || 0;
+
     await AIReel.findByIdAndDelete(id);
+
+    // Shift down priorities of all reels with priority > targetPriority
+    if (targetPriority > 0) {
+      await AIReel.updateMany(
+        { priority: { $gt: targetPriority } },
+        { $inc: { priority: -1 } }
+      );
+    }
 
     return res.status(200).json({
       success: true,

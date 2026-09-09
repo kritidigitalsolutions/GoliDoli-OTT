@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import API, { BASE_URL } from "../api/axios";
 import { uploadToBunny } from "../features/services/bunnyUpload";
 
@@ -85,6 +86,15 @@ export default function Content() {
   };
 
   const [contentType, setContentType] = useState("movies");
+  const [adultFilter, setAdultFilter] = useState("all"); // "all" | "non-adult" | "adult"
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.contentType) {
+      setContentType(location.state.contentType);
+    }
+  }, [location.state]);
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -196,19 +206,35 @@ export default function Content() {
   const fetchData = async (signal) => {
     setLoading(true);
     try {
-      const endpoint = contentType === "movies" ? "/admin/movies" :
-        contentType === "series" ? "/admin/series" :
-          contentType === "microdramas" ? "/admin/microdramas" :
-            "/admin/movies";
-      const res = await API.get(`${endpoint}?page=${currentPage}&limit=10`, { signal });
+      if (contentType === "all") {
+        // Fetch all three content types in parallel
+        const [moviesRes, seriesRes, microdramasRes] = await Promise.all([
+          API.get(`/admin/movies?page=1&limit=100`, { signal }),
+          API.get(`/admin/series?page=1&limit=100`, { signal }),
+          API.get(`/admin/microdramas?page=1&limit=100`, { signal }),
+        ]);
+        const movies = (moviesRes.data.movies || []).map(m => ({ ...m, _type: "movie" }));
+        const series = (seriesRes.data.series || []).map(s => ({ ...s, _type: "series" }));
+        const microdramas = (microdramasRes.data.microdramas || []).map(md => ({ ...md, _type: "microdrama" }));
+        const combined = [...movies, ...series, ...microdramas];
+        setData(combined);
+        setTotalPages(1);
+        setTotalItems(combined.length);
+      } else {
+        const endpoint = contentType === "movies" ? "/admin/movies" :
+          contentType === "series" ? "/admin/series" :
+            contentType === "microdramas" ? "/admin/microdramas" :
+              "/admin/movies";
+        const res = await API.get(`${endpoint}?page=${currentPage}&limit=10`, { signal });
 
-      const key = contentType === "movies" ? "movies" :
-        contentType === "series" ? "series" :
-          contentType === "microdramas" ? "microdramas" :
-            "movies";
-      setData(res.data[key] || []);
-      setTotalPages(res.data.pages || 1);
-      setTotalItems(res.data.total || 0);
+        const key = contentType === "movies" ? "movies" :
+          contentType === "series" ? "series" :
+            contentType === "microdramas" ? "microdramas" :
+              "movies";
+        setData(res.data[key] || []);
+        setTotalPages(res.data.pages || 1);
+        setTotalItems(res.data.total || 0);
+      }
 
       setSelectedSeries(null);
       setEpisodes([]);
@@ -276,6 +302,13 @@ export default function Content() {
   };
 
   const displayData = searchResults !== null ? searchResults : data;
+
+  // Adult sub-filter: isHide only applies when is18plus is true
+  const filteredDisplayData = displayData.filter(item => {
+    if (adultFilter === "adult") return item.is18plus === true;
+    if (adultFilter === "non-adult") return item.is18plus !== true;
+    return true; // "all"
+  });
 
   /* ===================== SERIES / EPISODES ===================== */
   const handleSeriesClick = (series) => {
@@ -505,7 +538,7 @@ export default function Content() {
 
       const formData = new FormData();
       // Basic text fields
-      const textFields = ["title", "description", "language", "duration", "rating", "releaseYear", "isPremium", "isComingSoon", "isPopular", "releaseDate", "priority"];
+      const textFields = ["title", "description", "language", "duration", "rating", "releaseYear", "isPremium", "isComingSoon", "isPopular", "is18plus", "isHide", "releaseDate", "priority"];
 
       textFields.forEach(k => {
         const value = editData[k];
@@ -638,6 +671,46 @@ export default function Content() {
     }
   };
 
+  /* ===================== BULK HIDE 18+ CONTENT ===================== */
+  const [bulkHiding, setBulkHiding] = useState(false);
+
+  const handleBulkHideAdult = async (hideValue) => {
+    // Get all 18+ items from current data
+    const adultItems = data.filter(item => item.is18plus === true);
+    if (adultItems.length === 0) { alert("No 18+ content found."); return; }
+
+    const action = hideValue ? "hide" : "unhide";
+    if (!window.confirm(`This will ${action} all ${adultItems.length} item(s) marked as 18+. Continue?`)) return;
+
+    setBulkHiding(true);
+    try {
+      // Determine route per item (use _type if available, else contentType)
+      const getRoute = (item) => {
+        if (item._type === "movie") return "movies";
+        if (item._type === "series") return "series";
+        if (item._type === "microdrama") return "microdramas";
+        return contentType === "movies" ? "movies" : contentType === "series" ? "series" : "microdramas";
+      };
+
+      await Promise.all(
+        adultItems.map(item =>
+          API.patch(`/admin/${getRoute(item)}/${item._id}`, { isHide: hideValue })
+        )
+      );
+
+      // Update local state
+      setData(prev => prev.map(x => x.is18plus ? { ...x, isHide: hideValue } : x));
+      if (searchResults) {
+        setSearchResults(prev => prev.map(x => x.is18plus ? { ...x, isHide: hideValue } : x));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Bulk action failed: " + (err.response?.data?.message || err.message));
+    } finally {
+      setBulkHiding(false);
+    }
+  };
+
   /* ===================== DELETE ===================== */
   const handleDelete = async (item) => {
     if (!window.confirm(`Delete '${item.title || item.name}' permanently?`)) return;
@@ -739,6 +812,13 @@ export default function Content() {
         <div className="filter-row" style={{ display: "flex", gap: 12, marginBottom: 32, flexWrap: "wrap", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: "20px" }}>
           <div className="tab-group" style={{ display: "flex", background: "var(--bg3)", padding: "4px", borderRadius: "12px", gap: "4px" }}>
             <button
+              className={`btn ${contentType === "all" ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => { setContentType("all"); setCurrentPage(1); }}
+              style={{ borderRadius: "8px", boxShadow: contentType === "all" ? "var(--shadow-sm)" : "none" }}
+            >
+              <Layers size={18} /> All
+            </button>
+            <button
               className={`btn ${contentType === "movies" ? "btn-primary" : "btn-ghost"}`}
               onClick={() => { setContentType("movies"); setCurrentPage(1); }}
               style={{ borderRadius: "8px", boxShadow: contentType === "movies" ? "var(--shadow-sm)" : "none" }}
@@ -775,6 +855,91 @@ export default function Content() {
           </div>
         </div>
 
+        {/* Adult sub-filter */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>Filter by:</span>
+          {[
+            { key: "all", label: "All" },
+            { key: "non-adult", label: "Non-Adult" },
+            { key: "adult", label: "🔞 18+ Adult" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setAdultFilter(key)}
+              style={{
+                padding: "4px 16px",
+                borderRadius: 20,
+                border: `1.5px solid ${adultFilter === key ? (key === "adult" ? "#f87171" : key === "non-adult" ? "#34d399" : "var(--primary)") : "var(--border)"}`,
+                background: adultFilter === key ? (key === "adult" ? "rgba(248,113,113,0.13)" : key === "non-adult" ? "rgba(52,211,153,0.13)" : "rgba(var(--primary-rgb),0.13)") : "transparent",
+                color: adultFilter === key ? (key === "adult" ? "#f87171" : key === "non-adult" ? "#34d399" : "var(--primary)") : "var(--text-muted)",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.18s ease"
+              }}
+            >
+              {label}
+            </button>
+          ))}
+          {adultFilter === "adult" && (
+            <label
+              style={{
+                marginLeft: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                cursor: bulkHiding ? "wait" : "pointer",
+                opacity: bulkHiding ? 0.6 : 1,
+                userSelect: "none",
+              }}
+            >
+              <span style={{
+                position: "relative",
+                display: "inline-block",
+                width: 38,
+                height: 22,
+                flexShrink: 0,
+              }}>
+                <input
+                  type="checkbox"
+                  checked={filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide)}
+                  disabled={bulkHiding || filteredDisplayData.length === 0}
+                  onChange={e => handleBulkHideAdult(e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0, position: "absolute" }}
+                />
+                <span style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: 22,
+                  background: filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide)
+                    ? "rgba(248,113,113,0.7)" : "var(--bg3)",
+                  border: `1.5px solid ${filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide) ? "#f87171" : "var(--border)"}`,
+                  transition: "all 0.2s ease",
+                  cursor: bulkHiding ? "wait" : "pointer",
+                }} />
+                <span style={{
+                  position: "absolute",
+                  top: 3,
+                  left: filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide) ? 18 : 3,
+                  width: 14,
+                  height: 14,
+                  borderRadius: "50%",
+                  background: filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide) ? "#fff" : "var(--text-muted)",
+                  transition: "left 0.2s ease",
+                  pointerEvents: "none",
+                }} />
+              </span>
+              <span style={{
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                color: filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide) ? "#f87171" : "var(--text-muted)",
+              }}>
+                {bulkHiding ? "Updating..." : "Hide All 18+ Content"}
+              </span>
+            </label>
+          )}
+        </div>
+
         {/* Search status */}
         {isSearching && <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Searching...</p>}
         {searchResults !== null && !isSearching && (
@@ -782,6 +947,114 @@ export default function Content() {
             {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "{searchQuery}"
             <button className="link-btn" onClick={clearSearch} style={{ marginLeft: 8 }}>Clear</button>
           </p>
+        )}
+
+        {/* ========== ALL CONTENT TABLE ========== */}
+        {contentType === "all" && (
+          <div className="table-section">
+            <div className="section-head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0 }}><Layers size={20} /> All Content Library</h3>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>{totalItems} Total Items</span>
+            </div>
+            {loading ? <p>Loading...</p> : (
+              <div className="tbl-wrap">
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>Title</th><th>Type</th><th>Category</th><th>Year</th><th>Audience</th><th>Priority</th><th>Status</th><th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDisplayData.length === 0 ? (
+                      <tr><td colSpan={8}>No content found</td></tr>
+                    ) : filteredDisplayData.map(item => (
+                      <tr key={item._id}>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div className="thumb-popular-wrap" style={{ width: 40, height: 60, flexShrink: 0 }}>
+                              <img src={getFullUrl(item.poster)} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, display: "block" }} />
+                              {item.isPopular && <span className="thumb-popular-tape">&#x1F525; Popular</span>}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600 }}>{item.title}</div>
+                              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{item.duration || (item.totalSeasons ? `${item.totalSeasons} Season(s)` : "")}</div>
+                              {isLocked(item) && (
+                                <div style={{ fontSize: "0.75rem", color: "var(--orange)" }}>
+                                  <Calendar size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />
+                                  {new Date(item.releaseDate).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`badge ${
+                            item._type === "movie" ? "badge-active" :
+                            item._type === "series" ? "badge-draft" : ""
+                          }`} style={{
+                            background: item._type === "movie" ? "rgba(255,193,7,0.15)" : item._type === "series" ? "rgba(99,102,241,0.15)" : "rgba(236,72,153,0.15)",
+                            color: item._type === "movie" ? "#f5c518" : item._type === "series" ? "#818cf8" : "#f472b6",
+                            border: `1px solid ${item._type === "movie" ? "rgba(255,193,7,0.3)" : item._type === "series" ? "rgba(99,102,241,0.3)" : "rgba(236,72,153,0.3)"}`,
+                            textTransform: "capitalize", padding: "2px 8px", borderRadius: 6, fontSize: "0.75rem", fontWeight: 600
+                          }}>
+                            {item._type === "movie" ? "Movie" : item._type === "series" ? "Series" : "Microdrama"}
+                          </span>
+                          {item.is18plus && (
+                            <span style={{ display: "block", marginTop: 4, fontSize: "0.7rem", color: "#f87171", fontWeight: 700 }}>🔞 18+{item.isHide ? " · Hidden" : ""}</span>
+                          )}
+                        </td>
+                        <td style={{ textTransform: "capitalize" }}>{Array.isArray(item.category) ? item.category.join(", ") : item.category || "\u2014"}</td>
+                        <td>{item.releaseYear}</td>
+                        <td>
+                          <span style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: 20,
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            background: item.is18plus ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.12)",
+                            color: item.is18plus ? "#f87171" : "#34d399",
+                            border: `1px solid ${item.is18plus ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.35)"}`,
+                          }}>
+                            {item.is18plus ? "🔞 Adult" : "✓ Non-Adult"}
+                          </span>
+                        </td>
+                        <td><strong>{item.priority || 0}</strong></td>
+                        <td>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                            <label className="switch-container" title={item.isPublished !== false ? "Click to make Draft" : "Click to Publish"}>
+                              <input
+                                type="checkbox"
+                                className="switch-input"
+                                checked={item.isPublished !== false}
+                                onChange={() => handleTogglePublished(item)}
+                              />
+                              <span className="switch-slider"></span>
+                            </label>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>
+                              {item.isPublished !== false ? (isLocked(item) ? "Coming Soon" : "Published") : "Draft"}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="tbl-actions">
+                            <button className="icon-btn view" onClick={() => openView(item)} title="View"><Eye size={18} /></button>
+                            <button className="icon-btn edit" onClick={() => openEdit(item)} title="Edit"><Edit2 size={18} /></button>
+                            <button className="icon-btn del" onClick={() => handleDelete(item)} title="Delete"><Trash2 size={18} /></button>
+                            {(item._type === "series" || item._type === "microdrama") && (
+                              <button className="btn btn-ghost eps-btn" onClick={() => { setContentType(item._type === "series" ? "series" : "microdramas"); setTimeout(() => handleSeriesClick(item), 100); }}>
+                                <Tv size={14} /> Seasons
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
 
         {/* ========== MOVIES TABLE ========== */}
@@ -796,13 +1069,13 @@ export default function Content() {
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>Title</th><th>Category</th><th>Year</th><th>Rating</th><th>Priority</th><th>Premium</th><th>Status</th><th>Actions</th>
+                      <th>Title</th><th>Category</th><th>Year</th><th>Audience</th><th>Priority</th><th>Premium</th><th>Status</th><th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {displayData.length === 0 ? (
+                    {filteredDisplayData.length === 0 ? (
                       <tr><td colSpan={8}>No content found</td></tr>
-                    ) : displayData.map(movie => (
+                    ) : filteredDisplayData.map(movie => (
                       <tr key={movie._id}>
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -811,7 +1084,7 @@ export default function Content() {
                               {movie.isPopular && <span className="thumb-popular-tape">&#x1F525; Popular</span>}
                             </div>
                             <div>
-                              <div style={{ fontWeight: 600 }}>{movie.title}</div>
+                              <div style={{ fontWeight: 600 }}>{movie.title}{movie.is18plus && <span style={{ marginLeft: 6, fontSize: "0.7rem", color: "#f87171", fontWeight: 700 }}>🔞{movie.isHide ? " Hidden" : ""}</span>}</div>
                               <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{movie.duration}</div>
                               {isLocked(movie) && (
                                 <div style={{ fontSize: "0.75rem", color: "var(--orange)" }}>
@@ -824,7 +1097,20 @@ export default function Content() {
                         </td>
                         <td style={{ textTransform: "capitalize" }}>{Array.isArray(movie.category) ? movie.category.join(", ") : movie.category || "\u2014"}</td>
                         <td>{movie.releaseYear}</td>
-                        <td>{movie.rating}</td>
+                        <td>
+                          <span style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: 20,
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            background: movie.is18plus ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.12)",
+                            color: movie.is18plus ? "#f87171" : "#34d399",
+                            border: `1px solid ${movie.is18plus ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.35)"}`,
+                          }}>
+                            {movie.is18plus ? "🔞 Adult" : "✓ Non-Adult"}
+                          </span>
+                        </td>
                         <td><strong>{movie.priority || 0}</strong></td>
                         <td><span className={`badge ${movie.isPremium ? "badge-active" : "badge-draft"}`}>{movie.isPremium ? "Premium" : "Free"}</span></td>
                         <td>
@@ -885,13 +1171,13 @@ export default function Content() {
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>Title</th><th>Category</th><th>Year</th><th>Rating</th><th>Priority</th><th>Seasons</th><th>Status</th><th>Actions</th>
+                      <th>Title</th><th>Category</th><th>Year</th><th>Audience</th><th>Priority</th><th>Seasons</th><th>Status</th><th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {displayData.length === 0 ? (
+                    {filteredDisplayData.length === 0 ? (
                       <tr><td colSpan={8}>No content found</td></tr>
-                    ) : displayData.map(series => (
+                    ) : filteredDisplayData.map(series => (
                       <tr key={series._id}>
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -900,7 +1186,7 @@ export default function Content() {
                               {series.isPopular && <span className="thumb-popular-tape">&#x1F525; Popular</span>}
                             </div>
                             <div>
-                              <div style={{ fontWeight: 600 }}>{series.title}</div>
+                              <div style={{ fontWeight: 600 }}>{series.title}{series.is18plus && <span style={{ marginLeft: 6, fontSize: "0.7rem", color: "#f87171", fontWeight: 700 }}>🔞{series.isHide ? " Hidden" : ""}</span>}</div>
                               {isLocked(series) && (
                                 <div style={{ fontSize: "0.75rem", color: "var(--orange)" }}>
                                   <Calendar size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />
@@ -912,7 +1198,20 @@ export default function Content() {
                         </td>
                         <td style={{ textTransform: "capitalize" }}>{Array.isArray(series.category) ? series.category.join(", ") : series.category || "\u2014"}</td>
                         <td>{series.releaseYear}</td>
-                        <td>{series.rating}</td>
+                        <td>
+                          <span style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: 20,
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            background: series.is18plus ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.12)",
+                            color: series.is18plus ? "#f87171" : "#34d399",
+                            border: `1px solid ${series.is18plus ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.35)"}`,
+                          }}>
+                            {series.is18plus ? "🔞 Adult" : "✓ Non-Adult"}
+                          </span>
+                        </td>
                         <td><strong>{series.priority || 0}</strong></td>
                         <td>{series.totalSeasons}</td>
                         <td>
@@ -1585,8 +1884,40 @@ export default function Content() {
                         <option value="no">No</option>
                         <option value="yes">Yes</option>
                       </select>
-                    </div>
-                    <div className="form-row form-full" style={{ gridColumn: "span 2", marginTop: 10, marginBottom: 10 }}>
+                     </div>
+                     <div className="form-row">
+                       <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                         🔞 18+ Content
+                       </label>
+                       <select
+                         className="form-input"
+                         value={editData.is18plus ? "yes" : "no"}
+                         onChange={e => {
+                           const val = e.target.value === "yes";
+                           setEditData(s => ({ ...s, is18plus: val, isHide: val ? s.isHide : false }));
+                         }}
+                       >
+                         <option value="no">No</option>
+                         <option value="yes">Yes — 18+ Adult</option>
+                       </select>
+                     </div>
+                     <div className="form-row">
+                       <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6, opacity: editData.is18plus ? 1 : 0.45 }}>
+                         🙈 Hide from non-adult users
+                         {!editData.is18plus && <span style={{ fontSize: "0.7rem", color: "#f87171", marginLeft: 4 }}>(requires 18+)</span>}
+                       </label>
+                       <select
+                         className="form-input"
+                         disabled={!editData.is18plus}
+                         value={editData.is18plus && editData.isHide ? "yes" : "no"}
+                         onChange={e => setEditData(s => ({ ...s, isHide: e.target.value === "yes" }))}
+                         style={{ opacity: editData.is18plus ? 1 : 0.45, cursor: editData.is18plus ? "pointer" : "not-allowed" }}
+                       >
+                         <option value="no">No — Show to everyone</option>
+                         <option value="yes">Yes — Hide from non-adult users</option>
+                       </select>
+                     </div>
+                     <div className="form-row form-full" style={{ gridColumn: "span 2", marginTop: 10, marginBottom: 10 }}>
                       <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
                         <Layers size={14} /> Selected Categories (Select Multiple)
                       </label>

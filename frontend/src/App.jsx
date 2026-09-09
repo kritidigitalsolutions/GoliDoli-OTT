@@ -29,6 +29,9 @@ const HomeBannersPage = lazy(() => import("./pages/HomeBanners"));
 const DramaPage = lazy(() => import("./pages/Drama"));
 const AddDramaPage = lazy(() => import("./pages/AddDrama"));
 const AIReels = lazy(() => import("./pages/AIReels"));
+const AddAIReels = lazy(() => import("./pages/AddAIReels"));
+const AudioStories = lazy(() => import("./pages/AudioStories"));
+const AddAudioStory = lazy(() => import("./pages/AddAudioStory"));
 
 // ── Toast Context ──
 const ToastContext = createContext();
@@ -120,6 +123,9 @@ function App() {
             <Route path="dramas" element={<DramaPage />} />
             <Route path="add-drama" element={<AddDramaPage />} />
             <Route path="ai-reels" element={<AIReels />} />
+            <Route path="add-ai-reel" element={<AddAIReels />} />
+            <Route path="audio-content" element={<AudioStories />} />
+            <Route path="add-audio-story" element={<AddAudioStory />} />
           </Route>
         </Routes>
       </Suspense>

@@ -34,6 +34,7 @@ export default function HomeBannersPage() {
   const [availableContent, setAvailableContent] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [viewMode, setViewMode] = useState("table"); // Default to "table" view
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Search in Content Selector Modal
   const [contentSearch, setContentSearch] = useState("");
@@ -162,26 +163,32 @@ export default function HomeBannersPage() {
     }
   };
 
-  const handleMoveOrder = async (index, direction) => {
-    const newBanners = [...banners];
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
+  const handleDirectOrderChange = async (currentIndex, newOrderValue) => {
+    const newOrder = parseInt(newOrderValue, 10);
+    if (!newOrder || isNaN(newOrder)) {
+      fetchHomeBanners();
+      return;
+    }
+    
+    let targetOrder = newOrder;
+    if (targetOrder < 1) targetOrder = 1;
+    if (targetOrder > banners.length) targetOrder = banners.length;
 
-    if (targetIndex < 0 || targetIndex >= newBanners.length) return;
+    if (targetOrder === currentIndex + 1) {
+      fetchHomeBanners(); // Reset UI if no actual change
+      return;
+    }
 
-    // Swap order values
-    const tempOrder = newBanners[index].order;
-    newBanners[index].order = newBanners[targetIndex].order;
-    newBanners[targetIndex].order = tempOrder;
+    const bannerToUpdate = banners[currentIndex];
 
-    // Local optimistic update
-    setBanners([...newBanners].sort((a, b) => a.order - b.order));
-
+    // Optimistic update will be handled by refetching immediately after,
+    // to keep it simple and ensure we get the perfect shifted order from DB.
     try {
-      const items = newBanners.map((b) => ({ id: b._id, order: b.order }));
-      await API.patch("/admin/home-banners/reorder", { items });
+      await API.put(`/admin/home-banners/${bannerToUpdate._id}`, { order: targetOrder });
+      fetchHomeBanners();
     } catch (err) {
-      console.error("Reorder error:", err);
-      setError("Failed to save reordered banners.");
+      console.error("Update order error:", err);
+      setError("Failed to update banner order.");
       fetchHomeBanners();
     }
   };
@@ -198,6 +205,14 @@ export default function HomeBannersPage() {
       (c) =>
         c.title.toLowerCase().includes(contentSearch.toLowerCase())
     );
+
+  // Filter banners based on search query for the main view
+  const filteredBanners = banners.filter((banner) => {
+    if (!searchQuery) return true;
+    const content = banner.contentId || {};
+    const title = content.title || "";
+    return title.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   if (fetching) {
     return (
@@ -278,6 +293,33 @@ export default function HomeBannersPage() {
           </span>
         </div>
 
+        <div style={{ position: "relative", flex: 1, maxWidth: "300px", margin: "0 auto 0 15px" }}>
+          <Search size={18} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+          <input
+            type="text"
+            placeholder="Search hero banners..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px 10px 10px 38px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "8px",
+              color: "#fff",
+              outline: "none"
+            }}
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery("")}
+              style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0 }}
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
         <div className="view-toggle-group">
           <button
             className={`view-toggle-btn ${viewMode === "table" ? "active" : ""}`}
@@ -297,7 +339,7 @@ export default function HomeBannersPage() {
       </div>
 
       {/* Main Content Area */}
-      {banners.length === 0 ? (
+      {filteredBanners.length === 0 ? (
         /* Empty State */
         <div className="intro-empty-state">
           <div className="intro-empty-icon">
@@ -325,7 +367,7 @@ export default function HomeBannersPage() {
               </thead>
 
               <tbody>
-                {banners.map((banner, index) => {
+                {filteredBanners.map((banner, index) => {
                   const content = banner.contentId || {};
                   const contentType = content.type || banner.contentType || "movie";
                   const imageUrl = getImageUrl(content.banner || content.poster || "");
@@ -341,49 +383,36 @@ export default function HomeBannersPage() {
                             gap: 8,
                           }}
                         >
-                          <span
-                            style={{
-                              fontWeight: 800,
-                              minWidth: "26px",
-                              textAlign: "center",
-                              color: "#FF7A1A",
-                              fontSize: "1rem",
-                            }}
-                          >
-                            #{banner.order}
-                          </span>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 2,
-                            }}
-                          >
-                            <button
-                              className="icon-btn"
-                              disabled={index === 0}
-                              onClick={() => handleMoveOrder(index, "up")}
-                              title="Move Up"
-                              style={{
-                                padding: "2px",
-                                opacity: index === 0 ? 0.3 : 1,
+                          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                            <span style={{ color: "#FF7A1A", fontWeight: "bold", marginRight: "4px" }}>#</span>
+                              <input
+                              type="number"
+                              min="1"
+                              max={banners.length}
+                              value={banner.order}
+                              onChange={(e) => {
+                                const newBanners = [...banners];
+                                newBanners[index].order = e.target.value;
+                                setBanners(newBanners);
                               }}
-                            >
-                              <ArrowUp size={14} />
-                            </button>
-                            <button
-                              className="icon-btn"
-                              disabled={index === banners.length - 1}
-                              onClick={() => handleMoveOrder(index, "down")}
-                              title="Move Down"
-                              style={{
-                                padding: "2px",
-                                opacity:
-                                  index === banners.length - 1 ? 0.3 : 1,
+                              onBlur={(e) => handleDirectOrderChange(index, e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.target.blur();
+                                }
                               }}
-                            >
-                              <ArrowDown size={14} />
-                            </button>
+                              style={{
+                                width: "50px",
+                                padding: "6px",
+                                background: "rgba(255,255,255,0.05)",
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                borderRadius: "4px",
+                                color: "#FF7A1A",
+                                fontWeight: "bold",
+                                textAlign: "center",
+                                outline: "none"
+                              }}
+                            />
                           </div>
                         </div>
                       </td>
@@ -486,7 +515,7 @@ export default function HomeBannersPage() {
       ) : (
         /* Grid View */
         <div className="banner-grid">
-          {banners.map((banner, index) => {
+          {filteredBanners.map((banner, index) => {
             const content = banner.contentId || {};
             const contentType = content.type || banner.contentType || "movie";
             const imageUrl = getImageUrl(content.banner || content.poster || "");
@@ -534,24 +563,37 @@ export default function HomeBannersPage() {
 
                   {/* Card Quick Overlay Actions */}
                   <div className="intro-quick-actions">
-                    {/* Order Arrows */}
-                    <div className="order-arrows-wrap">
-                      <button
-                        className="arrow-btn"
-                        disabled={index === 0}
-                        onClick={() => handleMoveOrder(index, "up")}
-                        title="Move Up in Order"
-                      >
-                        <ArrowUp size={14} />
-                      </button>
-                      <button
-                        className="arrow-btn"
-                        disabled={index === banners.length - 1}
-                        onClick={() => handleMoveOrder(index, "down")}
-                        title="Move Down in Order"
-                      >
-                        <ArrowDown size={14} />
-                      </button>
+                    {/* Input Field for Order */}
+                    <div className="order-arrows-wrap" style={{ flexDirection: "row", padding: "4px" }}>
+                      <span style={{ color: "#FF7A1A", fontWeight: "bold", marginRight: "2px" }}>#</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={banners.length}
+                        value={banner.order}
+                        onChange={(e) => {
+                          const newBanners = [...banners];
+                          newBanners[index].order = e.target.value;
+                          setBanners(newBanners);
+                        }}
+                        onBlur={(e) => handleDirectOrderChange(index, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.target.blur();
+                          }
+                        }}
+                        style={{
+                          width: "40px",
+                          padding: "2px",
+                          background: "rgba(255,255,255,0.1)",
+                          border: "none",
+                          borderRadius: "4px",
+                          color: "#FF7A1A",
+                          fontWeight: "bold",
+                          textAlign: "center",
+                          outline: "none"
+                        }}
+                      />
                     </div>
 
                     {/* Action Buttons */}

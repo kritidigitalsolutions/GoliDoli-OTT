@@ -113,6 +113,8 @@ const addSeries = async (req, res) => {
       category,
       priority,
       isPublished: req.body.isPublished !== undefined ? req.body.isPublished === "true" || req.body.isPublished === true : true,
+      is18plus: req.body.is18plus === "true" || req.body.is18plus === true,
+      isHide: (req.body.is18plus === "true" || req.body.is18plus === true) ? (req.body.isHide === "true" || req.body.isHide === true) : false,
     });
 
     console.log(`✅ Success: TV Series "${series.title}" uploaded and saved successfully!`);
@@ -140,7 +142,7 @@ const getAllSeries = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const series = await Series.find()
-      .sort({ priority: -1, createdAt: -1 })
+      .sort({ priority: 1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
@@ -238,6 +240,15 @@ const updateSeries = async (req, res) => {
     if (req.body.isPublished !== undefined) {
       series.isPublished = req.body.isPublished === "true" || req.body.isPublished === true;
     }
+    if (req.body.is18plus !== undefined) {
+      series.is18plus = req.body.is18plus === "true" || req.body.is18plus === true;
+    }
+    // isHide only takes effect when is18plus is true
+    if (req.body.isHide !== undefined) {
+      series.isHide = series.is18plus ? (req.body.isHide === "true" || req.body.isHide === true) : false;
+    } else if (!series.is18plus) {
+      series.isHide = false;
+    }
     series.category = category;
 
     if (req.files?.poster?.[0]) {
@@ -309,14 +320,14 @@ const updateSeries = async (req, res) => {
 
         // Step 2: Insert series into its new slot
         if (newPriority > 0) {
-          // Shift up all priorities >= newPriority
           await Series.updateMany(
             { _id: { $ne: series._id }, priority: { $gte: newPriority } },
             { $inc: { priority: 1 } }
           );
           series.priority = newPriority;
         } else {
-          series.priority = 0;
+          const maxSeries = await Series.findOne({ _id: { $ne: series._id } }).sort("-priority");
+          series.priority = maxSeries && maxSeries.priority ? maxSeries.priority + 1 : 1;
         }
       }
     }

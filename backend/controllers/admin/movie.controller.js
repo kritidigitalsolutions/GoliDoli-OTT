@@ -162,6 +162,8 @@ const addMovie = async (req, res) => {
       priority,
 
       isPublished: req.body.isPublished !== undefined ? req.body.isPublished === "true" || req.body.isPublished === true : true,
+      is18plus: req.body.is18plus === "true" || req.body.is18plus === true,
+      isHide: (req.body.is18plus === "true" || req.body.is18plus === true) ? (req.body.isHide === "true" || req.body.isHide === true) : false,
     });
 
     console.log(`✅ Success: Movie "${movie.title}" uploaded and saved successfully!`);
@@ -215,9 +217,10 @@ const getAllMovies = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const movies = await Movie.find()
+      .populate("category", "name _id")
       .sort({
-        priority: -1,
-        createdAt: -1
+        priority: 1,
+        createdAt: -1,
       })
       .skip(skip)
       .limit(limit)
@@ -399,6 +402,16 @@ const updateMovie = async (req, res) => {
       movie.isPublished = req.body.isPublished === "true" || req.body.isPublished === true;
     }
 
+    if (req.body.is18plus !== undefined) {
+      movie.is18plus = req.body.is18plus === "true" || req.body.is18plus === true;
+    }
+    // isHide only takes effect when is18plus is true
+    if (req.body.isHide !== undefined) {
+      movie.isHide = movie.is18plus ? (req.body.isHide === "true" || req.body.isHide === true) : false;
+    } else if (!movie.is18plus) {
+      movie.isHide = false;
+    }
+
     movie.category = category;
 
     // ========================================
@@ -498,7 +511,8 @@ const updateMovie = async (req, res) => {
           );
           movie.priority = newPriority;
         } else {
-          movie.priority = 0;
+          const maxMovie = await Movie.findOne({ _id: { $ne: movie._id } }).sort("-priority");
+          movie.priority = maxMovie && maxMovie.priority ? maxMovie.priority + 1 : 1;
         }
       }
     }

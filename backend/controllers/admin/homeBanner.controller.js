@@ -219,7 +219,23 @@ exports.updateHomeBanner = async (req, res) => {
     }
 
     if (order !== undefined) {
-      banner.order = order;
+      const inputOrder = parseInt(order, 10);
+      const currentOrder = banner.order;
+
+      if (inputOrder !== currentOrder) {
+        if (inputOrder < currentOrder) {
+          await HomeBanner.updateMany(
+            { order: { $gte: inputOrder, $lt: currentOrder } },
+            { $inc: { order: 1 } }
+          );
+        } else if (inputOrder > currentOrder) {
+          await HomeBanner.updateMany(
+            { order: { $gt: currentOrder, $lte: inputOrder } },
+            { $inc: { order: -1 } }
+          );
+        }
+        banner.order = inputOrder;
+      }
     }
 
     if (isActive !== undefined) {
@@ -297,9 +313,7 @@ exports.updateHomeBannerStatus = async (req, res) => {
 
 exports.deleteHomeBanner = async (req, res) => {
   try {
-    const banner = await HomeBanner.findByIdAndDelete(
-      req.params.id
-    );
+    const banner = await HomeBanner.findById(req.params.id);
 
     if (!banner) {
       return res.status(404).json({
@@ -307,6 +321,16 @@ exports.deleteHomeBanner = async (req, res) => {
         message: "Home banner not found",
       });
     }
+
+    const deletedOrder = banner.order;
+
+    await HomeBanner.findByIdAndDelete(req.params.id);
+
+    // Shift all subsequent banners down by 1
+    await HomeBanner.updateMany(
+      { order: { $gt: deletedOrder } },
+      { $inc: { order: -1 } }
+    );
 
     return res.status(200).json({
       success: true,

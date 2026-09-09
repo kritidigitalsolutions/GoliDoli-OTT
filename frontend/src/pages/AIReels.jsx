@@ -14,9 +14,9 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   getAIReels,
-  createAIReel,
   updateAIReel,
   deleteAIReel,
 } from "../features/services/aiReel.service";
@@ -25,6 +25,7 @@ import "./Content.css"; // Reuse Content Library styling for consistency
 import "./AddContent.css"; // Reuse Form styling
 
 export default function AIReels() {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -97,20 +98,7 @@ export default function AIReels() {
   };
 
   const handleOpenCreate = () => {
-    setEditId(null);
-    setForm({
-      title: "",
-      description: "",
-      duration: "",
-      priority: 0,
-      isPublished: true,
-      videoUrl: "",
-      thumbnailUrl: "",
-    });
-    setVideoFile(null);
-    setThumbnailFile(null);
-    setUploadProgress(0);
-    setIsOpen(true);
+    navigate("/dashboard/add-ai-reel");
   };
 
   const handleOpenEdit = (reel) => {
@@ -147,40 +135,19 @@ export default function AIReels() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!editId) return; // Should only be used for updates
+
     setFormLoading(true);
     setUploadProgress(0);
 
     try {
-      if (editId) {
-        // Update Reel
-        await updateAIReel(editId, {
-          form,
-          videoFile,
-          thumbnailFile,
-          onProgress: (percent) => setUploadProgress(percent),
-        });
-        showToast("AI Reel updated successfully! 🚀", "success");
-      } else {
-        // Create Reel
-        if (!videoFile && !form.videoUrl) {
-          alert("Please upload a video file or provide a videoUrl");
-          setFormLoading(false);
-          return;
-        }
-        if (!thumbnailFile && !form.thumbnailUrl) {
-          alert("Please upload a thumbnail file or provide a thumbnailUrl");
-          setFormLoading(false);
-          return;
-        }
-
-        await createAIReel({
-          form,
-          videoFile,
-          thumbnailFile,
-          onProgress: (percent) => setUploadProgress(percent),
-        });
-        showToast("AI Reel created successfully! 🚀", "success");
-      }
+      await updateAIReel(editId, {
+        form,
+        videoFile,
+        thumbnailFile,
+        onProgress: (percent) => setUploadProgress(percent),
+      });
+      showToast("AI Reel updated successfully! 🚀", "success");
 
       setIsOpen(false);
       fetchReels();

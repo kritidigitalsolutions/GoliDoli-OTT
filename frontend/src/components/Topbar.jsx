@@ -108,9 +108,13 @@ const handleSelect = (item) => {
   if (item.type === "User") {
     navigate("/dashboard/users");
   } 
-  else if (item.type === "Movie") {
-    navigate("/dashboard/content");
+  else if (["Movie", "Series", "Microdrama"].includes(item.type)) {
+    // Navigate to content library, passing the state so the target tab can be opened if supported
+    navigate("/dashboard/content", { state: { contentType: item.type.toLowerCase() + (item.type === "Series" ? "" : "s") } });
   } 
+  else if (item.type === "Audio Story") {
+    navigate("/dashboard/audio-content");
+  }
   else if (item.type === "Help") {
     navigate("/dashboard/help");
   }

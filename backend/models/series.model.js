@@ -89,7 +89,18 @@ totalEpisodes: {
 isPublished: {
   type: Boolean,
   default: true
-}
+},
+
+  is18plus: {
+    type: Boolean,
+    default: false
+  },
+
+  // isHide only has effect when is18plus is true; otherwise content is always visible
+  isHide: {
+    type: Boolean,
+    default: false
+  }
   },
   { timestamps: true }
 );

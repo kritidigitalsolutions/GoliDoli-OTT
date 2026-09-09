@@ -1,5 +1,8 @@
 const User = require("../../models/user.model");
 const Movie = require("../../models/movie.model");
+const Series = require("../../models/series.model");
+const Microdrama = require("../../models/microdrama.model");
+const AudioStory = require("../../models/audioStory.model");
 const Help = require("../../models/help.model");
 
 exports.globalSearch = async (req, res) => {
@@ -12,7 +15,7 @@ exports.globalSearch = async (req, res) => {
     const regex = new RegExp(query, "i");
 
     // Perform queries in parallel
-    const [users, movies, helpItems] = await Promise.all([
+    const [users, movies, series, microdramas, audioStories, helpItems] = await Promise.all([
       User.find({
         $or: [
           { name: regex },
@@ -21,6 +24,15 @@ exports.globalSearch = async (req, res) => {
         ]
       }).limit(5),
       Movie.find({ title: regex }).limit(5),
+      Series.find({ title: regex }).limit(5),
+      Microdrama.find({ title: regex }).limit(5),
+      AudioStory.find({
+        $or: [
+          { title: regex },
+          { author: regex },
+          { narrator: regex }
+        ]
+      }).limit(5),
       Help.find({
         $or: [
           { question: regex },
@@ -46,6 +58,30 @@ exports.globalSearch = async (req, res) => {
         _id: m._id,
         title: m.title,
         type: "Movie"
+      });
+    });
+
+    series.forEach((s) => {
+      results.push({
+        _id: s._id,
+        title: s.title,
+        type: "Series"
+      });
+    });
+
+    microdramas.forEach((md) => {
+      results.push({
+        _id: md._id,
+        title: md.title,
+        type: "Microdrama"
+      });
+    });
+
+    audioStories.forEach((a) => {
+      results.push({
+        _id: a._id,
+        title: a.title,
+        type: "Audio Story"
       });
     });
 

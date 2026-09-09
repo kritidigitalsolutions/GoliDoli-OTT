@@ -168,6 +168,8 @@ const addMicrodrama = async (
 
         priority,
         isPublished: req.body.isPublished !== undefined ? req.body.isPublished === "true" || req.body.isPublished === true : true,
+        is18plus: req.body.is18plus === "true" || req.body.is18plus === true,
+        isHide: (req.body.is18plus === "true" || req.body.is18plus === true) ? (req.body.isHide === "true" || req.body.isHide === true) : false,
       });
 
     console.log(`✅ Success: Microdrama "${microdrama.title}" uploaded and saved successfully!`);
@@ -207,7 +209,7 @@ const getAllMicrodramas =
 
       const [microdramas, total] = await Promise.all([
         Microdrama.find()
-          .sort({ priority: -1, createdAt: -1 })
+          .sort({ priority: 1, createdAt: -1 })
           .skip(skip)
           .limit(limit),
         Microdrama.countDocuments(),
@@ -329,6 +331,16 @@ const updateMicrodrama =
         drama.isPublished = req.body.isPublished === "true" || req.body.isPublished === true;
       }
 
+      if (req.body.is18plus !== undefined) {
+        drama.is18plus = req.body.is18plus === "true" || req.body.is18plus === true;
+      }
+      // isHide only takes effect when is18plus is true
+      if (req.body.isHide !== undefined) {
+        drama.isHide = drama.is18plus ? (req.body.isHide === "true" || req.body.isHide === true) : false;
+      } else if (!drama.is18plus) {
+        drama.isHide = false;
+      }
+
       if (req.body.isPopular !== undefined) {
         drama.isPopular = req.body.isPopular === "true" || req.body.isPopular === true;
       }
@@ -425,7 +437,8 @@ const updateMicrodrama =
             );
             drama.priority = newPriority;
           } else {
-            drama.priority = 0;
+            const maxDrama = await Microdrama.findOne({ _id: { $ne: drama._id } }).sort("-priority");
+            drama.priority = maxDrama && maxDrama.priority ? maxDrama.priority + 1 : 1;
           }
         }
       }

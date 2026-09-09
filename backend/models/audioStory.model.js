@@ -52,11 +52,12 @@ const audioStorySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    status: {
-      type: String,
-      enum: ["Draft", "Published", "Archived"],
-      default: "Draft",
-      index: true,
+    isComingSoon: {
+      type: Boolean,
+      default: false,
+    },
+    scheduleDate: {
+      type: Date,
     },
     priority: {
       type: Number,
@@ -97,7 +98,7 @@ audioStorySchema.pre("save", function () {
 
 // Indexes
 audioStorySchema.index({ priority: -1, createdAt: -1 });
-audioStorySchema.index({ status: 1, isPublished: 1, isPremium: 1 });
+audioStorySchema.index({ isPublished: 1, isPremium: 1, isComingSoon: 1 });
 audioStorySchema.index(
   {
     title: "text",

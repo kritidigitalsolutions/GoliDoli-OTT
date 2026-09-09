@@ -1,7 +1,7 @@
 import "./Sidebar.css";
 import { NavLink } from "react-router-dom";
 // import { BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut } from "lucide-react";
-import { X, BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut, Star, Bell, MessageSquare, Clapperboard, MapPin, Layers, Smartphone, Image as ImageIcon } from "lucide-react";
+import { X, BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut, Star, Bell, MessageSquare, Clapperboard, MapPin, Layers, Smartphone, Image as ImageIcon, Headphones } from "lucide-react";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "#FF7A1A" },
@@ -11,7 +11,10 @@ const NAV = [
   { id: "home-banners", label: "Home Banners", icon: ImageIcon, color: "#FF7A1A" },
   { id: "add-content", label: "Add Content", icon: Plus, color: "#10b981" },
   { id: "content", label: "Content Library", icon: Film, color: "#f59e0b" },
+  { id: "add-ai-reel", label: "Add AI Reel", icon: Plus, color: "#10b981" },
   { id: "ai-reels", label: "AI Reels", icon: Clapperboard, color: "#8b5cf6" },
+  { id: "add-audio-story", label: "Add Audio Story", icon: Plus, color: "#10b981" },
+  { id: "audio-content", label: "Audio Stories", icon: Headphones, color: "#f59e0b" },
   // { id: "add-drama", label: "Add Short Drama", icon: Plus, color: "#a78bfa" },
   // { id: "dramas", label: "Short Dramas", icon: Clapperboard, color: "#8b5cf6" },
   // { id: "ratings", label: "Ratings", icon: Star, color: "#facc15" },

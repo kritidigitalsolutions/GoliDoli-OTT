@@ -103,12 +103,90 @@ body.light .topbar,
   }
 }
 
+/* ── Left ── */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-menu-btn {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--border);
+  border-color: var(--border2);
+}
+
+.topbar-info {
+  min-width: 0;
+}
+
+.topbar-greeting {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-name {
+  color: var(--primary);
+}
+
+.topbar-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Responsive Topbar ── */
+@media (max-width: 1024px) {
+  .topbar {
+    padding: 14px 20px;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar-date {
+    display: none;
+  }
+
+  .topbar-greeting {
+    font-size: 1rem;
+  }
+
+  .topbar-search {
+    display: none;
+  }
+}
+
 /* ── Actions cluster ── */
 .topbar-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+}
 
 /* ── Left ── */
 .topbar-left {

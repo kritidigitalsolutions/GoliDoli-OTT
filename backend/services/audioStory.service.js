@@ -27,6 +27,21 @@ const checkUserSubscription = async (userId) => {
 };
 
 const createStory = async (data) => {
+  const inputPriority = data.priority !== undefined ? Number(data.priority) : 0;
+  let finalPriority = 0;
+
+  if (inputPriority > 0) {
+    await AudioStory.updateMany(
+      { priority: { $gte: inputPriority } },
+      { $inc: { priority: 1 } }
+    );
+    finalPriority = inputPriority;
+  } else {
+    const maxStory = await AudioStory.findOne().sort("-priority");
+    finalPriority = maxStory && maxStory.priority ? maxStory.priority + 1 : 1;
+  }
+
+  data.priority = finalPriority;
   return await AudioStory.create(data);
 };
 
@@ -56,7 +71,7 @@ const getStories = async (query = {}, userId = null) => {
 
   const stories = await AudioStory.find(filter)
     .populate("categories", "name slug")
-    .sort({ priority: -1, createdAt: -1 })
+    .sort({ priority: 1, createdAt: -1 })
     .lean();
 
   // If userId is provided, evaluate locked status
@@ -101,6 +116,32 @@ const getStoryById = async (id, userId = null) => {
 };
 
 const updateStory = async (id, data) => {
+  const existing = await AudioStory.findById(id);
+  if (!existing) return null;
+
+  if (data.priority !== undefined) {
+    const newPriority = Number(data.priority) || 0;
+    const oldPriority = existing.priority || 0;
+
+    if (newPriority !== oldPriority) {
+      if (oldPriority > 0) {
+        await AudioStory.updateMany(
+          { _id: { $ne: existing._id }, priority: { $gt: oldPriority } },
+          { $inc: { priority: -1 } }
+        );
+      }
+      if (newPriority > 0) {
+        await AudioStory.updateMany(
+          { _id: { $ne: existing._id }, priority: { $gte: newPriority } },
+          { $inc: { priority: 1 } }
+        );
+        data.priority = newPriority;
+      } else {
+        data.priority = 0;
+      }
+    }
+  }
+
   return await AudioStory.findByIdAndUpdate(id, data, {
     returnDocument: "after",
     runValidators: true,
@@ -108,15 +149,28 @@ const updateStory = async (id, data) => {
 };
 
 const deleteStory = async (id) => {
+  const existing = await AudioStory.findById(id);
+  if (!existing) return null;
+  const targetPriority = existing.priority || 0;
+
   // First delete associated episodes
   await AudioEpisode.deleteMany({ storyId: id });
-  return await AudioStory.findByIdAndDelete(id);
+  await AudioStory.findByIdAndDelete(id);
+
+  if (targetPriority > 0) {
+    await AudioStory.updateMany(
+      { priority: { $gt: targetPriority } },
+      { $inc: { priority: -1 } }
+    );
+  }
+  
+  return existing;
 };
 
 const getHomeFeed = async (userId = null) => {
   // Fetch active categories
   const categories = await AudioCategory.find({ isActive: true })
-    .sort({ priority: -1, createdAt: -1 })
+    .sort({ priority: 1, createdAt: -1 })
     .lean();
 
   const isSubscribed = await checkUserSubscription(userId);
@@ -129,7 +183,7 @@ const getHomeFeed = async (userId = null) => {
         isPublished: true,
         status: "Published",
       })
-        .sort({ priority: -1, createdAt: -1 })
+        .sort({ priority: 1, createdAt: -1 })
         .limit(10)
         .lean();
 

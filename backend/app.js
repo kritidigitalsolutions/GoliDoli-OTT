@@ -290,11 +290,11 @@ const userAudioEpisodeRoutes = require("./routes/user/audioEpisode.routes");
 const userAudioProgressRoutes = require("./routes/user/audioProgress.routes");
 
 app.use("/api/admin/audio-categories", adminAudioCategoryRoutes);
-app.use("/api/admin/audio-stories", adminAudioStoryRoutes);
+app.use("/api/admin/audio-stories", updateUpcomingStatus, adminAudioStoryRoutes);
 app.use("/api/admin/audio-episodes", adminAudioEpisodeRoutes);
 
 app.use("/api/audio-categories", userAudioCategoryRoutes);
-app.use("/api/audio-stories", userAudioStoryRoutes);
+app.use("/api/audio-stories", updateUpcomingStatus, userAudioStoryRoutes);
 app.use("/api/audio-episodes", userAudioEpisodeRoutes);
 app.use("/api/audio-progress", userAudioProgressRoutes);
 
