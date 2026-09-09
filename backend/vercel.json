@@ -12,7 +12,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://golidoli-admin-panel.vercel.app"
+          "value": "https://goli-doli-ott-admin-panel.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",
