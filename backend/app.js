@@ -408,6 +408,14 @@ app.use(
   homeBannerRoutes
 );
 // ========================================
+// COMMENTS ROUTES
+// ========================================
+const commentRoutes = require("./routes/user/comment.routes");
+app.use("/api/comments", commentRoutes);
+app.use("/api/v1/app/comments", commentRoutes);
+
+// ========================================
 // EXPORT
 // ========================================
 module.exports = app;
+
