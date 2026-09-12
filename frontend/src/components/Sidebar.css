@@ -158,8 +158,8 @@ body.light .nav-item:focus,
 
 body.light .nav-item.active,
 .light .nav-item.active {
-  background: rgba(99, 102, 241, 0.1) !important;
-  color: #4f46e5 !important;
+  background: rgba(255, 209, 26, 0.18) !important;
+  color: #b45309 !important;
   box-shadow: none !important;
 }
 
@@ -198,7 +198,7 @@ body.light .nav-item.active,
 
 body.light .nav-item.active .nav-icon-wrap,
 .light .nav-item.active .nav-icon-wrap {
-  color: #4f46e5 !important;
+  color: #b45309 !important;
 }
 
 .nav-label {
