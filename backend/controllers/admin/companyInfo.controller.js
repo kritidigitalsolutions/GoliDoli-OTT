@@ -21,30 +21,54 @@ const getCompanyInfo = async (req, res) => {
 const saveCompanyInfo = async (req, res) => {
   try {
     const {
+      companyName,
+      tagline,
+      supportEmail,
+      supportPhone,
+      address,
       addressLine1,
       addressLine2,
       city,
       state,
       country,
       postalCode,
+      latitude,
+      longitude,
       googleMapUrl,
+      copyrightText,
+      poweredBy,
+      socialLinks,
       status,
     } = req.body;
 
     let companyInfo = await CompanyInfo.findOne();
 
+    const streetAddress = address !== undefined ? address : [addressLine1, addressLine2].filter(Boolean).join(", ");
+
+    const fieldsToSave = {
+      ...(companyName !== undefined && { companyName }),
+      ...(tagline !== undefined && { tagline }),
+      ...(supportEmail !== undefined && { supportEmail }),
+      ...(supportPhone !== undefined && { supportPhone }),
+      ...(streetAddress !== undefined && { address: streetAddress, addressLine1: streetAddress, addressLine2: "" }),
+      ...(city !== undefined && { city }),
+      ...(state !== undefined && { state }),
+      ...(country !== undefined && { country }),
+      ...(postalCode !== undefined && { postalCode }),
+      ...(latitude !== undefined && { latitude: Number(latitude) || 0 }),
+      ...(longitude !== undefined && { longitude: Number(longitude) || 0 }),
+      ...(googleMapUrl !== undefined && { googleMapUrl }),
+      ...(copyrightText !== undefined && { copyrightText }),
+      ...(poweredBy !== undefined && { poweredBy }),
+      ...(socialLinks !== undefined && { socialLinks }),
+      status: status || "published",
+      updatedBy: req.admin?._id,
+    };
+
     if (!companyInfo) {
       companyInfo = await CompanyInfo.create({
-        addressLine1,
-        addressLine2,
-        city,
-        state,
-        country,
-        postalCode,
-        googleMapUrl,
-        status: status || "draft",
+        ...fieldsToSave,
         createdBy: req.admin?._id,
-        updatedBy: req.admin?._id,
       });
 
       return res.status(201).json({
@@ -54,20 +78,7 @@ const saveCompanyInfo = async (req, res) => {
       });
     }
 
-    companyInfo.addressLine1 = addressLine1;
-    companyInfo.addressLine2 = addressLine2;
-    companyInfo.city = city;
-    companyInfo.state = state;
-    companyInfo.country = country;
-    companyInfo.postalCode = postalCode;
-    companyInfo.googleMapUrl = googleMapUrl;
-
-    if (status) {
-      companyInfo.status = status;
-    }
-
-    companyInfo.updatedBy = req.admin?._id;
-
+    Object.assign(companyInfo, fieldsToSave);
     await companyInfo.save();
 
     return res.status(200).json({

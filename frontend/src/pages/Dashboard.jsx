@@ -24,7 +24,7 @@ import {
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 
-const CHART_COLORS = ["#6366F1", "#10B981", "#3B82F6", "#F59E0B", "#8B5CF6"];
+const CHART_COLORS = ["#FFD11A", "#FF0F8A", "#10B981", "#3B82F6", "#8B5CF6"];
 
 function MinimalChartTip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -64,8 +64,17 @@ export default function Dashboard() {
   const [growthData, setGrowthData] = useState([]);
   const [contentStats, setContentStats] = useState([]);
 
-  const GROWTH = growthData.length ? growthData : [];
-  const PIE = contentStats.length ? contentStats : [];
+  const extractNum = (v) => {
+    if (typeof v === "number") return v;
+    if (typeof v === "object" && v !== null) return Number(v.total || v.amount || 0) || 0;
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  const formatCurrency = (value) => {
+    const num = extractNum(value);
+    return `₹${num.toLocaleString("en-IN")}`;
+  };
 
   async function fetchData() {
     setLoading(true);
@@ -79,7 +88,20 @@ export default function Dashboard() {
         API.get("/admin/user/registration-stats"),
       ]);
 
-      setContentStats(sRes.data?.data || []);
+      // Parse Content Stats
+      const rawStats = sRes.data?.stats || sRes.data?.data || sRes.data || {};
+      let parsedStats = [];
+      if (Array.isArray(rawStats)) {
+        parsedStats = rawStats;
+      } else if (typeof rawStats === "object") {
+        parsedStats = [
+          { name: "Movies", value: rawStats.movies || 0 },
+          { name: "Series", value: rawStats.series || 0 },
+          { name: "Microdramas", value: rawStats.microdramas || 0 },
+        ];
+      }
+      setContentStats(parsedStats);
+
       setGrowthData(gRes.data?.data || []);
 
       setSubscriptionStats(subStatsRes.data?.data || {
@@ -87,19 +109,23 @@ export default function Dashboard() {
         totalNotSubscribedUsers: 0,
         expirySubscriptionCount: 0,
       });
-      setIncomeStats(incomeStatsRes.data?.data || {
-        todayIncome: 0,
-        yesterdayIncome: 0,
-        weeklyIncome: 0,
-        monthlyIncome: 0,
-        yearlyIncome: 0,
-        totalIncome: 0,
+
+      const rawIncome = incomeStatsRes.data?.data || incomeStatsRes.data?.incomeStats || incomeStatsRes.data || {};
+      setIncomeStats({
+        todayIncome: extractNum(rawIncome.todayIncome),
+        yesterdayIncome: extractNum(rawIncome.yesterdayIncome),
+        weeklyIncome: extractNum(rawIncome.weeklyIncome),
+        monthlyIncome: extractNum(rawIncome.monthlyIncome),
+        yearlyIncome: extractNum(rawIncome.yearlyIncome),
+        totalIncome: extractNum(rawIncome.totalIncome),
       });
+
       setRegistrationStats(regStatsRes.data?.data || {
         todayRegistration: 0,
         yesterdayRegistration: 0,
         totalRegistration: 0,
       });
+
       setUsers(uRes.data?.users || uRes.data?.data || uRes.data || []);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
@@ -111,12 +137,30 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const formatCurrency = (value) =>
-    `₹${Number(value || 0).toLocaleString("en-IN")}`;
-
   const moviesCount = contentStats.find(c => c.name === "Movies")?.value || 0;
   const seriesCount = contentStats.find(c => c.name === "Series")?.value || 0;
-  const totalContent = moviesCount + seriesCount;
+  const microdramasCount = contentStats.find(c => c.name === "Microdramas")?.value || 0;
+  const totalContent = moviesCount + seriesCount + microdramasCount;
+
+  const activePieItems = contentStats.filter(c => c.value > 0);
+  const PIE = activePieItems.length > 0
+    ? activePieItems
+    : [
+        { name: "Movies", value: moviesCount },
+        { name: "Series", value: seriesCount },
+        { name: "Microdramas", value: microdramasCount }
+      ];
+
+  const defaultGrowth = [
+    { day: "Mon", users: 0 },
+    { day: "Tue", users: 0 },
+    { day: "Wed", users: 0 },
+    { day: "Thu", users: 0 },
+    { day: "Fri", users: 0 },
+    { day: "Sat", users: 0 },
+    { day: "Sun", users: 0 },
+  ];
+  const GROWTH = growthData.length ? growthData : defaultGrowth;
 
   const totalUsersCount = Array.isArray(users) ? users.length : (registrationStats.totalRegistration || 0);
 
@@ -126,13 +170,13 @@ export default function Dashboard() {
       <div className="pg-header">
         <div>
           <h1 className="pg-title">
-            <LayoutDashboard size={24} className="pg-title-icon" />
+            <LayoutDashboard size={22} className="pg-title-icon" />
             Dashboard Overview
           </h1>
           <p className="pg-sub">Real-time metrics, user growth, and revenue statistics</p>
         </div>
         <button className="btn btn-ghost" onClick={fetchData} disabled={loading}>
-          <RefreshCw size={15} className={loading ? "spin-icon" : ""} />
+          <RefreshCw size={14} className={loading ? "spin-icon" : ""} />
           <span>{loading ? "Syncing..." : "Refresh"}</span>
         </button>
       </div>
@@ -142,13 +186,13 @@ export default function Dashboard() {
         <div className="kpi-card">
           <div className="kpi-header">
             <span className="kpi-label">Total Users</span>
-            <div className="kpi-icon-badge icon-indigo">
-              <Users size={18} />
+            <div className="kpi-icon-badge icon-amber">
+              <Users size={16} />
             </div>
           </div>
           <div className="kpi-value">{loading ? "..." : totalUsersCount.toLocaleString("en-IN")}</div>
           <div className="kpi-footer text-success">
-            <TrendingUp size={14} />
+            <TrendingUp size={13} />
             <span>Active user base</span>
           </div>
         </div>
@@ -157,7 +201,7 @@ export default function Dashboard() {
           <div className="kpi-header">
             <span className="kpi-label">Subscribed Users</span>
             <div className="kpi-icon-badge icon-emerald">
-              <BadgeCheck size={18} />
+              <BadgeCheck size={16} />
             </div>
           </div>
           <div className="kpi-value">{loading ? "..." : subscriptionStats.totalSubscribedUsers.toLocaleString("en-IN")}</div>
@@ -170,7 +214,7 @@ export default function Dashboard() {
           <div className="kpi-header">
             <span className="kpi-label">Content Library</span>
             <div className="kpi-icon-badge icon-blue">
-              <Film size={18} />
+              <Film size={16} />
             </div>
           </div>
           <div className="kpi-value">{loading ? "..." : totalContent.toLocaleString("en-IN")}</div>
@@ -182,13 +226,13 @@ export default function Dashboard() {
         <div className="kpi-card">
           <div className="kpi-header">
             <span className="kpi-label">Total Revenue</span>
-            <div className="kpi-icon-badge icon-amber">
-              <Wallet size={18} />
+            <div className="kpi-icon-badge icon-pink">
+              <Wallet size={16} />
             </div>
           </div>
           <div className="kpi-value">{loading ? "..." : formatCurrency(incomeStats.totalIncome)}</div>
           <div className="kpi-footer text-success">
-            <TrendingUp size={14} />
+            <TrendingUp size={13} />
             <span>All-time earnings</span>
           </div>
         </div>
@@ -199,12 +243,12 @@ export default function Dashboard() {
         {/* Registration & Subscriptions Breakdown */}
         <div className="content-box">
           <div className="box-header">
-            <UserPlus size={18} className="box-icon text-indigo" />
+            <UserPlus size={16} className="box-icon text-gold" />
             <h3>User & Subscription Activity</h3>
           </div>
           <div className="stat-subgrid">
             <div className="sub-card">
-              <div className="sub-icon"><Sun size={18} /></div>
+              <div className="sub-icon"><Sun size={16} /></div>
               <div>
                 <div className="sub-label">Today Registrations</div>
                 <div className="sub-val">{loading ? "..." : registrationStats.todayRegistration}</div>
@@ -212,7 +256,7 @@ export default function Dashboard() {
             </div>
 
             <div className="sub-card">
-              <div className="sub-icon"><CalendarDays size={18} /></div>
+              <div className="sub-icon"><CalendarDays size={16} /></div>
               <div>
                 <div className="sub-label">Yesterday Registrations</div>
                 <div className="sub-val">{loading ? "..." : registrationStats.yesterdayRegistration}</div>
@@ -220,7 +264,7 @@ export default function Dashboard() {
             </div>
 
             <div className="sub-card">
-              <div className="sub-icon"><UserX size={18} /></div>
+              <div className="sub-icon"><UserX size={16} /></div>
               <div>
                 <div className="sub-label">Unsubscribed Users</div>
                 <div className="sub-val">{loading ? "..." : subscriptionStats.totalNotSubscribedUsers}</div>
@@ -228,7 +272,7 @@ export default function Dashboard() {
             </div>
 
             <div className="sub-card">
-              <div className="sub-icon"><Clock3 size={18} /></div>
+              <div className="sub-icon"><Clock3 size={16} /></div>
               <div>
                 <div className="sub-label">Expired Subscriptions</div>
                 <div className="sub-val text-warning">{loading ? "..." : subscriptionStats.expirySubscriptionCount}</div>
@@ -240,12 +284,12 @@ export default function Dashboard() {
         {/* Financial Income Breakdown */}
         <div className="content-box">
           <div className="box-header">
-            <CreditCard size={18} className="box-icon text-emerald" />
+            <CreditCard size={16} className="box-icon text-emerald" />
             <h3>Revenue Breakdown</h3>
           </div>
           <div className="stat-subgrid">
             <div className="sub-card">
-              <div className="sub-icon"><Sun size={18} /></div>
+              <div className="sub-icon"><Sun size={16} /></div>
               <div>
                 <div className="sub-label">Today Earnings</div>
                 <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.todayIncome)}</div>
@@ -253,7 +297,7 @@ export default function Dashboard() {
             </div>
 
             <div className="sub-card">
-              <div className="sub-icon"><CalendarDays size={18} /></div>
+              <div className="sub-icon"><CalendarDays size={16} /></div>
               <div>
                 <div className="sub-label">Yesterday Earnings</div>
                 <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.yesterdayIncome)}</div>
@@ -261,7 +305,7 @@ export default function Dashboard() {
             </div>
 
             <div className="sub-card">
-              <div className="sub-icon"><CalendarRange size={18} /></div>
+              <div className="sub-icon"><CalendarRange size={16} /></div>
               <div>
                 <div className="sub-label">Weekly Earnings</div>
                 <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.weeklyIncome)}</div>
@@ -269,7 +313,7 @@ export default function Dashboard() {
             </div>
 
             <div className="sub-card">
-              <div className="sub-icon"><CalendarClock size={18} /></div>
+              <div className="sub-icon"><CalendarClock size={16} /></div>
               <div>
                 <div className="sub-label">Monthly Earnings</div>
                 <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.monthlyIncome)}</div>
@@ -284,25 +328,25 @@ export default function Dashboard() {
         {/* Area Chart - User Growth */}
         <div className="content-box">
           <div className="box-header">
-            <TrendingUp size={18} className="box-icon text-indigo" />
+            <TrendingUp size={16} className="box-icon text-gold" />
             <h3>User Growth Trend</h3>
           </div>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={GROWTH} margin={{ top: 12, right: 12, left: -20, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={GROWTH} margin={{ top: 10, right: 10, left: -24, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="indigoGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
+                  <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#FFD11A" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#FFD11A" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="day" stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="day" stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<MinimalChartTip />} cursor={{ stroke: "var(--border2)", strokeWidth: 1 }} />
-                <Area type="monotone" dataKey="users" stroke="#6366F1" strokeWidth={2}
-                  fill="url(#indigoGrad)"
-                  activeDot={{ r: 5, fill: "#6366F1", stroke: "var(--bg2)", strokeWidth: 2 }} />
+                <Area type="monotone" dataKey="users" stroke="#FFD11A" strokeWidth={2.2}
+                  fill="url(#goldGrad)"
+                  activeDot={{ r: 4, fill: "#FFD11A", stroke: "var(--bg2)", strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -311,23 +355,29 @@ export default function Dashboard() {
         {/* Pie Chart - Content Split */}
         <div className="content-box">
           <div className="box-header">
-            <PieChartIcon size={18} className="box-icon text-emerald" />
+            <PieChartIcon size={16} className="box-icon text-emerald" />
             <h3>Content Split</h3>
           </div>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie data={PIE} cx="50%" cy="45%"
-                  innerRadius={55} outerRadius={82}
-                  paddingAngle={5} dataKey="value" stroke="none">
-                  {PIE.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ background: "var(--bg2)", border: "1px solid var(--border2)", borderRadius: 8, color: "var(--text)", fontSize: "0.85rem" }} />
-                <Legend iconType="circle" iconSize={8} formatter={v => <span style={{ color: "var(--text-soft)", fontSize: "0.82rem", fontWeight: 500 }}>{v}</span>} />
-              </PieChart>
-            </ResponsiveContainer>
+            {totalContent === 0 ? (
+              <div className="tbl-placeholder" style={{ padding: "60px 0" }}>
+                No content in library yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={PIE} cx="50%" cy="45%"
+                    innerRadius={48} outerRadius={72}
+                    paddingAngle={4} dataKey="value" stroke="none">
+                    {PIE.map((_, i) => (
+                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: "var(--bg2)", border: "1px solid var(--border2)", borderRadius: 8, color: "var(--text)", fontSize: "0.8rem" }} />
+                  <Legend iconType="circle" iconSize={7} formatter={v => <span style={{ color: "var(--text-soft)", fontSize: "0.78rem", fontWeight: 500 }}>{v}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
@@ -335,7 +385,7 @@ export default function Dashboard() {
       {/* ── Section 4: Recent Users Table ── */}
       <div className="content-box">
         <div className="box-header">
-          <Clock3 size={18} className="box-icon text-soft" />
+          <Clock3 size={16} className="box-icon text-soft" />
           <h3>Recent User Signups</h3>
         </div>
         {loading ? (
@@ -347,7 +397,7 @@ export default function Dashboard() {
             <table className="tbl">
               <thead>
                 <tr>
-                  <th style={{ width: "60px" }}>#</th>
+                  <th style={{ width: "50px" }}>#</th>
                   <th>User</th>
                   <th>Email</th>
                   <th>Joined Date</th>
@@ -355,12 +405,27 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {users.slice(0, 6).map((u, i) => (
+                {users.slice(0, 5).map((u, i) => (
                   <tr key={u._id || i}>
                     <td className="text-muted">{i + 1}</td>
                     <td>
                       <div className="user-cell">
-                        <div className="u-avatar">{u.name?.[0]?.toUpperCase() || "U"}</div>
+                        <div className="u-avatar">
+                          <img
+                            src={
+                              u.profileImage || u.profilePic || u.avatar || u.photo
+                                ? (u.profileImage || u.profilePic || u.avatar || u.photo).startsWith("http")
+                                  ? (u.profileImage || u.profilePic || u.avatar || u.photo)
+                                  : `https://golidoli.com/${u.profileImage || u.profilePic || u.avatar || u.photo}`
+                                : `https://i.pravatar.cc/150?u=${encodeURIComponent(u._id || u.email || u.name || i)}`
+                            }
+                            alt={u.name || "User"}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = `https://i.pravatar.cc/150?u=${encodeURIComponent(u._id || u.email || u.name || i)}`;
+                            }}
+                          />
+                        </div>
                         <span className="u-name">{u.name || "User"}</span>
                       </div>
                     </td>
