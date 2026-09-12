@@ -12,8 +12,7 @@
 
 body.light .app-shell,
 .light.app-shell {
-  background:
-    linear-gradient(180deg, #f8fafc 0%, #eef3f9 100%) !important;
+  background: #F8FAFC !important;
 }
 
 .page-shell {
@@ -26,9 +25,7 @@ body.light .app-shell,
 
 body.light .page-shell,
 .light .page-shell {
-  background:
-    radial-gradient(circle at 78% 0%, rgba(255, 209, 26, 0.12), transparent 28%),
-    #f3f6fb !important;
+  background: #F8FAFC !important;
 }
 
 .page-body {

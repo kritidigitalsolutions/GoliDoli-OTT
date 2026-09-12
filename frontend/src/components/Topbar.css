@@ -6,11 +6,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 36px;
-  background: rgba(18, 14, 28, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 14px 28px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -22,13 +20,6 @@
 body.light .topbar,
 .light .topbar {
   background: #ffffff !important;
-  border-bottom-color: #dbe3ee !important;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06) !important;
-}
-
-/* ── Left ── */
-.topbar-left {
-  display: flex;
   align-items: center;
   gap: 12px;
   flex: 1;
