@@ -2,7 +2,7 @@ import PosterUploader from "../uploads/PosterUploader";
 import BannerUploader from "../uploads/BannerUploader";
 import TrailerUploader from "../uploads/TrailerUploader";
 import VideoUploader from "../uploads/VideoUploader";
-import { Images } from "lucide-react";
+import { Images, Film } from "lucide-react";
 
 export default function MediaAssetsStep({
   form,
@@ -11,43 +11,52 @@ export default function MediaAssetsStep({
   posterFile,
   posterInputRef,
   handlePosterFileChange,
+  onRemovePosterFile,
+
   bannerFile,
   bannerInputRef,
   handleBannerFileChange,
+  onRemoveBannerFile,
+
   trailerFile,
   trailerInputRef,
   handleTrailerFileChange,
+  onRemoveTrailerFile,
+
   videoFile,
   videoInputRef,
   handleVideoFileChange,
+  onRemoveVideoFile,
+
   type,
   isComingSoon,
 }) {
   return (
-    <div className="premium-card media-assets-card">
-      <div className="media-card-header">
-        <h3 className="section-title media-section-title">
-          <span>
-            <Images size={18} />
+    <div className="form-card media-assets-card">
+      <div className="card-header-styled">
+        <h3 className="section-title">
+          <span className="title-icon-wrap">
+            <Images size={20} />
           </span>
 
           <div>
-            Visual Assets & Media
+            Visual Assets & CDN Media Streams
             <small>
-              Add artwork, trailers, and source media for this title.
+              Attach high-resolution poster artwork, landscape banners, video trailers, and master movie streams.
             </small>
           </div>
         </h3>
       </div>
 
-      <div className="form-grid-3 media-assets-grid">
-
+      {/* Graphics Assets Row (2-Column Grid) */}
+      <div className="media-graphics-grid">
         <PosterUploader
           file={posterFile}
           value={form.poster}
           onUrlChange={ch}
           inputRef={posterInputRef}
           onFileChange={handlePosterFileChange}
+          onRemoveFile={onRemovePosterFile}
         />
 
         <BannerUploader
@@ -56,8 +65,12 @@ export default function MediaAssetsStep({
           onUrlChange={ch}
           inputRef={bannerInputRef}
           onFileChange={handleBannerFileChange}
+          onRemoveFile={onRemoveBannerFile}
         />
+      </div>
 
+      {/* Video Streams Row */}
+      <div className="media-streams-section" style={{ marginTop: 20 }}>
         {type !== "microdrama" && (
           <TrailerUploader
             file={trailerFile}
@@ -65,20 +78,23 @@ export default function MediaAssetsStep({
             onUrlChange={ch}
             inputRef={trailerInputRef}
             onFileChange={handleTrailerFileChange}
+            onRemoveFile={onRemoveTrailerFile}
           />
         )}
 
-        {(type === "movie") && !isComingSoon && (
+        {type === "movie" && !isComingSoon && (
           <VideoUploader
             file={videoFile}
             value={form.videoUrl}
             onUrlChange={ch}
             inputRef={videoInputRef}
             onFileChange={handleVideoFileChange}
+            onRemoveFile={onRemoveVideoFile}
           />
         )}
-
       </div>
     </div>
   );
 }
+
+

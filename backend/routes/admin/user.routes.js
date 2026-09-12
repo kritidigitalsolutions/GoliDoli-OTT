@@ -27,8 +27,8 @@ const {
     getRegistrationStats,
     getUserGrowth,
     toggleBlockUser,
+    updateUser,
 } = require("../../controllers/admin/user.controller");
-
 
 // ========================================
 // USER ROUTES
@@ -88,6 +88,13 @@ router.get(
     "/:id",
     isAdmin,
     getSingleUser
+);
+
+// Update user details
+router.patch(
+    "/:id",
+    isAdmin,
+    updateUser
 );
 
 // Toggle block user status

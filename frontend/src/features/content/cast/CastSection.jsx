@@ -11,37 +11,25 @@ export default function CastSection({
   getFullUrl,
 }) {
   return (
-    <div className="premium-card">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <h3
-          className="section-title"
-          style={{ marginBottom: 0 }}
-        >
-          <span>
+    <div className="form-card">
+      <div className="card-header-styled">
+        <h3 className="section-title">
+          <span className="title-icon-wrap">
             <Users size={18} />
           </span>
-
-          Cast & Crew
+          <div>
+            Cast & Crew Members
+            <small>Add actors, directors, and key contributors for this title</small>
+          </div>
         </h3>
 
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn btn-secondary-styled"
           onClick={addCast}
-          style={{
-            borderRadius: "12px",
-            padding: "8px 16px",
-          }}
         >
           <Plus size={16} />
-          Add Actor
+          Add Actor / Cast
         </button>
       </div>
 
@@ -59,6 +47,14 @@ export default function CastSection({
           />
         ))}
       </div>
+
+      {cast.length === 0 && (
+        <div className="cast-empty-state">
+          <Users size={32} opacity={0.3} />
+          <p>No cast members added yet. Click "Add Actor / Cast" to credit actors.</p>
+        </div>
+      )}
     </div>
   );
 }
+

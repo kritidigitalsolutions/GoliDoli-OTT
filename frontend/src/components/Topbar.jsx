@@ -1,23 +1,99 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, Moon, Sun, X, Menu, User, LogOut, Mail, Shield, Clock } from "lucide-react";
+import {
+  Search,
+  Bell,
+  Moon,
+  Sun,
+  X,
+  Menu,
+  User,
+  LogOut,
+  Mail,
+  Shield,
+  Clock,
+  ChevronRight,
+  CreditCard,
+  Sparkles,
+  Film,
+  Tv,
+  Zap,
+  Headphones,
+  HelpCircle,
+  Loader2,
+  BarChart3,
+  Users,
+  Plus,
+  FileText,
+  Settings,
+  Clapperboard,
+  MapPin,
+  Layers,
+  Smartphone,
+  Image as ImageIcon,
+  Compass
+} from "lucide-react";
 import "./Topbar.css";
 import API from "../api/axios";
 
 // Type → colour mapping (matches Notifications page)
 const TYPE_COLORS = {
-  GENERAL:     { bg: "rgba(100,116,139,0.2)", color: "#94a3b8" },
-  SYSTEM:      { bg: "rgba(59,130,246,0.2)",  color: "#3b82f6" },
-  PLAN:        { bg: "rgba(139,92,246,0.2)",  color: "#8b5cf6" },
-  PROMOTIONAL: { bg: "rgba(245,158,11,0.2)",  color: "#f59e0b" },
+  GENERAL:     { bg: "rgba(245, 158, 11, 0.14)", color: "#d97706" },
+  SYSTEM:      { bg: "rgba(59, 130, 246, 0.14)",  color: "#2563eb" },
+  PLAN:        { bg: "rgba(139, 92, 246, 0.14)",  color: "#7c3aed" },
+  PROMOTIONAL: { bg: "rgba(244, 63, 94, 0.14)",  color: "#e11d48" },
 };
 
-export default function Topbar({ theme, toggleTheme, toggleSidebar }) {
+// Search category configuration for badges & icons
+const SEARCH_CATEGORY_CONFIG = {
+  Page: { icon: Compass, color: "#3b82f6", bg: "rgba(59, 130, 246, 0.12)" },
+  Action: { icon: Sparkles, color: "#10b981", bg: "rgba(16, 185, 129, 0.12)" },
+  User: { icon: User, color: "#3b82f6", bg: "rgba(59, 130, 246, 0.12)" },
+  Movie: { icon: Film, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.12)" },
+  Series: { icon: Tv, color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.12)" },
+  Microdrama: { icon: Zap, color: "#ec4899", bg: "rgba(236, 72, 153, 0.12)" },
+  "Audio Story": { icon: Headphones, color: "#10b981", bg: "rgba(16, 185, 129, 0.12)" },
+  Plan: { icon: CreditCard, color: "#06b6d4", bg: "rgba(6, 182, 212, 0.12)" },
+  Notification: { icon: Bell, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.12)" },
+  Category: { icon: Layers, color: "#a78bfa", bg: "rgba(167, 139, 250, 0.12)" },
+  Banner: { icon: ImageIcon, color: "#ff7a1a", bg: "rgba(255, 122, 26, 0.12)" },
+  Help: { icon: HelpCircle, color: "#6366f1", bg: "rgba(99, 102, 241, 0.12)" },
+};
+
+// Admin panel pages, navigation elements & quick actions
+const ADMIN_PAGES_AND_ACTIONS = [
+  { title: "Dashboard Overview", subtitle: "Analytics, Stats & Charts", link: "/dashboard", type: "Page", icon: BarChart3, keywords: ["home", "dashboard", "stats", "overview", "analytics", "charts"] },
+  { title: "Users Management", subtitle: "User accounts, registered users", link: "/dashboard/users", type: "Page", icon: Users, keywords: ["users", "accounts", "customers", "members", "profiles"] },
+  { title: "Media Categories", subtitle: "Genres, labels & categories", link: "/dashboard/categories", type: "Page", icon: Layers, keywords: ["categories", "genres", "labels", "tags"] },
+  { title: "Intro Screens", subtitle: "App onboarding & intro slides", link: "/dashboard/intro-screens", type: "Page", icon: Smartphone, keywords: ["intro", "onboarding", "screens", "slides"] },
+  { title: "Home Banners", subtitle: "Hero banners & slider carousels", link: "/dashboard/home-banners", type: "Page", icon: ImageIcon, keywords: ["banners", "slides", "hero", "promotions", "home banner"] },
+  { title: "Add Content", subtitle: "Upload movies, series & microdramas", link: "/dashboard/add-content", type: "Action", icon: Plus, keywords: ["add content", "upload movie", "add series", "upload video", "create content"] },
+  { title: "Content Library", subtitle: "Manage Movies, Series & Microdramas", link: "/dashboard/content", type: "Page", icon: Film, keywords: ["content", "library", "movies", "series", "microdramas", "films", "shows"] },
+  { title: "Add AI Reel", subtitle: "Upload short AI video reels", link: "/dashboard/add-ai-reel", type: "Action", icon: Plus, keywords: ["add ai reel", "upload reel", "create reel", "short video"] },
+  { title: "AI Reels", subtitle: "AI reel feeds & video management", link: "/dashboard/ai-reels", type: "Page", icon: Clapperboard, keywords: ["reels", "ai reels", "shorts", "videos"] },
+  { title: "Add Audio Story", subtitle: "Upload podcasts & audio narrations", link: "/dashboard/add-audio-story", type: "Action", icon: Plus, keywords: ["add audio", "upload podcast", "narration", "create audio"] },
+  { title: "Audio Stories", subtitle: "Podcasts & audio content library", link: "/dashboard/audio-content", type: "Page", icon: Headphones, keywords: ["audio", "podcasts", "stories", "episodes", "narration"] },
+  { title: "Subscription Plans", subtitle: "Pricing plans, features & tiers", link: "/dashboard/plans", type: "Page", icon: CreditCard, keywords: ["plans", "pricing", "subscriptions", "tiers", "payment", "passes"] },
+  { title: "Subscribed Users", subtitle: "Active VIP & paid subscribers", link: "/dashboard/pricing", type: "Page", icon: User, keywords: ["subscribed users", "vip members", "active plans", "subscribers"] },
+  { title: "Notifications Hub", subtitle: "Broadcast alerts & user push notifications", link: "/dashboard/notifications", type: "Page", icon: Bell, keywords: ["notifications", "broadcast", "alerts", "push", "send message"] },
+  { title: "Legal Documents", subtitle: "Privacy policy, terms & legal agreements", link: "/dashboard/legal", type: "Page", icon: FileText, keywords: ["legal", "privacy", "terms", "policy", "agreement"] },
+  { title: "Help Center", subtitle: "FAQs, support knowledgebase & articles", link: "/dashboard/help", type: "Page", icon: HelpCircle, keywords: ["help", "support", "faq", "kb", "knowledgebase"] },
+  { title: "Company Info", subtitle: "Branding, contact details & address", link: "/dashboard/company-info", type: "Page", icon: MapPin, keywords: ["company", "branding", "contact", "address", "about"] },
+  { title: "Settings", subtitle: "System configurations & admin settings", link: "/dashboard/settings", type: "Page", icon: Settings, keywords: ["settings", "config", "admin settings", "system"] },
+];
+
+export default function Topbar({ theme, toggleTheme, toggleSidebar, isCollapsed, toggleCollapse }) {
   const navigate = useNavigate();
   const [adminName, setAdminName] = useState("Admin");
   const [adminData, setAdminData] = useState(null);
-  const [search, setSearch]       = useState("");
-  const [results, setResults]     = useState([]);
+
+  // ── Global Search state ─────────────────────────────────────────────
+  const [search, setSearch]               = useState("");
+  const [results, setResults]             = useState([]);
+  const [searchOpen, setSearchOpen]       = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef(null);
+  const searchTimerRef = useRef(null);
 
   // ── Notification state ──────────────────────────────────────────────
   const [notifCount,   setNotifCount]   = useState(0);
@@ -68,7 +144,6 @@ export default function Topbar({ theme, toggleTheme, toggleSidebar }) {
   const markAsRead = async (id) => {
     try {
       await API.patch(`/admin/notifications/${id}/read`);
-      // Optimistically update local state to reflect it's read
       setNotifList((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
@@ -78,50 +153,127 @@ export default function Topbar({ theme, toggleTheme, toggleSidebar }) {
     }
   };
 
-  // Close dropdown on outside click
+  // ================= OMNI-SEARCH HANDLER =================
+  const executeSearch = useCallback(async (query) => {
+    const cleanQ = query.trim().toLowerCase();
+    if (!cleanQ) {
+      setResults([]);
+      setSearchLoading(false);
+      setSearchOpen(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchOpen(true);
+
+    // 1. Filter Admin Pages & Actions locally
+    const matchedPages = ADMIN_PAGES_AND_ACTIONS.filter((p) => {
+      return (
+        p.title.toLowerCase().includes(cleanQ) ||
+        p.subtitle.toLowerCase().includes(cleanQ) ||
+        p.keywords.some((k) => k.includes(cleanQ))
+      );
+    }).map((p) => ({
+      _id: `page-${p.title}`,
+      title: p.title,
+      subtitle: p.subtitle,
+      type: p.type,
+      link: p.link,
+      customIcon: p.icon,
+    }));
+
+    // 2. Search Database Entities via Backend API
+    try {
+      const res = await API.get(`/admin/search?q=${encodeURIComponent(cleanQ)}`);
+      const dbResults = res.data.data || [];
+      setResults([...matchedPages, ...dbResults].slice(0, 14));
+    } catch (err) {
+      console.error("Search error:", err);
+      setResults(matchedPages);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    if (!value.trim()) {
+      setResults([]);
+      setSearchOpen(false);
+      setSearchLoading(false);
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      return;
+    }
+
+    setSearchOpen(true);
+    setSearchLoading(true);
+
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      executeSearch(value);
+    }, 220);
+  };
+
+  const handleSelect = (item) => {
+    if (item.link) {
+      if (["Movie", "Series", "Microdrama"].includes(item.type)) {
+        const contentTypeMap = {
+          Movie: "movies",
+          Series: "series",
+          Microdrama: "microdramas",
+        };
+        navigate(item.link, { state: { contentType: contentTypeMap[item.type] || "movies" } });
+      } else {
+        navigate(item.link);
+      }
+    } else if (item.type === "User") {
+      navigate("/dashboard/users");
+    } else if (["Movie", "Series", "Microdrama"].includes(item.type)) {
+      navigate("/dashboard/content", { state: { contentType: item.type.toLowerCase() + (item.type === "Series" ? "" : "s") } });
+    } else if (item.type === "Audio Story") {
+      navigate("/dashboard/audio-content");
+    } else if (item.type === "Help") {
+      navigate("/dashboard/help");
+    } else if (item.type === "Plan") {
+      navigate("/dashboard/plans");
+    }
+
+    setSearch("");
+    setResults([]);
+    setSearchOpen(false);
+  };
+
+  const handleClearSearch = () => {
+    setSearch("");
+    setResults([]);
+    setSearchOpen(false);
+  };
+
+  // Close dropdowns on outside click or Escape key
   useEffect(() => {
     const handler = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) {
         setNotifOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false);
+      }
     };
+
+    const keyHandler = (e) => {
+      if (e.key === "Escape") {
+        setNotifOpen(false);
+        setSearchOpen(false);
+      }
+    };
+
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", keyHandler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", keyHandler);
+    };
   }, []);
-
-  const handleSearch = async (value) => {
-  setSearch(value);
-
-  if (!value) {
-    setResults([]);
-    return;
-  }
-
-  try {
-    const res = await API.get(`/admin/search?q=${value}`);
-    setResults(res.data.data);
-  } catch (err) {
-    console.error("Search error:", err);
-  }
-};
-const handleSelect = (item) => {
-  if (item.type === "User") {
-    navigate("/dashboard/users");
-  } 
-  else if (["Movie", "Series", "Microdrama"].includes(item.type)) {
-    // Navigate to content library, passing the state so the target tab can be opened if supported
-    navigate("/dashboard/content", { state: { contentType: item.type.toLowerCase() + (item.type === "Series" ? "" : "s") } });
-  } 
-  else if (item.type === "Audio Story") {
-    navigate("/dashboard/audio-content");
-  }
-  else if (item.type === "Help") {
-    navigate("/dashboard/help");
-  }
-
-  setSearch("");
-  setResults([]);
-};
 
   // ================= LOGOUT =================
   const handleLogout = () => {
@@ -129,11 +281,10 @@ const handleSelect = (item) => {
     window.location.href = "/";
   };
 
-  // ================= CLOSE DROPDOWN =================
+  // ================= CLOSE MENU =================
   useEffect(() => {
     const handleClickOutside = () => setShowMenu(false);
     window.addEventListener("click", handleClickOutside);
-
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
@@ -142,13 +293,22 @@ const handleSelect = (item) => {
       <header className="topbar">
         {/* LEFT — Greeting */}
         <div className="topbar-left">
-          <button className="mobile-menu-btn" onClick={toggleSidebar}>
-            <Menu size={24} />
+          <button
+            className="mobile-menu-btn"
+            onClick={() => {
+              if (window.innerWidth <= 991) {
+                toggleSidebar && toggleSidebar();
+              } else {
+                toggleCollapse && toggleCollapse();
+              }
+            }}
+            title="Toggle Sidebar"
+          >
+            <Menu size={22} />
           </button>
           <div className="topbar-info">
             <h2 className="topbar-greeting">
-              Welcome back,{" "}
-              <span className="topbar-name">{adminName}</span> 👋
+              Welcome back, <span className="topbar-name">{adminName}</span>
             </h2>
             <p className="topbar-date">
               {new Date().toLocaleDateString("en-IN", {
@@ -163,41 +323,106 @@ const handleSelect = (item) => {
 
         {/* RIGHT — Actions */}
         <div className="topbar-actions">
-          {/* Search */}
-          {/* <div className="topbar-search">
-            <Search size={18} className="search-ico" />
-            <input
-              type="text"
-              placeholder="Search anything..."
-              value={search}
-              // onChange={(e) => setSearch(e.target.value)}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-          </div> */}
-          <div className="topbar-search" style={{ position: "relative" }}>
-  <Search size={18} className="search-ico" />
+          {/* ── Global Search Bar ── */}
+          <div className="topbar-search-container" ref={searchRef}>
+            <div className={`topbar-search ${searchOpen ? "search-focused" : ""}`}>
+              {searchLoading ? (
+                <Loader2 size={16} className="search-ico search-spin" />
+              ) : (
+                <Search size={16} className="search-ico" />
+              )}
 
-  <input
-    type="text"
-    placeholder="Search anything..."
-    value={search}
-    onChange={(e) => handleSearch(e.target.value)}
-  />
+              <input
+                type="text"
+                placeholder="Search pages, actions, movies, users..."
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => {
+                  if (search.trim()) setSearchOpen(true);
+                }}
+              />
 
-  {/* 🔥 SEARCH RESULTS */}
-  {results.length > 0 && (
-    <div className="search-dropdown">
-      {results.map((item, i) => (
-        <div key={i} className="search-item" onClick={() => handleSelect(item)}>
-          <strong>{item.title || item.name}</strong>
-          <p style={{ fontSize: "12px", opacity: 0.7 }}>
-            {item.type}
-          </p>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+              {search && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={handleClearSearch}
+                  title="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* 🔥 SEARCH RESULTS DROPDOWN */}
+            {searchOpen && (
+              <div className="search-dropdown-panel">
+                {searchLoading ? (
+                  <div className="search-dropdown-state">
+                    <Loader2 size={18} className="search-spin" />
+                    <span>Searching database...</span>
+                  </div>
+                ) : results.length === 0 ? (
+                  <div className="search-dropdown-state">
+                    <Search size={22} opacity={0.3} />
+                    <p className="search-empty-msg">No results found for &ldquo;{search}&rdquo;</p>
+                    <span className="search-empty-sub">Try searching by title, user email, or genre</span>
+                  </div>
+                ) : (
+                  <div className="search-results-list">
+                    <div className="search-dropdown-header">
+                      <span>Search Results ({results.length})</span>
+                    </div>
+
+                    {results.map((item, i) => {
+                      const catConfig = SEARCH_CATEGORY_CONFIG[item.type] || SEARCH_CATEGORY_CONFIG.User;
+                      const IconComponent = item.customIcon || catConfig.icon;
+
+                      return (
+                        <div
+                          key={item._id || i}
+                          className="search-item-row"
+                          onClick={() => handleSelect(item)}
+                        >
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.title}
+                              className="search-item-thumb"
+                              onError={(e) => { e.target.style.display = "none"; }}
+                            />
+                          ) : (
+                            <div
+                              className="search-item-icon-box"
+                              style={{ background: catConfig.bg, color: catConfig.color }}
+                            >
+                              <IconComponent size={15} />
+                            </div>
+                          )}
+
+                          <div className="search-item-details">
+                            <span className="search-item-title">{item.title || item.name}</span>
+                            {item.subtitle && (
+                              <span className="search-item-sub">{item.subtitle}</span>
+                            )}
+                          </div>
+
+                          <span
+                            className="search-item-badge"
+                            style={{ background: catConfig.bg, color: catConfig.color }}
+                          >
+                            {item.type}
+                          </span>
+
+                          <ChevronRight size={14} className="search-item-arrow" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* ── Notification Bell ── */}
           <div className="notif-bell-wrap" ref={notifRef}>
@@ -206,7 +431,7 @@ const handleSelect = (item) => {
               title="Notifications"
               onClick={() => setNotifOpen((o) => !o)}
             >
-              <Bell size={20} />
+              <Bell size={19} />
               {notifCount > 0 && (
                 <span className="notif-badge">
                   {notifCount > 99 ? "99+" : notifCount}
@@ -219,63 +444,87 @@ const handleSelect = (item) => {
               <div className="notif-panel">
                 {/* Header */}
                 <div className="notif-panel-head">
-                  <span className="notif-panel-title">
-                    🔔 Notifications
+                  <div className="notif-panel-head-left">
+                    <span className="notif-panel-icon-box">
+                      <Bell size={15} />
+                    </span>
+                    <span className="notif-panel-title">Notifications</span>
                     {notifCount > 0 && (
-                      <span className="notif-panel-count">{notifCount}</span>
+                      <span className="notif-panel-count">{notifCount} new</span>
                     )}
-                  </span>
+                  </div>
                   <button
                     className="notif-panel-close"
                     onClick={() => setNotifOpen(false)}
+                    title="Close"
                   >
-                    <X size={14} />
+                    <X size={15} />
                   </button>
                 </div>
 
                 {/* Body */}
                 <div className="notif-panel-body">
                   {notifLoading ? (
-                    <div className="notif-panel-empty">Loading…</div>
+                    <div className="notif-panel-empty">
+                      <span className="notif-spin-icon"><Clock size={20} /></span>
+                      <p>Fetching notifications...</p>
+                    </div>
                   ) : notifList.filter(n => !n.isRead).length === 0 ? (
                     <div className="notif-panel-empty">
-                      <span style={{ fontSize: "1.6rem" }}>🔔</span>
-                      <p>No new notifications</p>
+                      <div className="notif-empty-bell-icon">
+                        <Bell size={26} />
+                      </div>
+                      <p className="notif-empty-title">All caught up!</p>
+                      <p className="notif-empty-sub">No unread notifications at this time.</p>
                     </div>
                   ) : (
                     notifList
                       .filter((n) => !n.isRead)
-                      .slice(0, 5)
-                      .map((n) => (
-                        <div
-                          key={n._id}
-                          className="notif-panel-item"
-                          onClick={() => markAsRead(n._id)}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <span
-                            className="notif-panel-badge"
-                            style={{
-                              background: TYPE_COLORS[n.type]?.bg || TYPE_COLORS.GENERAL.bg,
-                              color: TYPE_COLORS[n.type]?.color || TYPE_COLORS.GENERAL.color,
-                            }}
+                      .slice(0, 6)
+                      .map((n) => {
+                        const typeKey = n.type && TYPE_COLORS[n.type] ? n.type : "GENERAL";
+                        const cfg = TYPE_COLORS[typeKey] || TYPE_COLORS.GENERAL;
+                        return (
+                          <div
+                            key={n._id}
+                            className="notif-panel-item"
+                            onClick={() => markAsRead(n._id)}
                           >
-                            {n.type || "GENERAL"}
-                          </span>
-                          <div className="notif-panel-text">
-                            <p className="notif-panel-item-title" style={{ fontWeight: 600 }}>
-                              {n.title}
-                            </p>
-                            <p className="notif-panel-item-date">
-                              {new Date(n.createdAt || n.sentAt).toLocaleDateString("en-IN", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </p>
+                            <div
+                              className="notif-panel-item-icon"
+                              style={{ background: cfg.bg, color: cfg.color }}
+                            >
+                              {n.type === "SYSTEM" ? (
+                                <Shield size={14} />
+                              ) : n.type === "PLAN" ? (
+                                <CreditCard size={14} />
+                              ) : n.type === "PROMOTIONAL" ? (
+                                <Sparkles size={14} />
+                              ) : (
+                                <Bell size={14} />
+                              )}
+                            </div>
+
+                            <div className="notif-panel-text">
+                              <div className="notif-panel-item-row">
+                                <p className="notif-panel-item-title">
+                                  {n.title}
+                                </p>
+                                <span className="notif-unread-dot" />
+                              </div>
+                              <p className="notif-panel-item-date">
+                                {new Date(n.createdAt || n.sentAt || Date.now()).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </p>
+                            </div>
+
+                            <ChevronRight size={14} className="notif-item-arrow" />
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                   )}
                 </div>
 
@@ -288,27 +537,26 @@ const handleSelect = (item) => {
                       setNotifOpen(false);
                     }}
                   >
-                    View All Notifications →
+                    View All Notifications <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Theme Toggle */}
+          {/* Modern Premium Theme Toggle Switch */}
           <button
-            className={`theme-toggle ${theme}`}
+            type="button"
+            className={`theme-toggle-switch ${theme}`}
             onClick={toggleTheme}
             title={`Switch to ${theme === "dark" ? "Light" : "Dark"} mode`}
+            aria-label="Toggle Theme"
           >
-            <span className="toggle-track">
-              <span className="toggle-thumb">
-                {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
-              </span>
-            </span>
-            <span className="toggle-label">
-              {theme === "dark" ? "Dark" : "Light"}
-            </span>
+            <div className="theme-switch-track">
+              <div className="theme-switch-thumb">
+                {theme === "dark" ? <Moon size={12} /> : <Sun size={12} />}
+              </div>
+            </div>
           </button>
 
           {/* Avatar + Dropdown */}
