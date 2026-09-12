@@ -31,6 +31,10 @@ exports.addComment = async (req, res) => {
       text: text.trim(),
     });
 
+    const totalComments = await Comment.countDocuments({
+      contentId: targetContentId,
+    });
+
     const populatedComment = await Comment.findById(comment._id).populate(
       "user",
       "name email avatar"
@@ -39,6 +43,7 @@ exports.addComment = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Comment posted successfully",
+      totalComments,
       comment: populatedComment,
     });
   } catch (error) {
@@ -136,6 +141,10 @@ exports.updateComment = async (req, res) => {
     comment.text = text.trim();
     await comment.save();
 
+    const totalComments = await Comment.countDocuments({
+      contentId: comment.contentId,
+    });
+
     const updatedComment = await Comment.findById(comment._id).populate(
       "user",
       "name email avatar"
@@ -144,6 +153,7 @@ exports.updateComment = async (req, res) => {
     res.json({
       success: true,
       message: "Comment updated successfully",
+      totalComments,
       comment: updatedComment,
     });
   } catch (error) {
@@ -185,11 +195,17 @@ exports.deleteComment = async (req, res) => {
       });
     }
 
+    const targetContentId = comment.contentId;
     await Comment.findByIdAndDelete(id);
+
+    const totalComments = await Comment.countDocuments({
+      contentId: targetContentId,
+    });
 
     res.json({
       success: true,
       message: "Comment deleted successfully",
+      totalComments,
     });
   } catch (error) {
     console.error("Delete Comment Error:", error);
@@ -200,6 +216,7 @@ exports.deleteComment = async (req, res) => {
     });
   }
 };
+
 
 // 5. 💬 GET USER'S OWN COMMENTS (AUTHENTICATED USER)
 exports.getUserComments = async (req, res) => {
