@@ -31,7 +31,7 @@
   overflow: hidden;
   border-radius: 20px;
   border: 1px solid rgba(255, 209, 26, 0.14);
-  background: linear-gradient(160deg, #18122B 0%, #120E1C 55%, #0E0B18 100%);
+  background: var(--bg2, #111827);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
     0 32px 80px rgba(0, 0, 0, 0.7),
@@ -329,6 +329,48 @@
 .episode-modal-footer .btn.btn-primary:active {
   transform: translateY(0);
   box-shadow: 0 2px 10px rgba(255, 209, 26, 0.25);
+}
+
+/* ── Light Mode Modal Overrides ── */
+body.light .episode-modal-overlay {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+body.light .episode-modal {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+body.light .episode-modal-header {
+  border-bottom-color: #f1f5f9;
+}
+
+body.light .episode-modal-body .form-input {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+body.light .episode-modal-body .form-input:focus {
+  border-color: var(--primary);
+  background: #ffffff;
+}
+
+body.light .episode-source-block {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+body.light .episode-modal-footer {
+  background: #f1f5f9;
+  border-top-color: #e2e8f0;
+}
+
+body.light .episode-modal-footer .btn.btn-ghost {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
 }
 
 /* ── Responsive ── */

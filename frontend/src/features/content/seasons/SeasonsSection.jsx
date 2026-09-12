@@ -24,7 +24,6 @@ export default function SeasonsSection({
 }) {
   const isMicrodrama = form.type === "microdrama";
 
-  // For Microdramas: auto-create a single "season" container on first render so episodes can be added directly
   useEffect(() => {
     if (isMicrodrama && form.seasons.length === 0) {
       setForm((f) => ({
@@ -42,35 +41,23 @@ export default function SeasonsSection({
   }
 
   return (
-    <div
-      className="premium-card"
-      style={{
-        animation: "pageIn 0.4s ease",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <h3
-          className="section-title"
-          style={{ marginBottom: 0 }}
-        >
-          <span>
+    <div className="form-card seasons-section-card">
+      <div className="card-header-styled">
+        <h3 className="section-title">
+          <span className="title-icon-wrap">
             <Tv size={18} />
           </span>
 
-          {isMicrodrama ? "Episodes" : "Seasons & Episodes"}
+          <div>
+            {isMicrodrama ? "Microdrama Episodes" : "Seasons & Episode Management"}
+            <small>Configure episodes, upload video streams, and set thumbnails</small>
+          </div>
         </h3>
 
         {!isMicrodrama && (
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-secondary-styled"
             onClick={addSeason}
           >
             <Plus size={16} />
@@ -79,8 +66,8 @@ export default function SeasonsSection({
         )}
       </div>
 
-      {form.seasons.map(
-        (season, seasonIndex) => (
+      <div className="seasons-container">
+        {form.seasons.map((season, seasonIndex) => (
           <SeasonSection
             key={seasonIndex}
             season={season}
@@ -95,64 +82,26 @@ export default function SeasonsSection({
             chEp={chEp}
             removeEp={removeEp}
 
-            episodeVideoFiles={
-              episodeVideoFiles
-            }
+            episodeVideoFiles={episodeVideoFiles}
+            episodeThumbnailFiles={episodeThumbnailFiles}
 
-            episodeThumbnailFiles={
-              episodeThumbnailFiles
-            }
+            handleEpisodeVideoChange={handleEpisodeVideoChange}
+            handleEpisodeThumbnailChange={handleEpisodeThumbnailChange}
 
-            handleEpisodeVideoChange={
-              handleEpisodeVideoChange
-            }
-
-            handleEpisodeThumbnailChange={
-              handleEpisodeThumbnailChange
-            }
-
-            setEpisodeVideoFiles={
-              setEpisodeVideoFiles
-            }
-
-            setEpisodeThumbnailFiles={
-              setEpisodeThumbnailFiles
-            }
+            setEpisodeVideoFiles={setEpisodeVideoFiles}
+            setEpisodeThumbnailFiles={setEpisodeThumbnailFiles}
           />
-        )
-      )}
+        ))}
+      </div>
 
       {form.seasons.length === 0 && !isMicrodrama && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "40px",
-            background:
-              "rgba(255,255,255,0.02)",
-            borderRadius: "16px",
-            border:
-              "2px dashed rgba(255,255,255,0.05)",
-          }}
-        >
-          <Tv
-            size={48}
-            style={{
-              color:
-                "rgba(255,255,255,0.1)",
-              marginBottom: 16,
-            }}
-          />
-
-          <p
-            style={{
-              color: "var(--text-muted)",
-            }}
-          >
-            Click "Add Season" to start
-            building your series
-          </p>
+        <div className="seasons-empty-state">
+          <Tv size={40} className="empty-icon" />
+          <p className="empty-title">No Seasons Created</p>
+          <p className="empty-sub">Click "Add Season" to begin organizing episodes for this web series.</p>
         </div>
       )}
     </div>
   );
 }
+

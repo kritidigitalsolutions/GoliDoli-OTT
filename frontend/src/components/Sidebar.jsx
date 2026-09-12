@@ -1,7 +1,7 @@
 import "./Sidebar.css";
 import { NavLink } from "react-router-dom";
 // import { BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut } from "lucide-react";
-import { X, BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut, Star, Bell, MessageSquare, Clapperboard, MapPin, Layers, Smartphone, Image as ImageIcon, Headphones } from "lucide-react";
+import { X, BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, Star, Bell, MessageSquare, Clapperboard, MapPin, Layers, Smartphone, Image as ImageIcon, Headphones, ChevronLeft, ChevronRight } from "lucide-react";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "#FF7A1A" },
@@ -28,28 +28,33 @@ const NAV = [
   { id: "company-info", label: "Company Info", icon: MapPin, color: "#0ea5e9" },
   { id: "settings", label: "Settings", icon: Settings, color: "#64748b" },
 ];
-export default function Sidebar({ theme, showSidebar, toggleSidebar, closeSidebar }) {
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = "/";
-  };
 
+export default function Sidebar({ theme, showSidebar, toggleSidebar, isCollapsed, toggleCollapse, closeSidebar }) {
   return (
-    <aside className={`sidebar ${showSidebar ? "open" : ""}`}>
+    <aside className={`sidebar ${showSidebar ? "open" : ""} ${isCollapsed ? "collapsed" : ""}`}>
       {/* ── Brand ── */}
       <div className="sidebar-brand">
         <div className="sidebar-logo">
           <img src="/favicon.jpeg" alt="Logo" />
         </div>
-        <div>
+        <div className="sidebar-brand-text">
           <div className="sidebar-title">GoliDoli</div>
           <div className="sidebar-tag">Admin Panel</div>
         </div>
-        <button className="mobile-close-btn" onClick={toggleSidebar}>
-          <X size={24} />
+        <button
+          type="button"
+          className="sidebar-collapse-btn"
+          onClick={toggleCollapse}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label="Toggle Sidebar"
+        >
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={16} />}
+        </button>
+        <button type="button" className="mobile-close-btn" onClick={toggleSidebar}>
+          <X size={20} />
         </button>
       </div>
-      {/* This is my sidebar  */}
+
       <div className="sidebar-divider" />
 
       {/* ── Nav ── */}
@@ -62,12 +67,13 @@ export default function Sidebar({ theme, showSidebar, toggleSidebar, closeSideba
               to={toPath}
               end={item.id === "dashboard"}
               className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-              style={({ isActive }) => isActive ? { "--accent": item.color } : undefined}
+              style={({ isActive }) => (isActive ? { "--accent": item.color } : undefined)}
               onClick={() => closeSidebar && closeSidebar()}
+              data-tooltip={item.label}
             >
               {({ isActive }) => (
                 <>
-                  <span className="nav-icon-wrap" style={isActive ? { background: item.color + "22", color: item.color } : undefined}>
+                  <span className="nav-icon-wrap" style={isActive ? { color: item.color } : undefined}>
                     <item.icon size={20} />
                   </span>
                   <span className="nav-label">{item.label}</span>
@@ -78,15 +84,6 @@ export default function Sidebar({ theme, showSidebar, toggleSidebar, closeSideba
           );
         })}
       </nav>
-
-      {/* ── Footer ── */}
-      <div className="sidebar-footer">
-        <div className="sidebar-divider" />
-        <button className="logout-btn" onClick={handleLogout}>
-          <LogOut size={18} /> <span>Logout</span>
-        </button>
-        <p className="sidebar-version">v1.0 · {theme === "dark" ? "Dark Mode" : "Light Mode"}</p>
-      </div>
     </aside>
   );
 }

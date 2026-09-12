@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import API from "../api/axios";
 import "./Dashboard.css";
 import {
@@ -28,12 +29,13 @@ const CHART_COLORS = ["#FFD11A", "#FF0F8A", "#10B981", "#3B82F6", "#8B5CF6"];
 
 function MinimalChartTip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
+  const count = payload[0]?.value || 0;
   return (
     <div className="ch-tooltip">
       <p className="ch-tooltip-label">{label}</p>
       <p className="ch-tooltip-val">
         <span className="ch-tooltip-dot"></span>
-        {payload[0].value.toLocaleString("en-IN")}
+        {count.toLocaleString("en-IN")} {count === 1 ? "User" : "Users"}
       </p>
     </div>
   );
@@ -61,7 +63,9 @@ export default function Dashboard() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState("weekly");
   const [growthData, setGrowthData] = useState([]);
+  const [growthCache, setGrowthCache] = useState({});
   const [contentStats, setContentStats] = useState([]);
 
   const extractNum = (v) => {
@@ -82,7 +86,7 @@ export default function Dashboard() {
       const [uRes, sRes, gRes, subStatsRes, incomeStatsRes, regStatsRes] = await Promise.all([
         API.get("/admin/users"),
         API.get("/admin/content/stats"),
-        API.get("/admin/user/growth"),
+        API.get(`/admin/user/growth?period=${timeframe}`),
         API.get("/admin/subscription/stats"),
         API.get("/admin/subscription/income-stats"),
         API.get("/admin/user/registration-stats"),
@@ -102,7 +106,9 @@ export default function Dashboard() {
       }
       setContentStats(parsedStats);
 
-      setGrowthData(gRes.data?.data || []);
+      const fetchedGrowth = gRes.data?.data || [];
+      setGrowthData(fetchedGrowth);
+      setGrowthCache((prev) => ({ ...prev, [timeframe]: fetchedGrowth }));
 
       setSubscriptionStats(subStatsRes.data?.data || {
         totalSubscribedUsers: 0,
@@ -133,6 +139,25 @@ export default function Dashboard() {
     setLoading(false);
   }
 
+  const handleTimeframeChange = async (period) => {
+    if (period === timeframe) return;
+    setTimeframe(period);
+
+    // Instant UI switch if cached
+    if (growthCache[period]) {
+      setGrowthData(growthCache[period]);
+    }
+
+    try {
+      const gRes = await API.get(`/admin/user/growth?period=${period}`);
+      const fetchedData = gRes.data?.data || [];
+      setGrowthData(fetchedData);
+      setGrowthCache((prev) => ({ ...prev, [period]: fetchedData }));
+    } catch (err) {
+      console.error("User growth timeframe fetch error:", err);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -151,16 +176,47 @@ export default function Dashboard() {
         { name: "Microdramas", value: microdramasCount }
       ];
 
-  const defaultGrowth = [
+  const defaultWeekly = [
+    { day: "Sun", users: 0 },
     { day: "Mon", users: 0 },
     { day: "Tue", users: 0 },
     { day: "Wed", users: 0 },
     { day: "Thu", users: 0 },
     { day: "Fri", users: 0 },
     { day: "Sat", users: 0 },
-    { day: "Sun", users: 0 },
   ];
-  const GROWTH = growthData.length ? growthData : defaultGrowth;
+
+  const defaultMonthly = [
+    { day: "Jan", users: 0 },
+    { day: "Feb", users: 0 },
+    { day: "Mar", users: 0 },
+    { day: "Apr", users: 0 },
+    { day: "May", users: 0 },
+    { day: "Jun", users: 0 },
+    { day: "Jul", users: 0 },
+    { day: "Aug", users: 0 },
+    { day: "Sep", users: 0 },
+    { day: "Oct", users: 0 },
+    { day: "Nov", users: 0 },
+    { day: "Dec", users: 0 },
+  ];
+
+  const currYear = new Date().getFullYear();
+  const defaultYearly = [
+    { day: (currYear - 4).toString(), users: 0 },
+    { day: (currYear - 3).toString(), users: 0 },
+    { day: (currYear - 2).toString(), users: 0 },
+    { day: (currYear - 1).toString(), users: 0 },
+    { day: currYear.toString(), users: 0 },
+  ];
+
+  const getDefaultGrowth = (period) => {
+    if (period === "yearly") return defaultYearly;
+    if (period === "monthly") return defaultMonthly;
+    return defaultWeekly;
+  };
+
+  const GROWTH = growthData.length ? growthData : getDefaultGrowth(timeframe);
 
   const totalUsersCount = Array.isArray(users) ? users.length : (registrationStats.totalRegistration || 0);
 
@@ -327,26 +383,65 @@ export default function Dashboard() {
       <div className="charts-row">
         {/* Area Chart - User Growth */}
         <div className="content-box">
-          <div className="box-header">
-            <TrendingUp size={16} className="box-icon text-gold" />
-            <h3>User Growth Trend</h3>
+          <div className="box-header box-header-between">
+            <div className="box-header-title">
+              <TrendingUp size={16} className="box-icon text-gold" />
+              <h3>User Growth Trend</h3>
+            </div>
+            <div className="timeframe-toggle-group">
+              {[
+                { key: "weekly", label: "Weekly" },
+                { key: "monthly", label: "Monthly" },
+                { key: "yearly", label: "Yearly" },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`timeframe-btn ${timeframe === item.key ? "active" : ""}`}
+                  onClick={() => handleTimeframeChange(item.key)}
+                >
+                  {timeframe === item.key && (
+                    <motion.div
+                      layoutId="activeTimeframePill"
+                      className="timeframe-pill-active-bg"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span className="timeframe-btn-text">{item.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={GROWTH} margin={{ top: 10, right: 10, left: -24, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FFD11A" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#FFD11A" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="day" stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <XAxis
+                  dataKey="day"
+                  stroke="var(--text-muted)"
+                  tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  domain={[0, "auto"]}
+                  stroke="var(--text-muted)"
+                  tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip content={<MinimalChartTip />} cursor={{ stroke: "var(--border2)", strokeWidth: 1 }} />
-                <Area type="monotone" dataKey="users" stroke="#FFD11A" strokeWidth={2.2}
-                  fill="url(#goldGrad)"
-                  activeDot={{ r: 4, fill: "#FFD11A", stroke: "var(--bg2)", strokeWidth: 2 }} />
+                <Area
+                  type="monotone"
+                  dataKey="users"
+                  stroke="#FFD11A"
+                  strokeWidth={2.2}
+                  fill="#FFD11A"
+                  fillOpacity={0.12}
+                  activeDot={{ r: 5, fill: "#FFD11A", stroke: "var(--bg2)", strokeWidth: 2 }}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>

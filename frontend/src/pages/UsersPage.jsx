@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import API, { API_BASE_URL } from "../api/axios";
 import { 
   Users, RefreshCw, User, CheckCircle, AlertCircle, Search, 
   Loader, Eye, Trash2, X, Lock, Unlock, FileSpreadsheet, 
   FileText, Shield, Mail, Phone, Calendar, Sparkles, Check, ChevronLeft, ChevronRight,
-  Copy, Crown, Key, CheckCheck
+  Copy, Crown, Key, CheckCheck, Pencil
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
@@ -20,6 +21,12 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState(new Set());
   const [copiedText, setCopiedText] = useState("");
+
+  // Edit User Modal State
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", status: "Active", authProvider: "PHONE", plan: "Free" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState([]);
 
   // Custom Confirmation & Alert Modal State
   const [dialog, setDialog] = useState({
@@ -92,6 +99,52 @@ export default function UsersPage() {
     navigator.clipboard.writeText(text);
     setCopiedText(label);
     setTimeout(() => setCopiedText(""), 2000);
+  };
+
+  const fetchPlans = async () => {
+    try {
+      const res = await API.get("/admin/plans");
+      if (res.data.success) {
+        setAvailablePlans(res.data.plans || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch plans:", err);
+    }
+  };
+
+  const handleOpenEditModal = (user) => {
+    setEditingUser(user);
+    setEditForm({
+      name: user.name || "",
+      email: user.email || "",
+      phone: formatPhone(user.phone) === "Not Provided" ? "" : (user.phone || ""),
+      status: user.status || "Active",
+      authProvider: user.authProvider || "PHONE",
+      plan: user.plan || "Free",
+    });
+    fetchPlans();
+  };
+
+  const handleSaveEditUser = async (e) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSavingEdit(true);
+    try {
+      const res = await API.patch(`/admin/users/${editingUser._id}`, editForm);
+      if (res.data.success) {
+        const updated = res.data.user;
+        setUsers(prev => prev.map(u => u._id === updated._id ? { ...u, ...updated } : u));
+        if (selected && selected._id === updated._id) {
+          setSelected(prev => ({ ...prev, ...updated }));
+        }
+        setEditingUser(null);
+        showAlert("Success", "User account updated successfully.");
+      }
+    } catch (err) {
+      console.error(err);
+      showAlert("Update Error", err.response?.data?.message || "Failed to update user account details.");
+    }
+    setSavingEdit(false);
   };
 
   // Debounce search query
@@ -318,7 +371,7 @@ export default function UsersPage() {
       </div>
 
       {/* 3-Card Symmetrical KPI Grid */}
-      <div className="kpi-grid">
+      <div className="kpi-grid kpi-grid-3">
         <div className="kpi-card">
           <div className="kpi-header">
             <span className="kpi-label">Total Registered</span>
@@ -375,29 +428,29 @@ export default function UsersPage() {
               />
             </div>
             
-            {/* Subscription Filter Segmented Buttons */}
-            <div style={{ display: "flex", background: "var(--bg3)", padding: 3, borderRadius: 8, border: "1px solid var(--border)" }}>
-              <button
-                className={`btn ${subFilter === "" ? "btn-primary" : "btn-ghost"}`}
-                style={{ padding: "5px 12px", borderRadius: 6, fontSize: "0.78rem", height: "auto" }}
-                onClick={() => { setSubFilter(""); setPage(1); }}
-              >
-                All Users
-              </button>
-              <button
-                className={`btn ${subFilter === "subscribed" ? "btn-primary" : "btn-ghost"}`}
-                style={{ padding: "5px 12px", borderRadius: 6, fontSize: "0.78rem", height: "auto" }}
-                onClick={() => { setSubFilter("subscribed"); setPage(1); }}
-              >
-                Subscribed
-              </button>
-              <button
-                className={`btn ${subFilter === "unsubscribed" ? "btn-primary" : "btn-ghost"}`}
-                style={{ padding: "5px 12px", borderRadius: 6, fontSize: "0.78rem", height: "auto" }}
-                onClick={() => { setSubFilter("unsubscribed"); setPage(1); }}
-              >
-                Free / Unsubscribed
-              </button>
+            {/* Subscription Filter Segmented Toggle Switch */}
+            <div className="segmented-switch">
+              {[
+                { value: "", label: "All Users" },
+                { value: "subscribed", label: "Subscribed" },
+                { value: "unsubscribed", label: "Free / Unsubscribed" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`segmented-switch-btn ${subFilter === opt.value ? "active" : ""}`}
+                  onClick={() => { setSubFilter(opt.value); setPage(1); }}
+                >
+                  {subFilter === opt.value && (
+                    <motion.div
+                      layoutId="activeUsersSubFilterPill"
+                      className="segmented-switch-active-bg"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span className="segmented-switch-btn-text">{opt.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -552,6 +605,13 @@ export default function UsersPage() {
                                 title="View User Profile"
                               >
                                 <Eye size={14} />
+                              </button>
+                              <button 
+                                className="icon-btn edit" 
+                                onClick={() => handleOpenEditModal(u)} 
+                                title="Edit User Details"
+                              >
+                                <Pencil size={14} />
                               </button>
                               {u.status === "Blocked" ? (
                                 <button 
@@ -726,6 +786,29 @@ export default function UsersPage() {
             {/* Minimal Action Footer */}
             <div className="up-min-foot">
               <div className="up-min-actions">
+                <button 
+                  className="up-min-btn-edit" 
+                  onClick={() => {
+                    const targetUser = selected;
+                    setSelected(null);
+                    handleOpenEditModal(targetUser);
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(245, 158, 11, 0.4)",
+                    background: "rgba(245, 158, 11, 0.12)",
+                    color: "var(--orange, #f59e0b)",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >
+                  <Pencil size={13} /> Edit
+                </button>
                 {selected.status === "Blocked" ? (
                   <button 
                     className="up-min-btn-unblock" 
@@ -760,6 +843,199 @@ export default function UsersPage() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Edit User Details Modal */}
+      {editingUser && (
+        <div className="modal-overlay" onClick={() => setEditingUser(null)}>
+          <div className="user-profile-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 510, padding: 24 }}>
+            {/* Header */}
+            <div className="up-min-head" style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  background: "rgba(255, 209, 26, 0.15)",
+                  border: "1px solid rgba(255, 209, 26, 0.35)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--primary)"
+                }}>
+                  <Pencil size={17} />
+                </div>
+                <div>
+                  <h3 className="up-min-title" style={{ fontSize: "1.05rem", fontWeight: 700 }}>Edit User Profile</h3>
+                  <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", margin: 0 }}>Update account details and subscription plan</p>
+                </div>
+              </div>
+              <button className="up-min-close" onClick={() => setEditingUser(null)} title="Close">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Mini User Preview Card */}
+            <div className="up-min-user-card" style={{ padding: "10px 14px", background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--border)", marginBottom: 16 }}>
+              <img 
+                className="up-min-avatar"
+                style={{ width: 38, height: 38 }}
+                src={
+                  editingUser.profileImage || editingUser.profilePic || editingUser.avatar || editingUser.photo
+                    ? getImageUrl(editingUser.profileImage || editingUser.profilePic || editingUser.avatar || editingUser.photo)
+                    : `https://i.pravatar.cc/150?u=${encodeURIComponent(editingUser._id || editingUser.email || editingUser.name)}`
+                } 
+                alt={editingUser.name || "User"} 
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://i.pravatar.cc/150?u=${encodeURIComponent(editingUser._id || editingUser.email || editingUser.name)}`;
+                }}
+              />
+              <div className="up-min-user-meta">
+                <div className="up-min-name-row" style={{ gap: 8, alignItems: "center" }}>
+                  <h4 className="up-min-name" style={{ fontSize: "0.88rem" }}>{capitalizeName(editingUser.name)}</h4>
+                  <span className="badge" style={{
+                    background: editForm.plan && editForm.plan !== "Free" ? "rgba(255, 209, 26, 0.18)" : "var(--bg3)",
+                    color: editForm.plan && editForm.plan !== "Free" ? "var(--primary)" : "var(--text-muted)",
+                    border: "1px solid " + (editForm.plan && editForm.plan !== "Free" ? "rgba(255, 209, 26, 0.5)" : "var(--border)"),
+                    fontSize: "0.65rem",
+                    fontWeight: 700
+                  }}>
+                    {editForm.plan || "Free"}
+                  </span>
+                </div>
+                <p className="up-min-email" style={{ fontSize: "0.75rem", marginTop: 2 }}>{editingUser.email || editingUser.phone || ("ID: " + editingUser._id)}</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEditUser} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Full Name */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-soft)" }}>Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                  placeholder="Enter user's name"
+                  required
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.85rem", outline: "none" }}
+                />
+              </div>
+
+              {/* Email Address */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-soft)" }}>Email Address</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="e.g. user@example.com"
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.85rem", outline: "none" }}
+                />
+              </div>
+
+              {/* Phone Number */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-soft)" }}>Phone Number</label>
+                <input
+                  type="text"
+                  value={editForm.phone}
+                  onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="e.g. +919876543210"
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.85rem", outline: "none" }}
+                />
+              </div>
+
+              {/* Subscription Plan Selector */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-soft)", display: "flex", alignItems: "center", gap: 5 }}>
+                    <Crown size={14} style={{ color: "#ffd11a" }} /> Subscription Plan
+                  </label>
+                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                    Current: <strong style={{ color: "var(--primary)" }}>{editingUser?.plan || "Free"}</strong>
+                  </span>
+                </div>
+                <select
+                  value={editForm.plan}
+                  onChange={e => setEditForm({ ...editForm, plan: e.target.value })}
+                  style={{ 
+                    width: "100%", 
+                    padding: "9px 12px", 
+                    borderRadius: 8, 
+                    background: "var(--bg3)", 
+                    border: "1px solid var(--border)", 
+                    color: "var(--text)", 
+                    fontSize: "0.85rem", 
+                    outline: "none", 
+                    cursor: "pointer",
+                    fontWeight: 600
+                  }}
+                >
+                  <option value="Free">Free Tier (No Subscription)</option>
+                  {availablePlans.map(p => (
+                    <option key={p._id || p.name} value={p.name}>
+                      {p.name} — ₹{p.price} ({p.duration} days)
+                    </option>
+                  ))}
+                  {editForm.plan && editForm.plan !== "Free" && !availablePlans.some(p => p.name === editForm.plan) && (
+                    <option value={editForm.plan}>{editForm.plan}</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Status & Auth Provider Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-soft)" }}>Account Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Blocked">Blocked</option>
+                  </select>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-soft)" }}>Auth Provider</label>
+                  <select
+                    value={editForm.authProvider}
+                    onChange={e => setEditForm({ ...editForm, authProvider: e.target.value })}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                  >
+                    <option value="PHONE">PHONE</option>
+                    <option value="GOOGLE">GOOGLE</option>
+                    <option value="FACEBOOK">FACEBOOK</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setEditingUser(null)}
+                  disabled={savingEdit}
+                  style={{ padding: "8px 16px", borderRadius: 8, fontSize: "0.82rem" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={savingEdit}
+                  style={{ padding: "8px 22px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}
+                >
+                  {savingEdit ? <Loader size={14} className="spin-icon" /> : <Check size={14} />}
+                  {savingEdit ? "Saving Changes..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

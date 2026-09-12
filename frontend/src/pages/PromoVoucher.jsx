@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { 
   Eye, 
   Edit2, 
@@ -164,21 +165,32 @@ export default function PromoVoucher() {
 
       <div className="content-box">
         <div className="filter-row" style={{ display: "flex", gap: 12, marginBottom: 32, alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: "20px" }}>
-          <div className="tab-group" style={{ display: "flex", background: "var(--bg3)", padding: "4px", borderRadius: "12px", gap: "4px" }}>
-            <button 
-              className={`btn ${tab === "promo" ? "btn-primary" : "btn-ghost"}`} 
-              onClick={() => setTab("promo")}
-              style={{ borderRadius: "8px" }}
-            >
-              <Tag size={18} /> Promo Codes
-            </button>
-            <button 
-              className={`btn ${tab === "voucher" ? "btn-primary" : "btn-ghost"}`} 
-              onClick={() => setTab("voucher")}
-              style={{ borderRadius: "8px" }}
-            >
-              <Ticket size={18} /> Vouchers
-            </button>
+          <div className="segmented-switch">
+            {[
+              { id: "promo", label: "Promo Codes", icon: Tag },
+              { id: "voucher", label: "Vouchers", icon: Ticket },
+            ].map((t) => {
+              const IconComp = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`segmented-switch-btn ${tab === t.id ? "active" : ""}`}
+                  onClick={() => setTab(t.id)}
+                >
+                  {tab === t.id && (
+                    <motion.div
+                      layoutId="activePromoTabPill"
+                      className="segmented-switch-active-bg"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span className="segmented-switch-btn-text" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <IconComp size={15} /> {t.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
