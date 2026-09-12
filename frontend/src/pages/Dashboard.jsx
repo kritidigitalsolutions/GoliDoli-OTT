@@ -2,37 +2,39 @@ import { useEffect, useState } from "react";
 import API from "../api/axios";
 import "./Dashboard.css";
 import {
-  BarChart3,
+  LayoutDashboard,
   Users,
   Film,
-  Radio,
-  TrendingUp, RefreshCw,
+  TrendingUp,
+  RefreshCw,
   BadgeCheck,
   UserX,
   Clock3,
   Sun,
   CalendarDays,
   CalendarRange,
-  Calendar,
   CalendarClock,
-  Wallet
+  Wallet,
+  PieChart as PieChartIcon,
+  CreditCard,
+  UserPlus
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  BarChart, Bar
+  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 
-// const GROWTH = growthData;
+const CHART_COLORS = ["#6366F1", "#10B981", "#3B82F6", "#F59E0B", "#8B5CF6"];
 
-const COLORS = ["#FFD11A", "#FF0F8A", "#1E88FF", "#FF2D55"];
-
-function ChartTip({ active, payload, label }) {
+function MinimalChartTip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="ch-tooltip">
       <p className="ch-tooltip-label">{label}</p>
-      <p className="ch-tooltip-val">{payload[0].value}</p>
+      <p className="ch-tooltip-val">
+        <span className="ch-tooltip-dot"></span>
+        {payload[0].value.toLocaleString("en-IN")}
+      </p>
     </div>
   );
 }
@@ -60,28 +62,14 @@ export default function Dashboard() {
 
   const [loading, setLoading] = useState(true);
   const [growthData, setGrowthData] = useState([]);
+  const [contentStats, setContentStats] = useState([]);
 
   const GROWTH = growthData.length ? growthData : [];
-
-  const [contentStats, setContentStats] = useState([]);
   const PIE = contentStats.length ? contentStats : [];
 
-  // ✅ CORRECT BACKEND ENDPOINTS
   async function fetchData() {
     setLoading(true);
     try {
-      // const [uRes, cRes] = await Promise.all([
-      //   API.get("/user"),       // ✅ correct: /api/user
-      //   API.get("/movies"),     // ✅ correct: /api/movies
-      // ]);
-      //     const [uRes, cRes, rRes, gRes, sRes] = await Promise.all([
-      //   API.get("/user"),
-      //   // API.get("/movies"),
-      //   API.get("/admin/content/stats"),
-      //   API.get("/admin/subscription/revenue"),
-      //   API.get("/admin/user/growth"),
-      //   API.get("/admin/content/stats"),
-      // ]);
       const [uRes, sRes, gRes, subStatsRes, incomeStatsRes, regStatsRes] = await Promise.all([
         API.get("/admin/users"),
         API.get("/admin/content/stats"),
@@ -91,11 +79,8 @@ export default function Dashboard() {
         API.get("/admin/user/registration-stats"),
       ]);
 
-      setContentStats(sRes.data.data || []);
-
-
-
-      setGrowthData(gRes.data.data || []);
+      setContentStats(sRes.data?.data || []);
+      setGrowthData(gRes.data?.data || []);
 
       setSubscriptionStats(subStatsRes.data?.data || {
         totalSubscribedUsers: 0,
@@ -116,226 +101,276 @@ export default function Dashboard() {
         totalRegistration: 0,
       });
       setUsers(uRes.data?.users || uRes.data?.data || uRes.data || []);
-      // setContent(cRes.data?.data || cRes.data || []);
     } catch (err) {
-      console.log("Dashboard fetch error:", err);
+      console.error("Dashboard fetch error:", err);
     }
     setLoading(false);
   }
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const formatCurrency = (value) =>
     `₹${Number(value || 0).toLocaleString("en-IN")}`;
 
   const moviesCount = contentStats.find(c => c.name === "Movies")?.value || 0;
   const seriesCount = contentStats.find(c => c.name === "Series")?.value || 0;
-
   const totalContent = moviesCount + seriesCount;
 
-
-  // const PIE = [
-  //   { name: "Movies", value: movies || 1 },
-  //   { name: "Series", value: series || 1 },
-  //   { name: "Other",  value: other  || 1 },
-  // ];
-
-  const activeUsers = Array.isArray(users) ? users.filter(u => !u.isBlocked).length : 0;
+  const totalUsersCount = Array.isArray(users) ? users.length : (registrationStats.totalRegistration || 0);
 
   return (
     <div className="page-section">
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="pg-header">
         <div>
-          <h1 className="pg-title"><BarChart3 style={{ display: "inline-block", marginRight: 8 }} size={32} /> Platform Overview</h1>
-          <p className="pg-sub">Real-time stats and analytics for GoliDoli</p>
+          <h1 className="pg-title">
+            <LayoutDashboard size={24} className="pg-title-icon" />
+            Dashboard Overview
+          </h1>
+          <p className="pg-sub">Real-time metrics, user growth, and revenue statistics</p>
         </div>
-        <button className="btn btn-ghost" onClick={fetchData}>
-          {loading ? <><TrendingUp size={18} style={{ marginRight: 6 }} /> Loading...</> : <><RefreshCw size={18} style={{ marginRight: 6 }} /> Refresh</>}
+        <button className="btn btn-ghost" onClick={fetchData} disabled={loading}>
+          <RefreshCw size={15} className={loading ? "spin-icon" : ""} />
+          <span>{loading ? "Syncing..." : "Refresh"}</span>
         </button>
       </div>
 
-      {/* ─── Stat Cards ─── */}
-      <div className="stat-grid">
-        <div className="stat-card s-red">
-          <div className="stat-icon"><Users size={32} /></div>
-          <div className="stat-label">Total Users</div>
-          <div className="stat-value">{loading ? "..." : (Array.isArray(users) ? users.length : 0)}</div>
-          <div className="stat-trend up">↑ +12% this week</div>
-        </div>
-        <div className="stat-card s-blue">
-          <div className="stat-icon"><Film size={32} /></div>
-          <div className="stat-label">Content Library</div>
-          {/* <div className="stat-value">{loading ? "..." : (Array.isArray(content) ? content.length : 0)}</div> */}
-          <div className="stat-value">
-            {loading ? "..." : totalContent}
+      {/* ── Section 1: Executive KPI Grid (4 Columns Symmetrical) ── */}
+      <div className="kpi-grid">
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Total Users</span>
+            <div className="kpi-icon-badge icon-indigo">
+              <Users size={18} />
+            </div>
           </div>
-          <div className="stat-trend up">↑ +8% this week</div>
+          <div className="kpi-value">{loading ? "..." : totalUsersCount.toLocaleString("en-IN")}</div>
+          <div className="kpi-footer text-success">
+            <TrendingUp size={14} />
+            <span>Active user base</span>
+          </div>
         </div>
-        <div className="stat-card s-green">
-          <div className="stat-icon"><Radio size={32} /></div>
-          <div className="stat-label">Active Users</div>
-          <div className="stat-value">{loading ? "..." : activeUsers}</div>
-          <div className="stat-trend up">↑ Live now</div>
-        </div>
-      </div>
 
-      <div className="content-box">
-        <h3>Registration</h3>
-        <div className="stat-grid">
-          <div className="stat-card s-red">
-            <div className="stat-icon"><Sun size={28} /></div>
-            <div className="stat-label">Today Registration</div>
-            <div className="stat-value">{loading ? "..." : registrationStats.todayRegistration}</div>
-            <div className="stat-trend up">New users today</div>
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Subscribed Users</span>
+            <div className="kpi-icon-badge icon-emerald">
+              <BadgeCheck size={18} />
+            </div>
           </div>
-          <div className="stat-card s-blue">
-            <div className="stat-icon"><CalendarDays size={28} /></div>
-            <div className="stat-label">Yesterday Registration</div>
-            <div className="stat-value">{loading ? "..." : registrationStats.yesterdayRegistration}</div>
-            <div className="stat-trend up">New users yesterday</div>
-          </div>
-          <div className="stat-card s-green">
-            <div className="stat-icon"><Users size={28} /></div>
-            <div className="stat-label">Total Registration counts</div>
-            <div className="stat-value">{loading ? "..." : registrationStats.totalRegistration}</div>
-            <div className="stat-trend up">All registered users</div>
+          <div className="kpi-value">{loading ? "..." : subscriptionStats.totalSubscribedUsers.toLocaleString("en-IN")}</div>
+          <div className="kpi-footer text-muted">
+            <span>{totalUsersCount > 0 ? `${Math.round((subscriptionStats.totalSubscribedUsers / totalUsersCount) * 100)}% conversion rate` : "0% conversion rate"}</span>
           </div>
         </div>
-      </div>
 
-      <div className="content-box">
-        <h3>Subscriptions</h3>
-        <div className="stat-grid">
-          <div className="stat-card s-green">
-            <div className="stat-icon"><BadgeCheck size={28} /></div>
-            <div className="stat-label">Total Subscribe Users</div>
-            <div className="stat-value">{loading ? "..." : subscriptionStats.totalSubscribedUsers}</div>
-            <div className="stat-trend up">Active subscription users</div>
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Content Library</span>
+            <div className="kpi-icon-badge icon-blue">
+              <Film size={18} />
+            </div>
           </div>
-          <div className="stat-card s-blue">
-            <div className="stat-icon"><UserX size={28} /></div>
-            <div className="stat-label">Total Not Subscribe Users</div>
-            <div className="stat-value">{loading ? "..." : subscriptionStats.totalNotSubscribedUsers}</div>
-            <div className="stat-trend down">No active subscription</div>
+          <div className="kpi-value">{loading ? "..." : totalContent.toLocaleString("en-IN")}</div>
+          <div className="kpi-footer text-muted">
+            <span>{moviesCount} Movies • {seriesCount} Series</span>
           </div>
-          <div className="stat-card s-orange">
-            <div className="stat-icon"><Clock3 size={28} /></div>
-            <div className="stat-label">Expiry Subscription counts</div>
-            <div className="stat-value">{loading ? "..." : subscriptionStats.expirySubscriptionCount}</div>
-            <div className="stat-trend down">Expired subscriptions</div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Total Revenue</span>
+            <div className="kpi-icon-badge icon-amber">
+              <Wallet size={18} />
+            </div>
+          </div>
+          <div className="kpi-value">{loading ? "..." : formatCurrency(incomeStats.totalIncome)}</div>
+          <div className="kpi-footer text-success">
+            <TrendingUp size={14} />
+            <span>All-time earnings</span>
           </div>
         </div>
       </div>
 
-      <div className="content-box">
-        <h3>Income</h3>
-        <div className="stat-grid">
-          <div className="stat-card s-red">
-            <div className="stat-icon"><Sun size={28} /></div>
-            <div className="stat-label">Today Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.todayIncome)}</div>
-            <div className="stat-trend up">Current day earnings</div>
+      {/* ── Section 2: Symmetric Dual Metrics Grid ── */}
+      <div className="dual-grid">
+        {/* Registration & Subscriptions Breakdown */}
+        <div className="content-box">
+          <div className="box-header">
+            <UserPlus size={18} className="box-icon text-indigo" />
+            <h3>User & Subscription Activity</h3>
           </div>
-          <div className="stat-card s-blue">
-            <div className="stat-icon"><CalendarDays size={28} /></div>
-            <div className="stat-label">Yesterday Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.yesterdayIncome)}</div>
-            <div className="stat-trend up">Previous day earnings</div>
+          <div className="stat-subgrid">
+            <div className="sub-card">
+              <div className="sub-icon"><Sun size={18} /></div>
+              <div>
+                <div className="sub-label">Today Registrations</div>
+                <div className="sub-val">{loading ? "..." : registrationStats.todayRegistration}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><CalendarDays size={18} /></div>
+              <div>
+                <div className="sub-label">Yesterday Registrations</div>
+                <div className="sub-val">{loading ? "..." : registrationStats.yesterdayRegistration}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><UserX size={18} /></div>
+              <div>
+                <div className="sub-label">Unsubscribed Users</div>
+                <div className="sub-val">{loading ? "..." : subscriptionStats.totalNotSubscribedUsers}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><Clock3 size={18} /></div>
+              <div>
+                <div className="sub-label">Expired Subscriptions</div>
+                <div className="sub-val text-warning">{loading ? "..." : subscriptionStats.expirySubscriptionCount}</div>
+              </div>
+            </div>
           </div>
-          <div className="stat-card s-green">
-            <div className="stat-icon"><CalendarRange size={28} /></div>
-            <div className="stat-label">Weekly Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.weeklyIncome)}</div>
-            <div className="stat-trend up">This week earnings</div>
+        </div>
+
+        {/* Financial Income Breakdown */}
+        <div className="content-box">
+          <div className="box-header">
+            <CreditCard size={18} className="box-icon text-emerald" />
+            <h3>Revenue Breakdown</h3>
           </div>
-          <div className="stat-card s-orange">
-            <div className="stat-icon"><Calendar size={28} /></div>
-            <div className="stat-label">Monthly Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.monthlyIncome)}</div>
-            <div className="stat-trend up">This month earnings</div>
-          </div>
-          <div className="stat-card s-blue">
-            <div className="stat-icon"><CalendarClock size={28} /></div>
-            <div className="stat-label">Yearly Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.yearlyIncome)}</div>
-            <div className="stat-trend up">This year earnings</div>
-          </div>
-          <div className="stat-card s-green">
-            <div className="stat-icon"><Wallet size={28} /></div>
-            <div className="stat-label">Total Income Counts</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.totalIncome)}</div>
-            <div className="stat-trend up">Overall revenue</div>
+          <div className="stat-subgrid">
+            <div className="sub-card">
+              <div className="sub-icon"><Sun size={18} /></div>
+              <div>
+                <div className="sub-label">Today Earnings</div>
+                <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.todayIncome)}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><CalendarDays size={18} /></div>
+              <div>
+                <div className="sub-label">Yesterday Earnings</div>
+                <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.yesterdayIncome)}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><CalendarRange size={18} /></div>
+              <div>
+                <div className="sub-label">Weekly Earnings</div>
+                <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.weeklyIncome)}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><CalendarClock size={18} /></div>
+              <div>
+                <div className="sub-label">Monthly Earnings</div>
+                <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.monthlyIncome)}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ─── Charts Row ─── */}
+      {/* ── Section 3: Charts Row ── */}
       <div className="charts-row">
-        {/* Area Chart */}
+        {/* Area Chart - User Growth */}
         <div className="content-box">
-          <h3>📈 User Growth — This Week</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={GROWTH} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-              <defs>
-                <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#FFD11A" stopOpacity={0.45} />
-                  <stop offset="95%" stopColor="#FF0F8A" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="day" stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTip />} cursor={{ stroke: "var(--border2)" }} />
-              <Area type="monotone" dataKey="users" stroke="#FFD11A" strokeWidth={2.5}
-                fill="url(#goldGrad)"
-                activeDot={{ r: 6, fill: "#FFD11A", stroke: "var(--bg2)", strokeWidth: 3 }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="box-header">
+            <TrendingUp size={18} className="box-icon text-indigo" />
+            <h3>User Growth Trend</h3>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={GROWTH} margin={{ top: 12, right: 12, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="indigoGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="day" stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<MinimalChartTip />} cursor={{ stroke: "var(--border2)", strokeWidth: 1 }} />
+                <Area type="monotone" dataKey="users" stroke="#6366F1" strokeWidth={2}
+                  fill="url(#indigoGrad)"
+                  activeDot={{ r: 5, fill: "#6366F1", stroke: "var(--bg2)", strokeWidth: 2 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Pie Chart */}
+        {/* Pie Chart - Content Split */}
         <div className="content-box">
-          <h3>🎬 Content Split</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie data={PIE} cx="50%" cy="50%"
-                innerRadius={55} outerRadius={88}
-                paddingAngle={4} dataKey="value" stroke="none">
-                {PIE.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ background: "var(--bg3)", border: "1px solid var(--border2)", borderRadius: 8, color: "var(--text)" }} />
-              <Legend iconType="circle" formatter={v => <span style={{ color: "var(--text-soft)", fontSize: "0.8rem" }}>{v}</span>} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="box-header">
+            <PieChartIcon size={18} className="box-icon text-emerald" />
+            <h3>Content Split</h3>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie data={PIE} cx="50%" cy="45%"
+                  innerRadius={55} outerRadius={82}
+                  paddingAngle={5} dataKey="value" stroke="none">
+                  {PIE.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: "var(--bg2)", border: "1px solid var(--border2)", borderRadius: 8, color: "var(--text)", fontSize: "0.85rem" }} />
+                <Legend iconType="circle" iconSize={8} formatter={v => <span style={{ color: "var(--text-soft)", fontSize: "0.82rem", fontWeight: 500 }}>{v}</span>} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      {/* ─── Recent Activity ─── */}
+      {/* ── Section 4: Recent Users Table ── */}
       <div className="content-box">
-        <h3>🕐 Recent Users</h3>
+        <div className="box-header">
+          <Clock3 size={18} className="box-icon text-soft" />
+          <h3>Recent User Signups</h3>
+        </div>
         {loading ? (
-          <p style={{ color: "var(--text-muted)", padding: "20px 0" }}>Loading...</p>
+          <div className="tbl-placeholder">Loading recent signups...</div>
         ) : !Array.isArray(users) || users.length === 0 ? (
-          <p style={{ color: "var(--text-muted)", padding: "20px 0" }}>No users yet</p>
+          <div className="tbl-placeholder">No user signups found</div>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
-              <thead><tr><th>#</th><th>User</th><th>Email</th><th>Joined</th></tr></thead>
+              <thead>
+                <tr>
+                  <th style={{ width: "60px" }}>#</th>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Joined Date</th>
+                  <th style={{ textAlign: "right" }}>Status</th>
+                </tr>
+              </thead>
               <tbody>
-                {users.slice(0, 5).map((u, i) => (
+                {users.slice(0, 6).map((u, i) => (
                   <tr key={u._id || i}>
-                    <td style={{ color: "var(--text-muted)" }}>{i + 1}</td>
+                    <td className="text-muted">{i + 1}</td>
                     <td>
                       <div className="user-cell">
                         <div className="u-avatar">{u.name?.[0]?.toUpperCase() || "U"}</div>
                         <span className="u-name">{u.name || "User"}</span>
                       </div>
                     </td>
-                    <td style={{ color: "var(--text-soft)" }}>{u.email}</td>
-                    <td style={{ color: "var(--text-muted)" }}>{new Date(u.createdAt).toLocaleDateString("en-IN")}</td>
+                    <td className="text-soft">{u.email}</td>
+                    <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "N/A"}</td>
+                    <td style={{ textAlign: "right" }}>
+                      <span className={`badge ${u.isBlocked ? "badge-blocked" : "badge-active"}`}>
+                        {u.isBlocked ? "Blocked" : "Active"}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

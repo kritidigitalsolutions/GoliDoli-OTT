@@ -3,6 +3,7 @@ const AIReel = require("../models/aiReel.model");
 const AIReelWatch = require("../models/aiReelWatch.model");
 const AIReelFeedSession = require("../models/aiReelFeedSession.model");
 const AIReelUserState = require("../models/aiReelUserState.model");
+const Comment = require("../models/comment.model");
 
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 20;
@@ -140,6 +141,28 @@ const getAllAIReels = async (req, res) => {
       await session.save();
     }
 
+    // Attach totalComments and commentsCount to each reel
+    if (reels.length) {
+      const reelIds = reels.map((reel) => reel._id);
+      const commentCounts = await Comment.aggregate([
+        { $match: { contentId: { $in: reelIds } } },
+        { $group: { _id: "$contentId", count: { $sum: 1 } } },
+      ]);
+
+      const commentCountMap = new Map();
+      commentCounts.forEach((item) => {
+        commentCountMap.set(item._id.toString(), item.count);
+      });
+
+      reels = reels.map((reel) => {
+        const count = commentCountMap.get(reel._id.toString()) || 0;
+        return {
+          ...reel,
+          totalComments: count,
+        };
+      });
+    }
+
     const publishedCount = await AIReel.countDocuments(baseFilter);
     const watchedPublishedCount = watchedIds.length
       ? await AIReel.countDocuments({
@@ -179,6 +202,7 @@ const getAllAIReels = async (req, res) => {
     });
   }
 };
+
 
 // ========================================
 // SET REPLAY PREFERENCE (USER)
@@ -322,6 +346,10 @@ const getAIReelById = async (req, res) => {
         message: "AI Reel not found",
       });
     }
+
+    const count = await Comment.countDocuments({ contentId: id });
+    aiReel.totalComments = count;
+
     return res.status(200).json({
       success: true,
       message: "AI Reel fetched successfully",
@@ -335,6 +363,7 @@ const getAIReelById = async (req, res) => {
     });
   }
 };
+
 
 // ========================================
 // RECORD AI REEL SHARE (USER)
