@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 
 import "./Dashboard.css";
 import "./AddContent.css";
@@ -301,36 +302,38 @@ export default function AddContent() {
           </div>
         </div>
 
-        <div className="content-type-toggle">
-          <button
-            type="button"
-            className={`toggle-btn ${form.type === "movie" ? "active" : ""}`}
-            onClick={() => {
-              setType("movie");
-              if (activeStep === 4) setActiveStep(3);
-            }}
-          >
-            <Film size={17} />
-            Movies
-          </button>
-
-          <button
-            type="button"
-            className={`toggle-btn ${form.type === "series" ? "active" : ""}`}
-            onClick={() => setType("series")}
-          >
-            <Tv size={17} />
-            Web Series
-          </button>
-
-          <button
-            type="button"
-            className={`toggle-btn ${form.type === "microdrama" ? "active" : ""}`}
-            onClick={() => setType("microdrama")}
-          >
-            <Clapperboard size={17} />
-            Microdramas
-          </button>
+        <div className="segmented-switch">
+          {[
+            { id: "movie", label: "Movies", icon: Film },
+            { id: "series", label: "Web Series", icon: Tv },
+            { id: "microdrama", label: "Microdramas", icon: Clapperboard },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = form.type === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`segmented-switch-btn ${isActive ? "active" : ""}`}
+                onClick={() => {
+                  setType(item.id);
+                  if (item.id === "movie" && activeStep === 4) setActiveStep(3);
+                }}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="addContentTypePill"
+                    className="segmented-switch-active-bg"
+                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                  />
+                )}
+                <span className="segmented-switch-btn-text" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Icon size={15} />
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

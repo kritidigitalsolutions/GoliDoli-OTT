@@ -1,305 +1,256 @@
-.subscription-page {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
+/* =====================================================
+   GOLIDOLI OTT — SUBSCRIPTIONS PAGE STYLES
+   Minimal, Clean, Professional Executive Admin UI
+   Maintains 100% design consistency with Dashboard & Users
+===================================================== */
 
-/* Header Row */
-.sub-header-row {
-  display: flex;
-  justify-content: space-between;
+/* Page container utilizes standard .page-section from Dashboard.css */
+
+/* ── Copyable Chip for Payment IDs / Order IDs ── */
+.sub-copy-chip {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-/* Stats Grid */
-.sub-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.sub-stat-card {
-  background: var(--bg2, #11151F);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.05));
-  border-radius: 12px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  box-shadow: var(--shadow-sm, 0 4px 20px rgba(0,0,0,0.2));
-  transition: all 0.25s ease;
-}
-
-body.light .sub-stat-card,
-.light .sub-stat-card {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
-}
-
-.sub-stat-card.highlight-card {
-  border-color: rgba(192, 132, 252, 0.4);
-  box-shadow: 0 0 20px rgba(192, 132, 252, 0.15);
-}
-
-body.light .sub-stat-card.highlight-card,
-.light .sub-stat-card.highlight-card {
-  border-color: rgba(192, 132, 252, 0.5);
-  background: #ffffff;
-}
-
-.stat-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.stat-icon-wrapper {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.bg-green { background: rgba(16, 185, 129, 0.15); }
-.text-green { color: #10b981; }
-
-.bg-blue { background: rgba(59, 130, 246, 0.15); }
-.text-blue { color: #3b82f6; }
-
-.bg-purple { background: rgba(192, 132, 252, 0.15); }
-
-.stat-titles {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-
-.stat-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stat-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.stat-time {
-  font-size: 0.7rem;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
   color: var(--text-soft);
-  font-weight: 600;
-  text-align: right;
-  line-height: 1.2;
+  max-width: 140px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
 }
 
-.badge-dark {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 10px;
-  border-radius: 12px;
-  color: #fff;
-  font-size: 0.75rem;
+.sub-copy-chip:hover {
+  background: rgba(255, 209, 26, 0.08);
+  border-color: rgba(255, 209, 26, 0.35);
+  color: var(--primary);
 }
 
-body.light .badge-dark,
-.light .badge-dark {
+.sub-copy-chip .sub-copy-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.light .sub-copy-chip {
   background: #f1f5f9;
+  border-color: #cbd5e1;
   color: #475569;
 }
 
-.stat-value {
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: var(--text, #fff);
-  line-height: 1;
+body.light .sub-copy-chip:hover {
+  background: rgba(255, 209, 26, 0.15);
+  border-color: #b45309;
+  color: #b45309;
 }
 
-body.light .stat-value,
-.light .stat-value {
-  color: #0f172a;
-}
-
-.stat-desc {
-  font-size: 0.88rem;
-  font-weight: 500;
-}
-
-/* Filter Row */
-.sub-filter-row {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+/* ── Plan Badge on Subscription Rows ── */
+.sub-plan-badge {
+  display: inline-flex;
   align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: rgba(255, 209, 26, 0.14);
+  color: var(--primary);
+  border: 1px solid rgba(255, 209, 26, 0.32);
 }
 
-.sub-search {
-  position: relative;
-  flex: 1;
-  min-width: 300px;
+body.light .sub-plan-badge {
+  background: rgba(255, 209, 26, 0.22);
+  color: #b45309;
+  border-color: rgba(180, 83, 9, 0.3);
 }
 
-.sub-search input {
-  width: 100%;
-  padding: 14px 16px 14px 44px;
-  border-radius: 10px;
-  border: 1px solid var(--border2, rgba(255,255,255,0.08));
-  background: var(--bg2, #11151F);
+/* ── Status Badges ── */
+.badge-cancelled {
+  background: rgba(244, 63, 94, 0.12) !important;
+  color: #f43f5e !important;
+  border: 1px solid rgba(244, 63, 94, 0.3) !important;
+}
+
+.badge-expired {
+  background: rgba(148, 163, 184, 0.12) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+}
+
+/* ── Date Cells ── */
+.sub-date-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sub-date-primary {
+  font-size: 0.8rem;
   color: var(--text);
-  font-size: 0.95rem;
-  outline: none;
-  transition: all 0.2s;
+  font-weight: 500;
 }
 
-.sub-search input::placeholder {
+.sub-date-meta {
+  font-size: 0.7rem;
   color: var(--text-muted);
 }
 
-.sub-search input:focus {
-  border-color: var(--primary, rgba(255,255,255,0.2));
-  box-shadow: 0 0 0 3px var(--primary-dim);
+.sub-days-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-top: 2px;
+  width: fit-content;
 }
 
-body.light .sub-search input,
-.light .sub-search input {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #0f172a;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+.sub-days-tag.active-soon {
+  background: rgba(245, 158, 11, 0.14);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-body.light .sub-search input::placeholder,
-.light .sub-search input::placeholder {
-  color: #64748b;
+.sub-days-tag.active-good {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-.search-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
+.sub-days-tag.is-expired {
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
 }
 
-body.light .search-icon,
-.light .search-icon {
-  color: #64748b;
+/* ── Amount Display ── */
+.sub-amount-cell {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
 }
 
-.sub-select {
-  padding: 14px 20px;
-  border-radius: 10px;
-  border: 1px solid var(--border2, rgba(255,255,255,0.08));
-  background: var(--bg2, #11151F);
-  color: var(--text, #fff);
-  font-size: 0.9rem;
+/* ── Filter Controls ── */
+.sub-filter-select {
+  padding: 7px 12px;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.82rem;
   font-weight: 500;
   outline: none;
-  min-width: 160px;
   cursor: pointer;
-  transition: all 0.2s;
-  appearance: none;
+  transition: border-color var(--transition);
 }
 
-.sub-select:hover {
-  background: var(--bg3, rgba(255,255,255,0.05));
+.sub-filter-select:focus {
+  border-color: var(--primary);
 }
 
-body.light .sub-select,
-.light .sub-select {
+body.light .sub-filter-select {
   background: #ffffff;
   border-color: #cbd5e1;
   color: #0f172a;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
 
-body.light .sub-select option,
-.light .sub-select option {
-  background: #ffffff;
-  color: #0f172a;
-}
 
-/* Table styling (updated) */
-.subscription-table {
+/* ── Details Modal Card Enhancements ── */
+.sub-modal-card {
+  background: var(--bg2);
+  border-radius: 16px;
   width: 100%;
-  border-collapse: collapse;
-}
-
-.subscription-table thead {
-  background: var(--bg3, #161B26);
-}
-
-body.light .subscription-table thead,
-.light .subscription-table thead {
-  background: #f8fafc;
-}
-
-.subscription-table th {
-  text-align: left;
-  padding: 16px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-body.light .subscription-table th,
-.light .subscription-table th {
-  color: #64748b;
-}
-
-.subscription-table td {
-  padding: 16px;
-  border-bottom: 1px solid var(--border, rgba(255,255,255,0.05));
-  font-size: 0.9rem;
+  max-width: 520px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--text);
+  font-family: inherit;
 }
 
-body.light .subscription-table td,
-.light .subscription-table td {
-  border-bottom-color: #e2e8f0;
+body.light .sub-modal-card {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
 }
 
-.subscription-table tr:hover {
-  background: rgba(255,255,255,0.02);
+.sub-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 16px 20px;
 }
 
-body.light .subscription-table tr:hover,
-.light .subscription-table tr:hover {
-  background: #f1f5f9;
+@media (max-width: 480px) {
+  .sub-details-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* Plan styling */
-.plan {
-  text-transform: capitalize;
+.sub-detail-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+body.light .sub-detail-item {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.sub-detail-label {
+  font-size: 0.7rem;
   font-weight: 600;
-  color: #c084fc; /* light purple matching the screenshot */
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
 }
 
-/* Status */
-.status {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
+.sub-detail-val {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
 }
 
-.status.active {
-  background: rgba(16,185,129,0.15);
-  color: #10b981;
+/* ── Pagination Bar matching UsersPage ── */
+.sub-pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
-.status.expired {
-  background: rgba(239,68,68,0.15);
-  color: #ef4444;
+@media (max-width: 640px) {
+  .sub-pagination-bar {
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* ── Centered Empty State ── */
+.tbl tbody tr td .empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 48px 20px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
 }

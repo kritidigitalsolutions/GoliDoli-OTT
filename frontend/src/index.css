@@ -154,11 +154,744 @@ select {
   transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
 }
 
-/* ---- Global buttons ---- */
-button {
-  font-family: inherit;
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--primary-dim) !important;
+}
+
+/* ==========================================================================
+   MASTER TOGGLE SLIDE SWITCH SYSTEM (Site-wide Consistent Design)
+   Supports .switch-container, .switch-label, .custom-switch markup patterns
+   ========================================================================== */
+
+/* ── Container / Label ── */
+.switch-container,
+.switch-label,
+.custom-switch {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  width: 44px !important;
+  height: 24px !important;
   cursor: pointer;
-  transition: all var(--transition);
+  user-select: none;
+  vertical-align: middle;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* Small Variant */
+.switch-container.switch-sm,
+.switch-label.switch-sm,
+.custom-switch.switch-sm {
+  width: 36px !important;
+  height: 20px !important;
+}
+
+/* Large Variant */
+.switch-container.switch-lg,
+.switch-label.switch-lg,
+.custom-switch.switch-lg {
+  width: 50px !important;
+  height: 28px !important;
+}
+
+/* ── Hidden Native Checkbox ── */
+.switch-container input,
+.switch-label input,
+.custom-switch input,
+.switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  margin: 0;
+}
+
+/* ── Switch Slider / Track (Base Inactive State) ── */
+.switch-slider,
+.switch-track {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #27272a !important; /* Sleek dark slate */
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 9999px !important;
+  transition: background-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+body.light .switch-slider,
+body.light .switch-track,
+.light .switch-slider,
+.light .switch-track {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Hover on Inactive */
+.switch-container:hover .switch-slider,
+.switch-label:hover .switch-track,
+.custom-switch:hover .switch-slider {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  background-color: #323238 !important;
+}
+
+body.light .switch-container:hover .switch-slider,
+body.light .switch-label:hover .switch-track,
+body.light .custom-switch:hover .switch-slider {
+  border-color: #94a3b8 !important;
+  background-color: #dbeafe !important;
+}
+
+/* ── Switch Thumb (The Sliding Knob) ── */
+/* When using .switch-slider:before */
+.switch-slider:before {
+  content: "";
+  position: absolute;
+  top: 2px !important;
+  left: 2px !important;
+  width: 18px !important;
+  height: 18px !important;
+  background-color: #ffffff !important;
+  border-radius: 50% !important;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background-color 0.2s ease,
+              box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+/* When using .switch-thumb child element */
+.switch-thumb {
+  position: absolute;
+  top: 2px !important;
+  left: 2px !important;
+  width: 18px !important;
+  height: 18px !important;
+  background-color: #ffffff !important;
+  border-radius: 50% !important;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background-color 0.2s ease,
+              box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+/* Small Variant Thumb */
+.switch-sm .switch-slider:before,
+.switch-sm .switch-thumb {
+  top: 2px !important;
+  left: 2px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* Large Variant Thumb */
+.switch-lg .switch-slider:before,
+.switch-lg .switch-thumb {
+  top: 2px !important;
+  left: 2px !important;
+  width: 22px !important;
+  height: 22px !important;
+}
+
+/* ── Active (Checked) Track ── */
+.switch-container input:checked + .switch-slider,
+.custom-switch input:checked + .switch-slider,
+.switch-label input:checked + .switch-track,
+.switch-track.active,
+.switch-track:has(.switch-input:checked) {
+  background-color: #10b981 !important; /* Emerald Green */
+  border-color: #10b981 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.32) !important;
+}
+
+/* Gold Variant Active Track */
+.switch-container.switch-gold input:checked + .switch-slider,
+.switch-gold input:checked + .switch-slider,
+.switch-label.switch-gold input:checked + .switch-track,
+.switch-track.gold.active,
+.switch-track.gold:has(.switch-input:checked) {
+  background-color: #FFD11A !important; /* GoliDoli Gold */
+  border-color: #FFD11A !important;
+  box-shadow: 0 0 12px rgba(255, 209, 26, 0.4) !important;
+}
+
+/* ── Active (Checked) Thumb Slide (Full Symmetrical Distance) ── */
+.switch-container input:checked + .switch-slider:before,
+.custom-switch input:checked + .switch-slider:before,
+.switch-label input:checked + .switch-track .switch-thumb,
+.switch-track.active .switch-thumb,
+.switch-track:has(.switch-input:checked) .switch-thumb {
+  transform: translateX(20px) !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Gold Variant Active Thumb */
+.switch-container.switch-gold input:checked + .switch-slider:before,
+.switch-gold input:checked + .switch-slider:before,
+.switch-track.gold.active .switch-thumb {
+  background-color: #000000 !important; /* High contrast black thumb on gold track */
+}
+
+/* Small Variant Checked Translation */
+.switch-sm input:checked + .switch-slider:before,
+.switch-sm.active .switch-thumb,
+.switch-sm:has(input:checked) .switch-thumb {
+  transform: translateX(16px) !important;
+}
+
+/* Large Variant Checked Translation */
+.switch-lg input:checked + .switch-slider:before,
+.switch-lg.active .switch-thumb,
+.switch-lg:has(input:checked) .switch-thumb {
+  transform: translateX(22px) !important;
+}
+
+/* ── Focus Outline for Accessibility ── */
+.switch-container input:focus-visible + .switch-slider,
+.switch-label input:focus-visible + .switch-track,
+.custom-switch input:focus-visible + .switch-slider {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Status Toggle Wrapper with Label ── */
+.status-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.status-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: capitalize;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.status-label.published,
+.status-label.active {
+  color: #10b981;
+}
+
+.status-label.draft,
+.status-label.inactive {
+  color: var(--text-muted);
+}
+
+.status-label.coming-soon {
+  color: #f59e0b;
+}
+
+/* ==========================================================================
+   MASTER MEDIA UPLOADER & MODE PILLS SYSTEM (Site-wide Consistent Design)
+   ========================================================================== */
+
+/* ── Universal Mode Pills Container (File / URL Switcher) ── */
+.mode-pills,
+.uploader-mode-pills,
+.reel-mode-pills {
+  display: inline-flex !important;
+  align-items: center;
+  background: var(--bg2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 9999px !important;
+  padding: 2px !important;
+  gap: 2px !important;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+body.light .mode-pills,
+body.light .uploader-mode-pills,
+body.light .reel-mode-pills {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* ── Universal Mode Pill Buttons ── */
+.mode-pill-btn,
+.mode-pill,
+.reel-mode-pill {
+  background: transparent !important;
+  border: none !important;
+  font-family: inherit;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--text-muted) !important;
+  padding: 4px 12px !important;
+  border-radius: 9999px !important;
+  cursor: pointer !important;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  line-height: 1.2 !important;
+  user-select: none;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+.mode-pill-btn svg,
+.mode-pill svg,
+.reel-mode-pill svg {
+  flex-shrink: 0;
+  transition: color 0.15s ease, stroke 0.15s ease;
+}
+
+.mode-pill-btn:hover:not(.active),
+.mode-pill:hover:not(.active),
+.reel-mode-pill:hover:not(.active) {
+  color: var(--text) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+body.light .mode-pill-btn:hover:not(.active),
+body.light .mode-pill:hover:not(.active),
+body.light .reel-mode-pill:hover:not(.active) {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ── Active Mode Pill Button (Gold / Primary with High Contrast) ── */
+.mode-pill-btn.active,
+.mode-pill.active,
+.reel-mode-pill.active {
+  background: var(--primary, #FFD11A) !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}
+
+.mode-pill-btn.active svg,
+.mode-pill.active svg,
+.reel-mode-pill.active svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+
+/* ── Universal Dropzone Area (Clean, Minimalist Left-Side Design) ── */
+.dropzone-content-area,
+.reel-dropzone {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 30px 20px !important;
+  border: 1.5px dashed var(--border) !important;
+  border-radius: 12px !important;
+  background: var(--bg2) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  gap: 0 !important;
+}
+
+body.light .dropzone-content-area,
+body.light .reel-dropzone {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+.dropzone-content-area:hover,
+.dropzone-content-area.dragging,
+.reel-dropzone:hover,
+.reel-dropzone.dragging {
+  border-color: var(--primary) !important;
+  background: rgba(255, 209, 26, 0.03) !important;
+}
+
+body.light .dropzone-content-area:hover,
+body.light .dropzone-content-area.dragging,
+body.light .reel-dropzone:hover,
+body.light .reel-dropzone.dragging {
+  border-color: var(--primary) !important;
+  background: rgba(255, 209, 26, 0.05) !important;
+}
+
+.dropzone-icon-clean {
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.dropzone-content-area:hover .dropzone-icon-clean,
+.reel-dropzone:hover .dropzone-icon-clean {
+  transform: translateY(-2px);
+  color: var(--primary);
+}
+
+.dropzone-title-text {
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin: 0 0 3px 0 !important;
+  line-height: 1.3 !important;
+}
+
+.dropzone-sub-text {
+  font-size: 0.74rem !important;
+  color: var(--text-muted) !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+/* ==========================================================================
+   MASTER BUTTON & ACTION DESIGN SYSTEM (Site-wide Consistent Physics)
+   ========================================================================== */
+
+/* ── Base Button ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm, 8px);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  text-decoration: none;
+  line-height: 1.35;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+/* Universal Button Hover Physics */
+.btn:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+}
+
+/* Universal Button Active/Click Physics */
+.btn:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.98);
+}
+
+/* Universal Button Disabled State */
+.btn:disabled,
+.btn[disabled],
+button:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* ── Primary Button ── */
+.btn-primary {
+  background: var(--primary, #FFD11A) !important;
+  color: #000000 !important;
+  font-weight: 600 !important;
+  border: 1px solid var(--primary, #FFD11A) !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #f5c518 !important;
+  border-color: #f5c518 !important;
+  color: #000000 !important;
+  box-shadow: 0 4px 16px rgba(255, 209, 26, 0.35) !important;
+}
+
+.btn-primary:active:not(:disabled) {
+  background: #e6bc17 !important;
+  box-shadow: 0 2px 6px rgba(255, 209, 26, 0.2) !important;
+}
+
+/* ── Ghost / Secondary Button ── */
+.btn-ghost,
+.btn-secondary {
+  background: var(--bg3, #18181b) !important;
+  color: var(--text, #f4f4f5) !important;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+body.light .btn-ghost,
+body.light .btn-secondary,
+.light .btn-ghost,
+.light .btn-secondary {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.btn-ghost:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border-color: var(--border2, rgba(255, 255, 255, 0.2)) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.light .btn-ghost:hover:not(:disabled),
+body.light .btn-secondary:hover:not(:disabled),
+.light .btn-ghost:hover:not(:disabled),
+.light .btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── Danger Button ── */
+.btn-danger,
+.confirm-btn-danger,
+.del-btn {
+  background: #f43f5e !important;
+  color: #ffffff !important;
+  border: 1px solid #e11d48 !important;
+}
+
+.btn-danger:hover:not(:disabled),
+.confirm-btn-danger:hover:not(:disabled),
+.del-btn:hover:not(:disabled) {
+  background: #e11d48 !important;
+  border-color: #be123c !important;
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4) !important;
+}
+
+/* ── Success Button ── */
+.btn-success {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border: 1px solid #059669 !important;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #059669 !important;
+  border-color: #047857 !important;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35) !important;
+}
+
+/* ── Outline Primary Button ── */
+.btn-outline-primary {
+  background: transparent !important;
+  border: 1px solid var(--primary, #FFD11A) !important;
+  color: var(--primary, #FFD11A) !important;
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+  background: var(--primary, #FFD11A) !important;
+  color: #000000 !important;
+  box-shadow: 0 4px 14px rgba(255, 209, 26, 0.3) !important;
+}
+
+/* ── Button Sizes ── */
+.btn-sm {
+  padding: 6px 12px !important;
+  font-size: 0.78rem !important;
+  border-radius: var(--radius-xs, 6px) !important;
+}
+
+.btn-lg {
+  padding: 12px 24px !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+}
+
+/* ── Icon Action Buttons in Tables & Toolbars ── */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+body.light .icon-btn,
+.light .icon-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+.icon-btn:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  background: var(--border);
+  color: var(--text);
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.92);
+}
+
+/* View Action (Blue) */
+.icon-btn.view:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Edit Action (Gold / Amber) */
+.icon-btn.edit:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Delete Action (Red) */
+.icon-btn.del:hover:not(:disabled),
+.icon-btn.delete:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.15) !important;
+  color: #f43f5e !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+
+/* ==========================================================================
+   UNIVERSAL SEGMENTED SWITCH (Pill Tabs)
+   ========================================================================== */
+.segmented-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg3, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 9999px;
+  padding: 4px;
+  gap: 4px;
+  position: relative;
+  user-select: none;
+}
+
+body.light .segmented-switch {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.segmented-switch-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: var(--text-muted, #64748b);
+  font-size: 0.82rem;
+  font-weight: 600 !important;
+  padding: 7px 18px !important;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: color 0.18s ease;
+  user-select: none;
+  letter-spacing: 0.1px;
+  margin: 0;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.segmented-switch-btn:hover:not(.active) {
+  color: var(--text, #0f172a);
+}
+
+.segmented-switch-btn.active {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+.segmented-switch-active-bg {
+  position: absolute;
+  inset: 0;
+  background: #FFD11A !important;
+  border-radius: 9999px;
+  z-index: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}
+
+.segmented-switch-btn-text {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+/* ==========================================================================
+   CARDS & TABLE HOVER ELEVATIONS
+   ========================================================================== */
+.kpi-card,
+.stat-card,
+.sub-stat-card,
+.cat-stat-card,
+.overview-card,
+.overview-kpi-card,
+.plan-card,
+.banner-card-item {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s ease,
+              box-shadow 0.25s ease !important;
+}
+
+.kpi-card:hover,
+.stat-card:hover,
+.sub-stat-card:hover,
+.cat-stat-card:hover,
+.overview-card:hover,
+.overview-kpi-card:hover,
+.plan-card:hover,
+.banner-card-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--border2, rgba(255, 255, 255, 0.18)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+}
+
+body.light .kpi-card:hover,
+body.light .stat-card:hover,
+body.light .sub-stat-card:hover,
+body.light .plan-card:hover {
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Table Row Hover */
+.tbl tbody tr,
+.tbl-categories tbody tr {
+  transition: background 0.15s ease !important;
+}
+
+.tbl tbody tr:hover,
+.tbl-categories tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025) !important;
+}
+
+body.light .tbl tbody tr:hover,
+body.light .tbl-categories tbody tr:hover {
+  background: rgba(0, 0, 0, 0.02) !important;
 }
 
 /* ---- Global Toast ---- */

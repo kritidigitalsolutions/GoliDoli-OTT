@@ -467,30 +467,5 @@ body.light .modal-table-container::-webkit-scrollbar-thumb {
   max-width: 380px;
 }
 
-/* Flat Toggle Switch (No Outer Glow) */
-.switch-label .switch-track,
-.switch-label .switch-track.active,
-body.light .switch-label .switch-track,
-body.light .switch-label .switch-track.active {
-  box-shadow: none !important;
-}
-
-/* Danger Button Styling */
-.btn-danger {
-  background: #f43f5e !important;
-  color: #ffffff !important;
-  border: 1px solid #e11d48 !important;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
-}
-
-.btn-danger:hover {
-  background: #e11d48 !important;
-  box-shadow: 0 6px 16px rgba(244, 63, 94, 0.4);
-}
+/* Switch and button styles inherited from master design system in index.css */
 

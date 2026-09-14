@@ -55,14 +55,14 @@ export default function VideoUploader({
             className={`mode-pill ${inputMode === "file" ? "active" : ""}`}
             onClick={() => setInputMode("file")}
           >
-            <Upload size={12} /> File Upload
+            <Upload size={11} /> File
           </button>
           <button
             type="button"
             className={`mode-pill ${inputMode === "url" ? "active" : ""}`}
             onClick={() => setInputMode("url")}
           >
-            <Link2 size={12} /> Direct Stream URL
+            <Link2 size={11} /> URL
           </button>
         </div>
       </div>

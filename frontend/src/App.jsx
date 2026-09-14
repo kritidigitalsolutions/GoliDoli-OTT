@@ -111,6 +111,7 @@ function App() {
             <Route path="plans" element={<PlansPage />} />
             {/* <Route path="promo" element={<PromoVoucher />} /> */}
             <Route path="pricing" element={<SubscriptionPage />} />
+            <Route path="subscriptions" element={<SubscriptionPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             {/* <Route path="support" element={<SupportDetails />} /> */}
             <Route path="legal" element={<LegalPage />} />

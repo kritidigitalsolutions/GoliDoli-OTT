@@ -6,19 +6,22 @@ export const getAIReels = async () => {
   return response.data;
 };
 
-export const createAIReel = async ({ form, videoFile, thumbnailFile, onProgress }) => {
+export const createAIReel = async ({ form, videoFile, thumbnailFile, onProgress, onPhase }) => {
   // 1. Upload thumbnail
-  let thumbnailUrl = form.thumbnail || "";
+  let thumbnailUrl = form.thumbnail || form.thumbnailUrl || "";
   if (thumbnailFile) {
+    if (onPhase) onPhase("thumbnail");
     thumbnailUrl = await uploadToBunny(thumbnailFile, "aireels", "posters");
   }
 
   // 2. Upload video
   let videoUrl = form.videoUrl || "";
   if (videoFile) {
+    if (onPhase) onPhase("video");
     videoUrl = await uploadToBunny(videoFile, "aireels", "videos", onProgress);
   }
 
+  if (onPhase) onPhase("saving");
   // 3. Post to backend
   const formData = new FormData();
   formData.append("title", form.title);
@@ -27,6 +30,7 @@ export const createAIReel = async ({ form, videoFile, thumbnailFile, onProgress 
   formData.append("priority", Number(form.priority) || 0);
   formData.append("isPublished", String(form.isPublished !== false));
   formData.append("thumbnail", thumbnailUrl);
+  formData.append("thumbnailUrl", thumbnailUrl);
   formData.append("videoUrl", videoUrl);
 
   const response = await API.post("/admin/ai-reels", formData, {
@@ -37,19 +41,22 @@ export const createAIReel = async ({ form, videoFile, thumbnailFile, onProgress 
   return response.data;
 };
 
-export const updateAIReel = async (id, { form, videoFile, thumbnailFile, onProgress }) => {
+export const updateAIReel = async (id, { form, videoFile, thumbnailFile, onProgress, onPhase }) => {
   // 1. Upload thumbnail if updated
-  let thumbnailUrl = form.thumbnail || "";
+  let thumbnailUrl = form.thumbnail || form.thumbnailUrl || "";
   if (thumbnailFile) {
+    if (onPhase) onPhase("thumbnail");
     thumbnailUrl = await uploadToBunny(thumbnailFile, "aireels", "posters");
   }
 
   // 2. Upload video if updated
   let videoUrl = form.videoUrl || "";
   if (videoFile) {
+    if (onPhase) onPhase("video");
     videoUrl = await uploadToBunny(videoFile, "aireels", "videos", onProgress);
   }
 
+  if (onPhase) onPhase("saving");
   // 3. Patch to backend
   const formData = new FormData();
   formData.append("title", form.title);
@@ -57,7 +64,10 @@ export const updateAIReel = async (id, { form, videoFile, thumbnailFile, onProgr
   formData.append("duration", form.duration || "");
   formData.append("priority", Number(form.priority) || 0);
   formData.append("isPublished", String(form.isPublished !== false));
-  if (thumbnailUrl) formData.append("thumbnail", thumbnailUrl);
+  if (thumbnailUrl) {
+    formData.append("thumbnail", thumbnailUrl);
+    formData.append("thumbnailUrl", thumbnailUrl);
+  }
   if (videoUrl) formData.append("videoUrl", videoUrl);
 
   const response = await API.patch(`/admin/ai-reels/${id}`, formData, {
