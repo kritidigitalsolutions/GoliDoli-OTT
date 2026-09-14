@@ -364,11 +364,12 @@ body.light .timeframe-btn.active {
 .segmented-switch {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   background: var(--bg3, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
   border-radius: 9999px;
-  padding: 3px;
-  gap: 2px;
+  padding: 4px;
+  gap: 4px;
   position: relative;
   user-select: none;
 }
@@ -380,14 +381,18 @@ body.light .segmented-switch {
 
 .segmented-switch-btn {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
   color: var(--text-muted, #64748b);
-  font-size: 0.78rem;
-  font-weight: 500 !important;
-  padding: 5px 14px !important;
+  font-size: 0.82rem;
+  font-weight: 600 !important;
+  padding: 7px 18px !important;
   border-radius: 9999px;
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease;
@@ -415,12 +420,12 @@ body.light .segmented-switch-btn:hover:not(.active) {
 
 .segmented-switch-btn.active {
   color: #000000 !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
 
 body.light .segmented-switch-btn.active {
   color: #000000 !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
 
 .segmented-switch-active-bg {
@@ -429,12 +434,18 @@ body.light .segmented-switch-btn.active {
   background: #FFD11A !important;
   border-radius: 9999px;
   z-index: 1;
-  box-shadow: 0 2px 6px rgba(255, 209, 26, 0.35), 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
 }
 
 .segmented-switch-btn-text {
   position: relative;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 7px;
+  width: 100%;
 }
 
 .box-icon {
@@ -504,37 +515,69 @@ body.light .segmented-switch-btn.active {
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  border: none;
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid transparent;
+  font-size: 0.86rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition);
+  user-select: none;
+  line-height: 1.35;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.98);
 }
 
 .btn-primary {
-  background: var(--primary);
-  color: #000000;
-  font-weight: 600;
+  background: var(--primary, #FFD11A) !important;
+  color: #000000 !important;
+  font-weight: 600 !important;
+  border: 1px solid var(--primary, #FFD11A) !important;
 }
 
-.btn-primary:hover {
-  background: var(--primary-hover);
-  box-shadow: none;
+.btn-primary:hover:not(:disabled) {
+  background: #f5c518 !important;
+  border-color: #f5c518 !important;
+  box-shadow: 0 4px 16px rgba(255, 209, 26, 0.35) !important;
+}
+
+.btn-primary:active:not(:disabled) {
+  background: #e6bc17 !important;
+  box-shadow: 0 2px 6px rgba(255, 209, 26, 0.2) !important;
 }
 
 .btn-ghost {
-  background: transparent;
-  color: var(--text-soft);
-  border: 1px solid var(--border);
+  background: var(--bg3, #18181b) !important;
+  color: var(--text-soft) !important;
+  border: 1px solid var(--border) !important;
 }
 
-.btn-ghost:hover {
-  background: var(--bg3);
-  color: var(--text);
-  border-color: var(--border2);
+body.light .btn-ghost {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text) !important;
+  border-color: var(--border2) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.light .btn-ghost:hover:not(:disabled) {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
 }
 
 .spin-icon {
@@ -720,38 +763,7 @@ body.light .tbl thead tr {
   gap: 4px;
 }
 
-.icon-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.icon-btn.view:hover {
-  background: var(--blue-dim);
-  color: var(--blue);
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.icon-btn.del:hover {
-  background: rgba(255, 45, 85, 0.1);
-  color: var(--vibrant-red);
-  border-color: rgba(255, 45, 85, 0.3);
-}
-
-.icon-btn.edit:hover {
-  background: var(--orange-dim);
-  color: var(--orange);
-  border-color: rgba(245, 158, 11, 0.3);
-}
+/* Action buttons in table - styles inherited from master design system in index.css */
 
 /* Empty state */
 .empty-state {
@@ -1308,31 +1320,7 @@ textarea.form-input-styled {
   box-shadow: 0 10px 28px rgba(229, 9, 20, 0.4);
 }
 
-/* 🔥 Icon Buttons (Same as Content page) */
-.icon-btn {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  color: var(--text-muted);
-}
-
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
-}
-
-.icon-btn.edit:hover {
-  color: #facc15;
-  /* yellow */
-}
-
-.icon-btn.delete:hover {
-  color: #ef4444;
-  /* red */
-}
+/* Icon Buttons - inherited from master design system in index.css */
 
 /* ---------- Responsive Page Styles ---------- */
 
@@ -1418,8 +1406,8 @@ textarea.form-input-styled {
 
 .toggle-btn.active {
   background: var(--primary);
-  color: white;
-  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+  color: #0b0f19;
+  box-shadow: none;
 }
 
 .toggle-btn:not(.active):hover {
@@ -1693,9 +1681,9 @@ body.light .toggle-btn {
 }
 
 body.light .toggle-btn.active {
-  background: linear-gradient(135deg, #ffd11a, #ffb703);
+  background: #ffd11a;
   color: #241a00;
-  box-shadow: 0 8px 18px rgba(255, 183, 3, 0.28);
+  box-shadow: none;
 }
 
 body.light .toggle-btn:not(.active):hover {
@@ -2264,53 +2252,7 @@ body.light .checkbox-row:has(input[name="isPremium"]) span {
   object-fit: contain;
 }
 
-/* Toggle Switch Styling */
-.switch-container {
-  display: inline-block;
-  position: relative;
-  width: 50px;
-  height: 24px;
-}
-
-.switch-input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.switch-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border);
-  transition: .3s;
-  border-radius: 24px;
-}
-
-.switch-slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 3px;
-  bottom: 3px;
-  background-color: #fff;
-  transition: .3s;
-  border-radius: 50%;
-}
-
-.switch-input:checked + .switch-slider {
-  background-color: #FF7A1A;
-  border-color: #FF7A1A;
-}
-
-.switch-input:checked + .switch-slider:before {
-  transform: translateX(26px);
-}
+/* Toggle Switch styles inherited from master design system in index.css */
 
 /* ── Light Mode Dashboard Overrides ── */
 body.light .kpi-card,
@@ -2425,7 +2367,8 @@ body.light .p-detail-value {
   border-radius: 16px;
   width: 100%;
   max-width: 440px;
-  overflow: hidden;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   animation: modalPopIn 0.2s ease-out;
   color: var(--text, #f8fafc);
@@ -2583,6 +2526,30 @@ body.light .p-detail-value {
   align-items: center;
 }
 
+.up-min-btn-block,
+.up-min-btn-unblock,
+.up-min-btn-del,
+.up-min-btn-close,
+.up-min-btn-edit {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.up-min-btn-block:hover,
+.up-min-btn-unblock:hover,
+.up-min-btn-del:hover,
+.up-min-btn-close:hover,
+.up-min-btn-edit:hover {
+  transform: translateY(-1.5px);
+}
+
+.up-min-btn-block:active,
+.up-min-btn-unblock:active,
+.up-min-btn-del:active,
+.up-min-btn-close:active,
+.up-min-btn-edit:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+
 .up-min-btn-block {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.25);
@@ -2595,12 +2562,12 @@ body.light .p-detail-value {
   gap: 6px;
   padding: 6px 12px;
   border-radius: 8px;
-  transition: all 0.2s ease;
 }
 
 .up-min-btn-block:hover {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 .up-min-btn-unblock {
@@ -2615,12 +2582,12 @@ body.light .p-detail-value {
   gap: 6px;
   padding: 6px 12px;
   border-radius: 8px;
-  transition: all 0.2s ease;
 }
 
 .up-min-btn-unblock:hover {
   background: rgba(16, 185, 129, 0.2);
   border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 }
 
 .up-min-btn-del {
@@ -2635,13 +2602,13 @@ body.light .p-detail-value {
   gap: 6px;
   padding: 6px 12px;
   border-radius: 8px;
-  transition: all 0.2s ease;
 }
 
 .up-min-btn-del:hover {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.25);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 .up-min-btn-close {
@@ -2653,13 +2620,13 @@ body.light .p-detail-value {
   padding: 6px 16px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .up-min-btn-close:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Light mode overrides for Minimal User Profile Modal */
@@ -2815,11 +2782,17 @@ body.light .up-min-btn-close:hover {
   border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
   color: var(--text, #ffffff);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .confirm-btn-cancel:hover {
   background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-btn-cancel:active {
+  transform: translateY(0.5px) scale(0.98);
 }
 
 .confirm-btn-danger {
@@ -2832,13 +2805,18 @@ body.light .up-min-btn-close:hover {
   border: 1px solid #E11D48;
   color: #ffffff;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
 }
 
 .confirm-btn-danger:hover {
   background: #E11D48;
+  transform: translateY(-1.5px);
   box-shadow: 0 6px 16px rgba(244, 63, 94, 0.4);
+}
+
+.confirm-btn-danger:active {
+  transform: translateY(0.5px) scale(0.98);
 }
 
 /* Light mode overrides for Confirmation Modal */

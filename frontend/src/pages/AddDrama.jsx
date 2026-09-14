@@ -332,10 +332,38 @@ export default function AddDrama() {
           </div>
 
           <div style={{ display: "flex", gap: 16, marginTop: 24, flexWrap: "wrap" }}>
-            <label className="checkbox-row" style={{ flex: 1, minWidth: "200px", background: "rgba(229,9,20,0.1)", borderColor: "rgba(229,9,20,0.2)" }}>
-              <input type="checkbox" name="isPremium" onChange={ch} checked={form.isPremium} />
-              <span style={{ color: "var(--primary)" }}><Lock size={16} style={{ marginRight: 8 }} />Premium Content</span>
-            </label>
+            <div
+              style={{
+                flex: 1,
+                minWidth: "240px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "12px 18px",
+                background: "var(--bg3)",
+                border: "1px solid var(--border)",
+                borderRadius: "10px",
+                cursor: "pointer"
+              }}
+              onClick={() => setForm((prev) => ({ ...prev, isPremium: !prev.isPremium }))}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Lock size={16} color={form.isPremium ? "var(--primary)" : "var(--text-muted)"} />
+                <span style={{ fontWeight: 600, fontSize: "0.88rem", color: form.isPremium ? "var(--primary)" : "var(--text)" }}>
+                  Premium Content (VIP Only)
+                </span>
+              </div>
+              <label className="switch-container switch-gold" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  name="isPremium"
+                  className="switch-input"
+                  onChange={ch}
+                  checked={form.isPremium}
+                />
+                <span className="switch-slider" />
+              </label>
+            </div>
           </div>
         </div>
 
@@ -518,23 +546,33 @@ export default function AddDrama() {
                   </div>
 
                   {/* Flags */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, justifyContent: "center" }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", cursor: "pointer" }}>
-                      <input
-                        type="checkbox"
-                        checked={ep.isLocked}
-                        onChange={(e) => chEpisode(i, "isLocked", e.target.checked)}
-                      />
-                      <Lock size={14} /> Locked (Premium)
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", cursor: "pointer" }}>
-                      <input
-                        type="checkbox"
-                        checked={ep.isVertical}
-                        onChange={(e) => chEpisode(i, "isVertical", e.target.checked)}
-                      />
-                      Vertical Video
-                    </label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, justifyContent: "center", minWidth: 160 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.82rem", fontWeight: 600 }}>
+                        <Lock size={13} color="var(--primary)" /> Locked
+                      </span>
+                      <label className="switch-container switch-sm switch-gold">
+                        <input
+                          type="checkbox"
+                          className="switch-input"
+                          checked={ep.isLocked}
+                          onChange={(e) => chEpisode(i, "isLocked", e.target.checked)}
+                        />
+                        <span className="switch-slider" />
+                      </label>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ fontSize: "0.82rem", fontWeight: 600 }}>Vertical</span>
+                      <label className="switch-container switch-sm">
+                        <input
+                          type="checkbox"
+                          className="switch-input"
+                          checked={ep.isVertical}
+                          onChange={(e) => chEpisode(i, "isVertical", e.target.checked)}
+                        />
+                        <span className="switch-slider" />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>

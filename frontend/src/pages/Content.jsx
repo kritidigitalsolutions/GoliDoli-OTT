@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import API, { BASE_URL } from "../api/axios";
 import { uploadToBunny } from "../features/services/bunnyUpload";
 
@@ -8,7 +9,7 @@ import "./Dashboard.css";
 import {
   Eye, Edit2, Trash2, X, Play, Film, Tv,
   Search, Plus, ChevronRight, ChevronLeft, ChevronDown, User, Calendar, Video,
-  Activity, Upload, Layers, Flame
+  Activity, Upload, Layers, Flame, RefreshCw, AlertTriangle, CheckCircle2, XCircle, Info, ShieldAlert, AlertCircle
 } from "lucide-react";
 
 /* ===================== PAGINATION COMPONENT ===================== */
@@ -61,8 +62,8 @@ const SearchBar = ({ placeholder, onSearchChange, onClear, initialValue }) => {
   };
 
   return (
-    <div className="search-bar" style={{ minWidth: "300px" }}>
-      <Search size={18} className="search-icon" />
+    <div className="search-bar">
+      <Search size={15} className="search-icon" />
       <input
         className="search-input"
         type="text"
@@ -71,13 +72,16 @@ const SearchBar = ({ placeholder, onSearchChange, onClear, initialValue }) => {
         onChange={handleChange}
       />
       {value && (
-        <button className="search-clear" onClick={handleClear}><X size={16} /></button>
+        <button className="search-clear" onClick={handleClear} title="Clear Search">
+          <X size={14} />
+        </button>
       )}
     </div>
   );
 };
 
 export default function Content() {
+  const navigate = useNavigate();
   // Prevent Enter key from submitting form when typing inside input fields
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && e.target.tagName === "INPUT") {
@@ -88,6 +92,89 @@ export default function Content() {
   const [contentType, setContentType] = useState("movies");
   const [adultFilter, setAdultFilter] = useState("all"); // "all" | "non-adult" | "adult"
   const location = useLocation();
+
+  /* ===================== CUSTOM DIALOG POPUP STATE ===================== */
+  const [popupDialog, setPopupDialog] = useState({
+    isOpen: false,
+    type: "warning", // "warning" | "danger" | "success" | "info"
+    title: "",
+    message: "",
+    confirmText: "OK",
+    cancelText: null,
+    onConfirm: null,
+    onCancel: null,
+  });
+
+  const showCustomAlert = (message, title = "Notification", type = "info") => {
+    return new Promise((resolve) => {
+      setPopupDialog({
+        isOpen: true,
+        type,
+        title,
+        message,
+        confirmText: "OK",
+        cancelText: null,
+        onConfirm: () => {
+          setPopupDialog((prev) => ({ ...prev, isOpen: false }));
+          resolve(true);
+        },
+        onCancel: null,
+      });
+    });
+  };
+
+  const showCustomConfirm = (message, title = "Please Confirm", type = "warning", confirmText = "Continue", cancelText = "Cancel") => {
+    return new Promise((resolve) => {
+      setPopupDialog({
+        isOpen: true,
+        type,
+        title,
+        message,
+        confirmText,
+        cancelText,
+        onConfirm: () => {
+          setPopupDialog((prev) => ({ ...prev, isOpen: false }));
+          resolve(true);
+        },
+        onCancel: () => {
+          setPopupDialog((prev) => ({ ...prev, isOpen: false }));
+          resolve(false);
+        },
+      });
+    });
+  };
+
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    moviesCount: 0,
+    seriesCount: 0,
+    microdramasCount: 0,
+  });
+
+  const fetchContentStats = async () => {
+    try {
+      const [mRes, sRes, mdRes] = await Promise.all([
+        API.get("/admin/movies?page=1&limit=1"),
+        API.get("/admin/series?page=1&limit=1"),
+        API.get("/admin/microdramas?page=1&limit=1"),
+      ]);
+      const mTotal = mRes.data.total || (mRes.data.movies || []).length || 0;
+      const sTotal = sRes.data.total || (sRes.data.series || []).length || 0;
+      const mdTotal = mdRes.data.total || (mdRes.data.microdramas || []).length || 0;
+      setStats({
+        moviesCount: mTotal,
+        seriesCount: sTotal,
+        microdramasCount: mdTotal,
+        totalItems: mTotal + sTotal + mdTotal,
+      });
+    } catch (err) {
+      console.error("Failed to fetch content stats:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchContentStats();
+  }, []);
 
   useEffect(() => {
     if (location.state?.contentType) {
@@ -347,7 +434,7 @@ export default function Content() {
       : { ...newEpisode, seasonNumber: Number(seasonNumber) };
 
     if (!epData.title || !epData.episodeNumber || !epData.seasonNumber) {
-      alert("Title, Episode Number, and Season Number are required");
+      showCustomAlert("Title, Episode Number, and Season Number are required.", "Required Fields", "warning");
       return;
     }
     setAddingEpisode(true);
@@ -375,7 +462,7 @@ export default function Content() {
       const epAddRoute = contentType === "microdramas" ? `/admin/microdramas-episodes/${selectedSeries._id}/add` : "/admin/episodes/add";
       await API.post(epAddRoute, formData, { headers: { "Content-Type": "multipart/form-data" } });
 
-      alert("Episode added successfully!");
+      showCustomAlert("Episode added successfully!", "Success", "success");
       setShowAddEpisodeForm(null);
       setShowAddSeasonForm(false);
       setNewEpisode({ title: "", episodeNumber: "", duration: "", description: "", seasonNumber: "" });
@@ -388,26 +475,32 @@ export default function Content() {
       fetchEpisodes(selectedSeries._id);
 
     } catch (err) {
-      alert("Failed: " + (err.response?.data?.message || err.message));
+      showCustomAlert("Failed: " + (err.response?.data?.message || err.message), "Error", "danger");
     }
     setAddingEpisode(false);
   };
 
   /* ===================== DELETE SEASON ===================== */
   const handleDeleteSeason = async (seasonNumber) => {
-    const confirmed = window.confirm(`Delete ALL episodes in Season ${seasonNumber}? This cannot be undone.`);
+    const confirmed = await showCustomConfirm(
+      `Delete ALL episodes in Season ${seasonNumber}? This cannot be undone.`,
+      "Delete Season",
+      "danger",
+      "Delete Season",
+      "Cancel"
+    );
     if (!confirmed) return;
     try {
       if (contentType === "microdramas") {
-        alert("Deleting entire seasons is not supported for Microdramas yet.");
+        showCustomAlert("Deleting entire seasons is not supported for Microdramas yet.", "Not Supported", "info");
         return;
       }
       await API.delete(`/admin/episodes/season/${selectedSeries._id}/${seasonNumber}`);
 
-      alert(`Season ${seasonNumber} deleted`);
+      showCustomAlert(`Season ${seasonNumber} deleted`, "Season Deleted", "success");
       fetchEpisodes(selectedSeries._id);
     } catch (err) {
-      alert("Failed to delete season: " + (err.response?.data?.message || err.message));
+      showCustomAlert("Failed to delete season: " + (err.response?.data?.message || err.message), "Delete Failed", "danger");
     }
   };
 
@@ -574,12 +667,12 @@ export default function Content() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Saved successfully");
+      showCustomAlert("Saved successfully", "Success", "success");
       closeModal();
       fetchData();
     } catch (err) {
       console.error("CONTENT SAVE ERROR:", err.response?.data || err);
-      alert("Save failed: " + (err.response?.data?.error || err.response?.data?.message || err.message));
+      showCustomAlert("Save failed: " + (err.response?.data?.error || err.response?.data?.message || err.message), "Save Failed", "danger");
     } finally {
       setUploadProgress(0);
       setUploadPhase("");
@@ -637,11 +730,11 @@ export default function Content() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Episode saved");
+      showCustomAlert("Episode saved", "Success", "success");
       closeModal();
       fetchEpisodes(selectedSeries._id);
     } catch (err) {
-      alert("Save failed: " + (err.response?.data?.message || err.message));
+      showCustomAlert("Save failed: " + (err.response?.data?.message || err.message), "Save Failed", "danger");
     } finally {
       setUploadProgress(0);
       setUploadPhase("");
@@ -649,25 +742,35 @@ export default function Content() {
     }
   };
 
-  /* ===================== TOGGLE PUBLISHED ===================== */
+  /* ===================== TOGGLE PUBLISHED (OPTIMISTIC INSTANT UI) ===================== */
   const handleTogglePublished = async (item) => {
+    const originalStatus = item.isPublished;
+    const updatedIsPublished = item.isPublished === false ? true : false;
+
+    // 1. Instant local state update (0ms UI latency)
+    setData(prev => prev.map(x => x._id === item._id ? { ...x, isPublished: updatedIsPublished } : x));
+    if (searchResults) {
+      setSearchResults(prev => prev.map(x => x._id === item._id ? { ...x, isPublished: updatedIsPublished } : x));
+    }
+
+    // 2. Background API persistence with exact item route
     try {
-      const updatedIsPublished = item.isPublished === false ? true : false;
-      const route = contentType === "movies" ? "movies" :
+      const route = item._type === "series" ? "series" :
+        item._type === "microdrama" ? "microdramas" :
+        item._type === "movie" ? "movies" :
         contentType === "series" ? "series" :
-          contentType === "microdramas" ? "microdramas" :
-            "movies";
+        contentType === "microdramas" ? "microdramas" :
+        "movies";
 
       await API.patch(`/admin/${route}/${item._id}`, { isPublished: updatedIsPublished });
-
-      // Update local state
-      setData(prev => prev.map(x => x._id === item._id ? { ...x, isPublished: updatedIsPublished } : x));
-      if (searchResults) {
-        setSearchResults(prev => prev.map(x => x._id === item._id ? { ...x, isPublished: updatedIsPublished } : x));
-      }
     } catch (err) {
-      console.error(err);
-      alert("Failed to toggle status");
+      console.error("Failed to update status on server:", err);
+      // Revert local state on error
+      setData(prev => prev.map(x => x._id === item._id ? { ...x, isPublished: originalStatus } : x));
+      if (searchResults) {
+        setSearchResults(prev => prev.map(x => x._id === item._id ? { ...x, isPublished: originalStatus } : x));
+      }
+      showCustomAlert("Failed to save toggle state to server.", "Update Failed", "danger");
     }
   };
 
@@ -677,10 +780,17 @@ export default function Content() {
   const handleBulkHideAdult = async (hideValue) => {
     // Get all 18+ items from current data
     const adultItems = data.filter(item => item.is18plus === true);
-    if (adultItems.length === 0) { alert("No 18+ content found."); return; }
+    if (adultItems.length === 0) { showCustomAlert("No 18+ content found.", "Notice", "info"); return; }
 
     const action = hideValue ? "hide" : "unhide";
-    if (!window.confirm(`This will ${action} all ${adultItems.length} item(s) marked as 18+. Continue?`)) return;
+    const confirmed = await showCustomConfirm(
+      `This will ${action} all ${adultItems.length} item(s) marked as 18+. Continue?`,
+      "Content Visibility Confirmation",
+      "warning",
+      "Continue",
+      "Cancel"
+    );
+    if (!confirmed) return;
 
     setBulkHiding(true);
     try {
@@ -705,7 +815,7 @@ export default function Content() {
       }
     } catch (err) {
       console.error(err);
-      alert("Bulk action failed: " + (err.response?.data?.message || err.message));
+      showCustomAlert("Bulk action failed: " + (err.response?.data?.message || err.message), "Action Failed", "danger");
     } finally {
       setBulkHiding(false);
     }
@@ -713,32 +823,46 @@ export default function Content() {
 
   /* ===================== DELETE ===================== */
   const handleDelete = async (item) => {
-    if (!window.confirm(`Delete '${item.title || item.name}' permanently?`)) return;
+    const confirmed = await showCustomConfirm(
+      `Delete '${item.title || item.name}' permanently? This action cannot be undone.`,
+      "Confirm Permanent Delete",
+      "danger",
+      "Delete",
+      "Cancel"
+    );
+    if (!confirmed) return;
     try {
       if (contentType === "movies") await API.delete(`/admin/movies/${item._id}`);
       else if (contentType === "series") await API.delete(`/admin/series/${item._id}`);
       else if (contentType === "microdramas") await API.delete(`/admin/microdramas/${item._id}`);
       else if (contentType === "movies") await API.delete(`/admin/movies/${item._id}`);
 
-      alert("Deleted");
+      showCustomAlert("Item deleted successfully", "Deleted", "success");
       fetchData();
       if (selectedSeries?._id === item._id) { setSelectedSeries(null); setEpisodes([]); }
       closeModal();
     } catch (err) {
-      alert("Delete failed");
+      showCustomAlert("Delete failed: " + (err.response?.data?.message || err.message), "Delete Failed", "danger");
     }
   };
 
   const handleEpisodeDelete = async (ep) => {
-    if (!window.confirm(`Delete Ep ${ep.episodeNumber}: ${ep.title}?`)) return;
+    const confirmed = await showCustomConfirm(
+      `Delete Ep ${ep.episodeNumber}: ${ep.title}? This action cannot be undone.`,
+      "Delete Episode",
+      "danger",
+      "Delete",
+      "Cancel"
+    );
+    if (!confirmed) return;
     try {
       const epDeleteRoute = contentType === "microdramas" ? `/admin/microdramas-episodes/${ep._id}` : `/admin/episodes/${ep._id}`;
       await API.delete(epDeleteRoute);
 
-      alert("Episode deleted");
+      showCustomAlert("Episode deleted", "Deleted", "success");
       fetchEpisodes(selectedSeries._id);
     } catch (err) {
-      alert("Delete failed");
+      showCustomAlert("Delete failed: " + (err.response?.data?.message || err.message), "Delete Failed", "danger");
     }
   };
 
@@ -790,60 +914,201 @@ export default function Content() {
     }
   };
 
+  /* ===================== TABLE UI HELPERS ===================== */
+  const renderCategories = (category) => {
+    const catArray = Array.isArray(category)
+      ? category
+      : typeof category === "string"
+      ? category.split(",").map((c) => c.trim()).filter(Boolean)
+      : [];
+
+    if (catArray.length === 0) return <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>—</span>;
+
+    const displayCats = catArray.slice(0, 2);
+    const remaining = catArray.length - 2;
+
+    return (
+      <div className="cat-chip-group">
+        {displayCats.map((cat, idx) => (
+          <span key={idx} className="cat-chip">
+            {cat}
+          </span>
+        ))}
+        {remaining > 0 && (
+          <span className="cat-chip-more" title={catArray.slice(2).join(", ")}>
+            +{remaining}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const renderAudienceBadge = (is18plus) => {
+    return is18plus ? (
+      <span className="badge-audience adult">🔞 18+ Adult</span>
+    ) : (
+      <span className="badge-audience non-adult">✓ Family</span>
+    );
+  };
+
+  const renderStatusToggle = (item) => {
+    const isPub = item.isPublished !== false;
+    const locked = isLocked(item);
+    return (
+      <div className="status-toggle-wrap">
+        <label className="switch-container" title={isPub ? "Click to make Draft" : "Click to Publish"}>
+          <input
+            type="checkbox"
+            className="switch-input"
+            checked={isPub}
+            onChange={() => handleTogglePublished(item)}
+          />
+          <span className="switch-slider"></span>
+        </label>
+        <span className={`status-label ${isPub ? (locked ? "coming-soon" : "published") : "draft"}`}>
+          {isPub ? (locked ? "Coming Soon" : "Published") : "Draft"}
+        </span>
+      </div>
+    );
+  };
+
   /* ===================== GROUPED SEASONS ===================== */
   const groupedEpisodes = groupEpisodesBySeason();
   const seasonNumbers = Object.keys(groupedEpisodes).map(Number).sort((a, b) => a - b);
 
-
-
   /* ===================== RENDER ===================== */
   return (
     <div className="page-section">
-      {/* Header */}
+      {/* Page Header */}
       <div className="pg-header">
         <div>
-          <h1 className="pg-title"><Film style={{ display: "inline-block", marginRight: 8 }} size={32} /> Content Management</h1>
-          <p className="pg-sub">View and manage movies and series</p>
+          <h1 className="pg-title">
+            <Film className="pg-title-icon" size={20} />
+            Content Management
+          </h1>
+          <p className="pg-sub">View, filter, and manage platform movies, series, and microdramas</p>
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate("/add-content")}
+            style={{ padding: "7px 14px", fontSize: "0.82rem" }}
+          >
+            <Plus size={15} /> Add Content
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              fetchData();
+              fetchContentStats();
+            }}
+            disabled={loading}
+            title="Refresh Content List"
+            style={{ padding: "7px 12px", fontSize: "0.78rem" }}
+          >
+            <RefreshCw size={14} className={loading ? "spin-icon" : ""} /> Refresh
+          </button>
         </div>
       </div>
 
+      {/* 4-Card Symmetrical KPI Grid */}
+      <div className="kpi-grid kpi-grid-4">
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Total Catalog</span>
+            <div className="kpi-icon-badge icon-amber">
+              <Layers size={15} />
+            </div>
+          </div>
+          <div className="kpi-value">{stats.totalItems.toLocaleString()}</div>
+          <div className="kpi-footer" style={{ color: "var(--text-muted)" }}>
+            Total media items in library
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Movies</span>
+            <div className="kpi-icon-badge icon-blue">
+              <Film size={15} />
+            </div>
+          </div>
+          <div className="kpi-value" style={{ color: "#3B82F6" }}>{stats.moviesCount.toLocaleString()}</div>
+          <div className="kpi-footer" style={{ color: "#3B82F6" }}>
+            Feature films & titles
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Series & Shows</span>
+            <div className="kpi-icon-badge icon-indigo">
+              <Tv size={15} />
+            </div>
+          </div>
+          <div className="kpi-value" style={{ color: "#6366F1" }}>{stats.seriesCount.toLocaleString()}</div>
+          <div className="kpi-footer" style={{ color: "#6366F1" }}>
+            Episodic series & seasons
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Microdramas</span>
+            <div className="kpi-icon-badge icon-emerald">
+              <Flame size={15} />
+            </div>
+          </div>
+          <div className="kpi-value" style={{ color: "#10B981" }}>{stats.microdramasCount.toLocaleString()}</div>
+          <div className="kpi-footer" style={{ color: "#10B981" }}>
+            Short-form drama content
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Box & Toolbar */}
       <div className="content-box">
-        {/* Type Selector + Search */}
-        <div className="filter-row" style={{ display: "flex", gap: 12, marginBottom: 32, flexWrap: "wrap", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: "20px" }}>
-          <div className="tab-group" style={{ display: "flex", background: "var(--bg3)", padding: "4px", borderRadius: "12px", gap: "4px" }}>
-            <button
-              className={`btn ${contentType === "all" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => { setContentType("all"); setCurrentPage(1); }}
-              style={{ borderRadius: "8px", boxShadow: contentType === "all" ? "var(--shadow-sm)" : "none" }}
-            >
-              <Layers size={18} /> All
-            </button>
-            <button
-              className={`btn ${contentType === "movies" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => { setContentType("movies"); setCurrentPage(1); }}
-              style={{ borderRadius: "8px", boxShadow: contentType === "movies" ? "var(--shadow-sm)" : "none" }}
-            >
-              <Film size={18} /> Movies
-            </button>
-            <button
-              className={`btn ${contentType === "series" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => { setContentType("series"); setCurrentPage(1); }}
-              style={{ borderRadius: "8px", boxShadow: contentType === "series" ? "var(--shadow-sm)" : "none" }}
-            >
-              <Tv size={18} /> Series
-            </button>
-            <button
-              className={`btn ${contentType === "microdramas" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => { setContentType("microdramas"); setCurrentPage(1); }}
-              style={{ borderRadius: "8px", boxShadow: contentType === "microdramas" ? "var(--shadow-sm)" : "none" }}
-            >
-              <Tv size={18} /> Microdramas
-            </button>
+        {/* Toolbar Row */}
+        <div className="search-row" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12, alignItems: "center" }}>
+          {/* Category Segmented Switch */}
+          <div className="segmented-switch">
+            {[
+              { key: "all", label: "All Content", icon: Layers },
+              { key: "movies", label: "Movies", icon: Film },
+              { key: "series", label: "Series", icon: Tv },
+              { key: "microdramas", label: "Microdramas", icon: Flame },
+            ].map((tab) => {
+              const IconComponent = tab.icon;
+              const isActive = contentType === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`segmented-switch-btn ${isActive ? "active" : ""}`}
+                  onClick={() => {
+                    setContentType(tab.key);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeContentTabPill"
+                      className="segmented-switch-active-bg"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span className="segmented-switch-btn-text">
+                    <IconComponent size={14} /> {tab.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
+          {/* Search Input */}
+          <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
             <SearchBar
-              placeholder={`Quick search ${contentType}...`}
+              placeholder={`Search ${contentType}...`}
               onSearchChange={(q) => {
                 setSearchQuery(q);
                 if (!q.trim()) { setSearchResults(null); return; }
@@ -855,88 +1120,42 @@ export default function Content() {
           </div>
         </div>
 
-        {/* Adult sub-filter */}
+        {/* Rating / Audience Filter Chips */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>Filter by:</span>
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>Rating Filter:</span>
           {[
             { key: "all", label: "All" },
-            { key: "non-adult", label: "Non-Adult" },
+            { key: "non-adult", label: "Family Friendly" },
             { key: "adult", label: "🔞 18+ Adult" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setAdultFilter(key)}
-              style={{
-                padding: "4px 16px",
-                borderRadius: 20,
-                border: `1.5px solid ${adultFilter === key ? (key === "adult" ? "#f87171" : key === "non-adult" ? "#34d399" : "var(--primary)") : "var(--border)"}`,
-                background: adultFilter === key ? (key === "adult" ? "rgba(248,113,113,0.13)" : key === "non-adult" ? "rgba(52,211,153,0.13)" : "rgba(var(--primary-rgb),0.13)") : "transparent",
-                color: adultFilter === key ? (key === "adult" ? "#f87171" : key === "non-adult" ? "#34d399" : "var(--primary)") : "var(--text-muted)",
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.18s ease"
-              }}
-            >
-              {label}
-            </button>
-          ))}
+          ].map(({ key, label }) => {
+            const isActive = adultFilter === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setAdultFilter(key)}
+                className={`filter-chip ${isActive ? "active" : ""} ${key}`}
+              >
+                {label}
+              </button>
+            );
+          })}
           {adultFilter === "adult" && (
-            <label
-              style={{
-                marginLeft: 10,
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: bulkHiding ? "wait" : "pointer",
-                opacity: bulkHiding ? 0.6 : 1,
-                userSelect: "none",
-              }}
-            >
-              <span style={{
-                position: "relative",
-                display: "inline-block",
-                width: 38,
-                height: 22,
-                flexShrink: 0,
-              }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 10 }}>
+              <label className="switch-container" title="Hide All 18+ Content">
                 <input
                   type="checkbox"
+                  className="switch-input"
                   checked={filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide)}
                   disabled={bulkHiding || filteredDisplayData.length === 0}
                   onChange={e => handleBulkHideAdult(e.target.checked)}
-                  style={{ opacity: 0, width: 0, height: 0, position: "absolute" }}
                 />
-                <span style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: 22,
-                  background: filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide)
-                    ? "rgba(248,113,113,0.7)" : "var(--bg3)",
-                  border: `1.5px solid ${filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide) ? "#f87171" : "var(--border)"}`,
-                  transition: "all 0.2s ease",
-                  cursor: bulkHiding ? "wait" : "pointer",
-                }} />
-                <span style={{
-                  position: "absolute",
-                  top: 3,
-                  left: filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide) ? 18 : 3,
-                  width: 14,
-                  height: 14,
-                  borderRadius: "50%",
-                  background: filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide) ? "#fff" : "var(--text-muted)",
-                  transition: "left 0.2s ease",
-                  pointerEvents: "none",
-                }} />
-              </span>
-              <span style={{
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                color: filteredDisplayData.length > 0 && filteredDisplayData.every(i => i.isHide) ? "#f87171" : "var(--text-muted)",
-              }}>
+                <span className="switch-slider"></span>
+              </label>
+              <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)" }}>
                 {bulkHiding ? "Updating..." : "Hide All 18+ Content"}
               </span>
-            </label>
+            </div>
           )}
         </div>
 
@@ -966,20 +1185,32 @@ export default function Content() {
                   </thead>
                   <tbody>
                     {filteredDisplayData.length === 0 ? (
-                      <tr><td colSpan={8}>No content found</td></tr>
+                      <tr><td colSpan={8} style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>No content found</td></tr>
                     ) : filteredDisplayData.map(item => (
                       <tr key={item._id}>
                         <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div className="thumb-popular-wrap" style={{ width: 40, height: 60, flexShrink: 0 }}>
-                              <img src={getFullUrl(item.poster)} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, display: "block" }} />
-                              {item.isPopular && <span className="thumb-popular-tape">&#x1F525; Popular</span>}
+                          <div className="tbl-media-cell">
+                            <div className="thumb-popular-wrap">
+                              {item.poster ? (
+                                <img
+                                  src={getFullUrl(item.poster)}
+                                  alt=""
+                                  className="thumb-img"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <Film size={18} style={{ color: "var(--text-muted)" }} />
+                              )}
+                              {item.isPopular && <span className="thumb-popular-tape">🔥 Popular</span>}
                             </div>
                             <div>
-                              <div style={{ fontWeight: 600 }}>{item.title}</div>
-                              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{item.duration || (item.totalSeasons ? `${item.totalSeasons} Season(s)` : "")}</div>
+                              <div className="media-title">{item.title}</div>
+                              <div className="media-sub">{item.duration || (item.totalSeasons ? `${item.totalSeasons} Season(s)` : "")}</div>
                               {isLocked(item) && (
-                                <div style={{ fontSize: "0.75rem", color: "var(--orange)" }}>
+                                <div className="media-lock-date">
                                   <Calendar size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />
                                   {new Date(item.releaseDate).toLocaleDateString()}
                                 </div>
@@ -988,62 +1219,23 @@ export default function Content() {
                           </div>
                         </td>
                         <td>
-                          <span className={`badge ${
-                            item._type === "movie" ? "badge-active" :
-                            item._type === "series" ? "badge-draft" : ""
-                          }`} style={{
-                            background: item._type === "movie" ? "rgba(255,193,7,0.15)" : item._type === "series" ? "rgba(99,102,241,0.15)" : "rgba(236,72,153,0.15)",
-                            color: item._type === "movie" ? "#f5c518" : item._type === "series" ? "#818cf8" : "#f472b6",
-                            border: `1px solid ${item._type === "movie" ? "rgba(255,193,7,0.3)" : item._type === "series" ? "rgba(99,102,241,0.3)" : "rgba(236,72,153,0.3)"}`,
-                            textTransform: "capitalize", padding: "2px 8px", borderRadius: 6, fontSize: "0.75rem", fontWeight: 600
-                          }}>
+                          <span className={`badge-type ${item._type}`}>
                             {item._type === "movie" ? "Movie" : item._type === "series" ? "Series" : "Microdrama"}
                           </span>
-                          {item.is18plus && (
-                            <span style={{ display: "block", marginTop: 4, fontSize: "0.7rem", color: "#f87171", fontWeight: 700 }}>🔞 18+{item.isHide ? " · Hidden" : ""}</span>
-                          )}
                         </td>
-                        <td style={{ textTransform: "capitalize" }}>{Array.isArray(item.category) ? item.category.join(", ") : item.category || "\u2014"}</td>
-                        <td>{item.releaseYear}</td>
-                        <td>
-                          <span style={{
-                            display: "inline-block",
-                            padding: "3px 10px",
-                            borderRadius: 20,
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            background: item.is18plus ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.12)",
-                            color: item.is18plus ? "#f87171" : "#34d399",
-                            border: `1px solid ${item.is18plus ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.35)"}`,
-                          }}>
-                            {item.is18plus ? "🔞 Adult" : "✓ Non-Adult"}
-                          </span>
-                        </td>
-                        <td><strong>{item.priority || 0}</strong></td>
-                        <td>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                            <label className="switch-container" title={item.isPublished !== false ? "Click to make Draft" : "Click to Publish"}>
-                              <input
-                                type="checkbox"
-                                className="switch-input"
-                                checked={item.isPublished !== false}
-                                onChange={() => handleTogglePublished(item)}
-                              />
-                              <span className="switch-slider"></span>
-                            </label>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>
-                              {item.isPublished !== false ? (isLocked(item) ? "Coming Soon" : "Published") : "Draft"}
-                            </span>
-                          </div>
-                        </td>
+                        <td>{renderCategories(item.category)}</td>
+                        <td><span className="year-txt">{item.releaseYear || "—"}</span></td>
+                        <td>{renderAudienceBadge(item.is18plus)}</td>
+                        <td><span className="priority-badge">{item.priority || 0}</span></td>
+                        <td>{renderStatusToggle(item)}</td>
                         <td>
                           <div className="tbl-actions">
-                            <button className="icon-btn view" onClick={() => openView(item)} title="View"><Eye size={18} /></button>
-                            <button className="icon-btn edit" onClick={() => openEdit(item)} title="Edit"><Edit2 size={18} /></button>
-                            <button className="icon-btn del" onClick={() => handleDelete(item)} title="Delete"><Trash2 size={18} /></button>
+                            <button className="icon-btn view" onClick={() => openView(item)} title="View"><Eye size={15} /></button>
+                            <button className="icon-btn edit" onClick={() => openEdit(item)} title="Edit"><Edit2 size={15} /></button>
+                            <button className="icon-btn del" onClick={() => handleDelete(item)} title="Delete"><Trash2 size={15} /></button>
                             {(item._type === "series" || item._type === "microdrama") && (
-                              <button className="btn btn-ghost eps-btn" onClick={() => { setContentType(item._type === "series" ? "series" : "microdramas"); setTimeout(() => handleSeriesClick(item), 100); }}>
-                                <Tv size={14} /> Seasons
+                              <button className="btn-seasons" onClick={() => { setContentType(item._type === "series" ? "series" : "microdramas"); setTimeout(() => handleSeriesClick(item), 100); }} title="Seasons & Episodes">
+                                <Tv size={13} /> Seasons
                               </button>
                             )}
                           </div>
@@ -1074,20 +1266,32 @@ export default function Content() {
                   </thead>
                   <tbody>
                     {filteredDisplayData.length === 0 ? (
-                      <tr><td colSpan={8}>No content found</td></tr>
+                      <tr><td colSpan={8} style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>No content found</td></tr>
                     ) : filteredDisplayData.map(movie => (
                       <tr key={movie._id}>
                         <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div className="thumb-popular-wrap" style={{ width: 40, height: 60, flexShrink: 0 }}>
-                              <img src={getFullUrl(movie.poster)} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, display: "block" }} />
-                              {movie.isPopular && <span className="thumb-popular-tape">&#x1F525; Popular</span>}
+                          <div className="tbl-media-cell">
+                            <div className="thumb-popular-wrap">
+                              {movie.poster ? (
+                                <img
+                                  src={getFullUrl(movie.poster)}
+                                  alt=""
+                                  className="thumb-img"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <Film size={18} style={{ color: "var(--text-muted)" }} />
+                              )}
+                              {movie.isPopular && <span className="thumb-popular-tape">🔥 Popular</span>}
                             </div>
                             <div>
-                              <div style={{ fontWeight: 600 }}>{movie.title}{movie.is18plus && <span style={{ marginLeft: 6, fontSize: "0.7rem", color: "#f87171", fontWeight: 700 }}>🔞{movie.isHide ? " Hidden" : ""}</span>}</div>
-                              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{movie.duration}</div>
+                              <div className="media-title">{movie.title}</div>
+                              <div className="media-sub">{movie.duration || "Movie"}</div>
                               {isLocked(movie) && (
-                                <div style={{ fontSize: "0.75rem", color: "var(--orange)" }}>
+                                <div className="media-lock-date">
                                   <Calendar size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />
                                   {new Date(movie.releaseDate).toLocaleDateString()}
                                 </div>
@@ -1095,52 +1299,21 @@ export default function Content() {
                             </div>
                           </div>
                         </td>
-                        <td style={{ textTransform: "capitalize" }}>{Array.isArray(movie.category) ? movie.category.join(", ") : movie.category || "\u2014"}</td>
-                        <td>{movie.releaseYear}</td>
+                        <td>{renderCategories(movie.category)}</td>
+                        <td><span className="year-txt">{movie.releaseYear || "—"}</span></td>
+                        <td>{renderAudienceBadge(movie.is18plus)}</td>
+                        <td><span className="priority-badge">{movie.priority || 0}</span></td>
                         <td>
-                          <span style={{
-                            display: "inline-block",
-                            padding: "3px 10px",
-                            borderRadius: 20,
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            background: movie.is18plus ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.12)",
-                            color: movie.is18plus ? "#f87171" : "#34d399",
-                            border: `1px solid ${movie.is18plus ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.35)"}`,
-                          }}>
-                            {movie.is18plus ? "🔞 Adult" : "✓ Non-Adult"}
+                          <span className={`badge-tier ${movie.isPremium ? "premium" : "free"}`}>
+                            {movie.isPremium ? "Premium" : "Free"}
                           </span>
                         </td>
-                        <td><strong>{movie.priority || 0}</strong></td>
-                        <td><span className={`badge ${movie.isPremium ? "badge-active" : "badge-draft"}`}>{movie.isPremium ? "Premium" : "Free"}</span></td>
-                        <td>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                            <label className="switch-container" title={movie.isPublished !== false ? "Click to make Draft" : "Click to Publish"}>
-                              <input
-                                type="checkbox"
-                                className="switch-input"
-                                checked={movie.isPublished !== false}
-                                onChange={() => handleTogglePublished(movie)}
-                              />
-                              <span className="switch-slider"></span>
-                            </label>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>
-                              {movie.isPublished !== false ? (isLocked(movie) ? "Coming Soon" : "Published") : "Draft"}
-                            </span>
-                          </div>
-                        </td>
+                        <td>{renderStatusToggle(movie)}</td>
                         <td>
                           <div className="tbl-actions">
-                            {/* View always allowed \u2014 coming-soon shows details + release date */}
-                            <button className="icon-btn view" onClick={() => openView(movie)} title="View">
-                              <Eye size={18} />
-                            </button>
-                            <button className="icon-btn edit" onClick={() => openEdit(movie)} title="Edit">
-                              <Edit2 size={18} />
-                            </button>
-                            <button className="icon-btn del" onClick={() => handleDelete(movie)} title="Delete">
-                              <Trash2 size={18} />
-                            </button>
+                            <button className="icon-btn view" onClick={() => openView(movie)} title="View"><Eye size={15} /></button>
+                            <button className="icon-btn edit" onClick={() => openEdit(movie)} title="Edit"><Edit2 size={15} /></button>
+                            <button className="icon-btn del" onClick={() => handleDelete(movie)} title="Delete"><Trash2 size={15} /></button>
                           </div>
                         </td>
                       </tr>
@@ -1176,19 +1349,32 @@ export default function Content() {
                   </thead>
                   <tbody>
                     {filteredDisplayData.length === 0 ? (
-                      <tr><td colSpan={8}>No content found</td></tr>
+                      <tr><td colSpan={8} style={{ textAlign: "center", padding: "30px", color: "var(--text-muted)" }}>No content found</td></tr>
                     ) : filteredDisplayData.map(series => (
                       <tr key={series._id}>
                         <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div className="thumb-popular-wrap" style={{ width: 40, height: 60, flexShrink: 0 }}>
-                              <img src={getFullUrl(series.poster)} alt="" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, display: "block" }} />
-                              {series.isPopular && <span className="thumb-popular-tape">&#x1F525; Popular</span>}
+                          <div className="tbl-media-cell">
+                            <div className="thumb-popular-wrap">
+                              {series.poster ? (
+                                <img
+                                  src={getFullUrl(series.poster)}
+                                  alt=""
+                                  className="thumb-img"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <Tv size={18} style={{ color: "var(--text-muted)" }} />
+                              )}
+                              {series.isPopular && <span className="thumb-popular-tape">🔥 Popular</span>}
                             </div>
                             <div>
-                              <div style={{ fontWeight: 600 }}>{series.title}{series.is18plus && <span style={{ marginLeft: 6, fontSize: "0.7rem", color: "#f87171", fontWeight: 700 }}>🔞{series.isHide ? " Hidden" : ""}</span>}</div>
+                              <div className="media-title">{series.title}</div>
+                              <div className="media-sub">{series.totalSeasons ? `${series.totalSeasons} Season(s)` : "Series"}</div>
                               {isLocked(series) && (
-                                <div style={{ fontSize: "0.75rem", color: "var(--orange)" }}>
+                                <div className="media-lock-date">
                                   <Calendar size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />
                                   {new Date(series.releaseDate).toLocaleDateString()}
                                 </div>
@@ -1196,55 +1382,20 @@ export default function Content() {
                             </div>
                           </div>
                         </td>
-                        <td style={{ textTransform: "capitalize" }}>{Array.isArray(series.category) ? series.category.join(", ") : series.category || "\u2014"}</td>
-                        <td>{series.releaseYear}</td>
-                        <td>
-                          <span style={{
-                            display: "inline-block",
-                            padding: "3px 10px",
-                            borderRadius: 20,
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            background: series.is18plus ? "rgba(248,113,113,0.15)" : "rgba(52,211,153,0.12)",
-                            color: series.is18plus ? "#f87171" : "#34d399",
-                            border: `1px solid ${series.is18plus ? "rgba(248,113,113,0.4)" : "rgba(52,211,153,0.35)"}`,
-                          }}>
-                            {series.is18plus ? "🔞 Adult" : "✓ Non-Adult"}
-                          </span>
-                        </td>
-                        <td><strong>{series.priority || 0}</strong></td>
-                        <td>{series.totalSeasons}</td>
-                        <td>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                            <label className="switch-container" title={series.isPublished !== false ? "Click to make Draft" : "Click to Publish"}>
-                              <input
-                                type="checkbox"
-                                className="switch-input"
-                                checked={series.isPublished !== false}
-                                onChange={() => handleTogglePublished(series)}
-                              />
-                              <span className="switch-slider"></span>
-                            </label>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>
-                              {series.isPublished !== false ? (isLocked(series) ? "Coming Soon" : "Published") : "Draft"}
-                            </span>
-                          </div>
-                        </td>
+                        <td>{renderCategories(series.category)}</td>
+                        <td><span className="year-txt">{series.releaseYear || "—"}</span></td>
+                        <td>{renderAudienceBadge(series.is18plus)}</td>
+                        <td><span className="priority-badge">{series.priority || 0}</span></td>
+                        <td><span className="seasons-count-tag">{series.totalSeasons || 1} Seasons</span></td>
+                        <td>{renderStatusToggle(series)}</td>
                         <td>
                           <div className="tbl-actions">
-                            <button className="icon-btn view" onClick={() => openView(series)} title="View">
-                              <Eye size={18} />
+                            <button className="icon-btn view" onClick={() => openView(series)} title="View"><Eye size={15} /></button>
+                            <button className="icon-btn edit" onClick={() => openEdit(series)} title="Edit"><Edit2 size={15} /></button>
+                            <button className="icon-btn del" onClick={() => handleDelete(series)} title="Delete"><Trash2 size={15} /></button>
+                            <button className="btn-seasons" onClick={() => handleSeriesClick(series)} title="Seasons & Episodes">
+                              <Tv size={13} /> Seasons
                             </button>
-                            <button className="icon-btn edit" onClick={() => openEdit(series)} title="Edit">
-                              <Edit2 size={18} />
-                            </button>
-                            <button className="icon-btn del" onClick={() => handleDelete(series)} title="Delete">
-                              <Trash2 size={18} />
-                            </button>
-                            <button className="btn btn-ghost eps-btn" onClick={() => handleSeriesClick(series)}>
-                              <Tv size={14} /> Seasons
-                            </button>
-
                           </div>
                         </td>
                       </tr>
@@ -1543,10 +1694,10 @@ export default function Content() {
       </div>
 
       {/* ========== MODALS ========== */}
-      {(modalMode === "view" || modalMode === "edit" || modalMode === "upload" || modalMode === "episode-view" || modalMode === "episode-edit") && selectedItem && (
+      {(modalMode === "edit" || modalMode === "upload" || modalMode === "episode-view" || modalMode === "episode-edit") && selectedItem && (
         <div className="modal-overlay" onClick={closeModal}>
           <div
-            className={`modal-box ${(modalMode === "view" || modalMode === "episode-view") ? "modal-box-view" : "modal-box-form"}`}
+            className={`modal-box ${modalMode === "episode-view" ? "modal-box-view" : "modal-box-form"}`}
             onClick={e => e.stopPropagation()}
             onKeyDown={handleKeyDown}
           >
@@ -1617,158 +1768,7 @@ export default function Content() {
                 </div>
               )}
 
-              {/* ---- VIEW (Premium) ---- */}
-              {modalMode === "view" && (
-                <div className="vp-container">
-                  {/* Hero Banner */}
-                  <div className="vp-hero">
-                    <img src={getFullUrl(selectedItem.banner || selectedItem.poster)} alt="" className="vp-hero-img" />
-                    <div className="vp-hero-overlay">
-                      <span className="vp-type-badge">
-                        {contentType === "movies" ? "MOVIE" :
-                          contentType === "microdramas" ? "MICRODRAMA" :
-                            contentType === "series" ? "SERIES" :
-                              "UNKNOWN"}
-                      </span>
-                      <h2 className="vp-title">{selectedItem.title}</h2>
-                      <div className="vp-quick-meta">
-                        <span><Calendar size={13} /> {selectedItem.releaseYear}</span>
-                        <span className="vp-dot">\u2022</span>
-                        <span>\u2B50 {selectedItem.rating}/10</span>
-                        <span className="vp-dot">\u2022</span>
-                        <span>{selectedItem.duration || "N/A"}</span>
-                        <span className="vp-dot">\u2022</span>
-                        <span>{selectedItem.language || "N/A"}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Coming Soon Alert */}
-                  {isLocked(selectedItem) && (
-                    <div className="vp-alert">
-                      <Calendar size={18} />
-                      <div>
-                        <strong>Scheduled Release</strong>
-                        <p>Available from {new Date(selectedItem.releaseDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Genre / Category Pills */}
-                  <div className="vp-pills">
-                    {(Array.isArray(selectedItem.genre) ? selectedItem.genre : [selectedItem.genre]).filter(Boolean).map((g, i) => (
-                      <span key={i} className="vp-pill">{g}</span>
-                    ))}
-                    {selectedItem.isPremium && <span className="vp-pill vp-pill-gold">★ Premium</span>}
-                    {selectedItem.isPopular && <span className="vp-pill vp-pill-popular"><Flame size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />Popular</span>}
-                    {(Array.isArray(selectedItem.category) ? selectedItem.category : [selectedItem.category]).filter(Boolean).map((c, i) => (
-                      <span key={`c-${i}`} className="vp-pill vp-pill-blue">{c}</span>
-                    ))}
-                  </div>
-
-                  {/* Description */}
-                  {selectedItem.description && (
-                    <div className="vp-section">
-                      <div className="vp-section-label"><Activity size={14} /> Storyline</div>
-                      <p className="vp-desc">{selectedItem.description}</p>
-                    </div>
-                  )}
-
-                  {/* Trailer */}
-                  {contentType !== "microdramas" && (
-                    <div className="vp-section">
-                      <div className="vp-section-label"><Play size={14} /> Trailer</div>
-                      {selectedItem.trailerUrl ? (
-                        <div className="vp-video-wrap">
-                          {getYouTubeId(selectedItem.trailerUrl) ? (
-                            <iframe src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.trailerUrl)}`} title="Trailer" frameBorder="0" allowFullScreen></iframe>
-                          ) : (
-                            <video controls src={getFullUrl(selectedItem.trailerUrl)}></video>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="vp-unavailable">
-                          <Video size={28} />
-                          <span>Trailer not uploaded</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Full Movie */}
-                  {contentType === "movies" && (
-                    <div className="vp-section">
-                      <div className="vp-section-label"><Film size={14} /> Full Movie</div>
-                      {!isLocked(selectedItem) && (selectedItem.videoUrl || selectedItem.video) ? (
-                        <div className="vp-video-wrap">
-                          {getYouTubeId(selectedItem.videoUrl || selectedItem.video) ? (
-                            <iframe src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.videoUrl || selectedItem.video)}`} title={"Full Movie"} frameBorder="0" allowFullScreen></iframe>
-                          ) : (
-                            <video ref={videoRef} controls src={getFullUrl(selectedItem.videoUrl || selectedItem.video)}></video>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="vp-unavailable">
-                          <Film size={28} />
-                          <span>{isLocked(selectedItem) ? "Locked until release" : "Video not uploaded"}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Details Grid */}
-                  <div className="vp-section">
-                    <div className="vp-section-label"><Eye size={14} /> Details</div>
-                    <div className="vp-details-grid">
-                      <div className="vp-detail-card">
-                        <span className="vp-detail-label">Release Year</span>
-                        <span className="vp-detail-value">{selectedItem.releaseYear}</span>
-                      </div>
-                      <div className="vp-detail-card">
-                        <span className="vp-detail-label">Duration</span>
-                        <span className="vp-detail-value">{selectedItem.duration || "N/A"}</span>
-                      </div>
-                      <div className="vp-detail-card">
-                        <span className="vp-detail-label">Rating</span>
-                        <span className="vp-detail-value">{selectedItem.rating} ⭐</span>
-                      </div>
-                      <div className="vp-detail-card">
-                        <span className="vp-detail-label">Priority</span>
-                        <span className="vp-detail-value">{selectedItem.priority || 0}</span>
-                      </div>
-                      <div className="vp-detail-card">
-                        <span className="vp-detail-label">Premium</span>
-                        <span className={`vp-detail-value ${selectedItem.isPremium ? "text-gold" : ""}`}>{selectedItem.isPremium ? "✓ Yes" : "✗ No"}</span>
-                      </div>
-                      <div className="vp-detail-card">
-                        <span className="vp-detail-label">Language</span>
-                        <span className="vp-detail-value">{selectedItem.language || "N/A"}</span>
-                      </div>
-                      {selectedItem.releaseDate && (
-                        <div className="vp-detail-card">
-                          <span className="vp-detail-label">Release Date</span>
-                          <span className="vp-detail-value">{new Date(selectedItem.releaseDate).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Cast */}
-                  {selectedItem.cast?.length > 0 && (
-                    <div className="vp-section">
-                      <div className="vp-section-label"><User size={14} /> Cast & Crew</div>
-                      <div className="cast-grid">
-                        {selectedItem.cast.map((c, i) => (
-                          <div key={i} className="cast-card-view">
-                            {c.image && <img src={getFullUrl(c.image)} alt={c.name} className="cast-img-view" />}
-                            <span>{c.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
 
 
               {/* ---- EPISODE EDIT ---- */}
@@ -2206,6 +2206,228 @@ export default function Content() {
           </div>
         </div>
       )}
+
+      {/* ========== RIGHT SLIDE-OVER DRAWER FOR VIEW DETAILS ========== */}
+      <AnimatePresence>
+        {modalMode === "view" && selectedItem && (
+          <div className="side-drawer-overlay" onClick={closeModal}>
+            <motion.div
+              className="side-drawer-panel"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 320 }}
+            >
+              {/* Drawer Header */}
+              <div className="side-drawer-head">
+                <div className="side-drawer-title-wrap">
+                  <div className="side-drawer-icon-badge">
+                    <Eye size={18} />
+                  </div>
+                  <h3 className="side-drawer-title">Content Details</h3>
+                </div>
+                <button className="side-drawer-close" onClick={closeModal} title="Close Panel">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Drawer Body */}
+              <div className="side-drawer-body">
+                {/* Hero Banner */}
+                <div className="side-drawer-hero">
+                  <img
+                    src={getFullUrl(selectedItem.banner || selectedItem.poster)}
+                    alt=""
+                    className="side-drawer-hero-img"
+                  />
+                  <div className="side-drawer-hero-overlay" />
+                </div>
+
+                {/* Overlapping Poster & Info */}
+                <div className="side-drawer-meta-header">
+                  <img
+                    src={getFullUrl(selectedItem.poster)}
+                    alt=""
+                    className="side-drawer-poster"
+                  />
+                  <div className="side-drawer-info">
+                    <div className="side-drawer-badges-row">
+                      <span className="side-drawer-type-badge">
+                        {contentType === "movies" ? "MOVIE" :
+                          contentType === "microdramas" ? "MICRODRAMA" :
+                            contentType === "series" ? "SERIES" : "CONTENT"}
+                      </span>
+                      {selectedItem.isPremium && <span className="vp-pill vp-pill-gold">★ Premium</span>}
+                      {selectedItem.isPopular && <span className="vp-pill vp-pill-popular"><Flame size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />Popular</span>}
+                      {selectedItem.is18plus ? (
+                        <span className="vp-pill vp-pill-adult">🔞 18+ Adult</span>
+                      ) : (
+                        <span className="vp-pill vp-pill-family">✓ Family</span>
+                      )}
+                    </div>
+                    <h2 className="side-drawer-item-title">{selectedItem.title}</h2>
+                    <div className="side-drawer-quick-meta">
+                      <span><Calendar size={13} /> {selectedItem.releaseYear || "N/A"}</span>
+                      <span className="vp-dot">•</span>
+                      <span>⭐ {selectedItem.rating || "0"}/10</span>
+                      <span className="vp-dot">•</span>
+                      <span>{selectedItem.duration || "N/A"}</span>
+                      <span className="vp-dot">•</span>
+                      <span>{selectedItem.language || "English"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scheduled Release Alert */}
+                {isLocked(selectedItem) && (
+                  <div className="vp-alert">
+                    <Calendar size={18} />
+                    <div>
+                      <strong>Scheduled Release</strong>
+                      <p>Available from {new Date(selectedItem.releaseDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Storyline */}
+                {selectedItem.description && (
+                  <div className="side-drawer-section">
+                    <div className="side-drawer-section-title"><Activity size={14} /> Storyline</div>
+                    <p className="side-drawer-text">{selectedItem.description}</p>
+                  </div>
+                )}
+
+                {/* Categories & Genres */}
+                <div className="side-drawer-section">
+                  <div className="side-drawer-section-title"><Layers size={14} /> Categories & Genres</div>
+                  <div className="side-drawer-tags-wrap">
+                    {(Array.isArray(selectedItem.genre) ? selectedItem.genre : [selectedItem.genre]).filter(Boolean).map((g, i) => (
+                      <span key={`g-${i}`} className="side-drawer-tag">{g}</span>
+                    ))}
+                    {(Array.isArray(selectedItem.category) ? selectedItem.category : [selectedItem.category]).filter(Boolean).map((c, i) => (
+                      <span key={`c-${i}`} className="side-drawer-tag">{c}</span>
+                    ))}
+                  </div>
+                </div>
+
+
+
+                {/* Content Specifications Grid */}
+                <div className="side-drawer-section">
+                  <div className="side-drawer-section-title"><Info size={14} /> Content Specifications</div>
+                  <div className="side-drawer-specs-grid">
+                    <div className="side-drawer-spec-card">
+                      <span className="side-drawer-spec-label">Release Year</span>
+                      <span className="side-drawer-spec-value">{selectedItem.releaseYear || "N/A"}</span>
+                    </div>
+                    <div className="side-drawer-spec-card">
+                      <span className="side-drawer-spec-label">Duration</span>
+                      <span className="side-drawer-spec-value">{selectedItem.duration || "N/A"}</span>
+                    </div>
+                    <div className="side-drawer-spec-card">
+                      <span className="side-drawer-spec-label">Rating</span>
+                      <span className="side-drawer-spec-value">{selectedItem.rating || 0} ⭐</span>
+                    </div>
+                    <div className="side-drawer-spec-card">
+                      <span className="side-drawer-spec-label">Priority Score</span>
+                      <span className="side-drawer-spec-value">{selectedItem.priority || 0}</span>
+                    </div>
+                    <div className="side-drawer-spec-card">
+                      <span className="side-drawer-spec-label">Access Tier</span>
+                      <span className="side-drawer-spec-value">{selectedItem.isPremium ? "★ Premium" : "Free"}</span>
+                    </div>
+                    <div className="side-drawer-spec-card">
+                      <span className="side-drawer-spec-label">Language</span>
+                      <span className="side-drawer-spec-value">{selectedItem.language || "English"}</span>
+                    </div>
+                    {selectedItem.releaseDate && (
+                      <div className="side-drawer-spec-card">
+                        <span className="side-drawer-spec-label">Release Date</span>
+                        <span className="side-drawer-spec-value">{new Date(selectedItem.releaseDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Cast & Crew */}
+                {selectedItem.cast?.length > 0 && (
+                  <div className="side-drawer-section">
+                    <div className="side-drawer-section-title"><User size={14} /> Cast & Crew</div>
+                    <div className="cast-grid">
+                      {selectedItem.cast.map((c, i) => (
+                        <div key={i} className="cast-card">
+                          <img src={getFullUrl(c.image || c.photo)} alt="" className="cast-img" />
+                          <div className="cast-name">{c.name}</div>
+                          <div className="cast-role">{c.role}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="side-drawer-foot">
+                <button
+                  className="btn btn-primary"
+                  onClick={() => { setEditData({ ...selectedItem, cast: selectedItem.cast ? [...selectedItem.cast.map(c => ({ ...c }))] : [] }); setModalMode("edit"); }}
+                  style={{ gap: 8 }}
+                >
+                  <Edit2 size={15} /> Edit Content
+                </button>
+                <button className="btn btn-ghost" onClick={closeModal}>
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ========== CUSTOM POPUP DIALOG MODAL ========== */}
+      <AnimatePresence>
+        {popupDialog.isOpen && (
+          <div
+            className="custom-popup-overlay"
+            onClick={() => popupDialog.onCancel ? popupDialog.onCancel() : popupDialog.onConfirm()}
+          >
+            <motion.div
+              className="custom-popup-box"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 10 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+              <div className={`custom-popup-icon-wrap ${popupDialog.type}`}>
+                {popupDialog.type === "danger" && <XCircle size={28} />}
+                {popupDialog.type === "warning" && <AlertTriangle size={28} />}
+                {popupDialog.type === "success" && <CheckCircle2 size={28} />}
+                {popupDialog.type === "info" && <Info size={28} />}
+              </div>
+              <h3 className="custom-popup-title">{popupDialog.title}</h3>
+              <p className="custom-popup-message">{popupDialog.message}</p>
+              <div className="custom-popup-actions">
+                {popupDialog.cancelText && (
+                  <button
+                    className="custom-popup-btn cancel"
+                    onClick={() => popupDialog.onCancel && popupDialog.onCancel()}
+                  >
+                    {popupDialog.cancelText}
+                  </button>
+                )}
+                <button
+                  className={`custom-popup-btn ${popupDialog.type === "danger" ? "confirm-danger" : "confirm-primary"}`}
+                  onClick={() => popupDialog.onConfirm && popupDialog.onConfirm()}
+                >
+                  {popupDialog.confirmText}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

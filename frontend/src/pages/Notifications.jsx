@@ -447,7 +447,7 @@ export default function NotificationsPage() {
                   </button>
                 ))}
               </div>
-            </div> */}
+            </div>
             <div className="notif-field-group notif-col-6">
               <label className="notif-label">Notification Type</label>
               <select

@@ -95,18 +95,27 @@
 .support-btn:hover,
 .support-icon-btn:hover {
   border-color: var(--border2);
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
+}
+
+.support-btn:active,
+.support-icon-btn:active {
+  transform: translateY(0.5px) scale(0.98);
 }
 
 .support-btn.primary {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #ffffff;
-  box-shadow: 0 8px 22px rgba(229, 9, 20, 0.24);
+  background: var(--primary, #FFD11A);
+  border-color: var(--primary, #FFD11A);
+  color: #000000;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(255, 209, 26, 0.3);
 }
 
 .support-btn.primary:hover {
-  background: #c1071a;
+  background: #f5c518;
+  border-color: #f5c518;
+  color: #000000;
+  box-shadow: 0 6px 20px rgba(255, 209, 26, 0.4);
 }
 
 .support-btn.ghost {

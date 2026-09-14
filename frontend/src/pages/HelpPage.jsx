@@ -176,14 +176,20 @@ export default function HelpPage() {
                   <Phone size={14} /> Phone Support
                 </span>
                 {phoneSupport && (
-                  <span
-                    className={`badge ${phoneSupport.isPublished !== false ? "badge-pub" : "badge-draft"}`}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleToggleSupport(phoneSupport._id)}
-                    title="Click to toggle visibility"
-                  >
-                    {phoneSupport.isPublished !== false ? "👁️ Published" : "👁️‍🗨️ Draft"}
-                  </span>
+                  <div className="status-toggle-wrap">
+                    <label className="switch-container switch-sm" title="Toggle visibility">
+                      <input
+                        type="checkbox"
+                        className="switch-input"
+                        checked={phoneSupport.isPublished !== false}
+                        onChange={() => handleToggleSupport(phoneSupport._id)}
+                      />
+                      <span className="switch-slider" />
+                    </label>
+                    <span className={`status-label ${phoneSupport.isPublished !== false ? "published" : "draft"}`}>
+                      {phoneSupport.isPublished !== false ? "Published" : "Draft"}
+                    </span>
+                  </div>
                 )}
               </div>
               <div style={{ fontSize: "1.2rem", fontWeight: "600", color: "var(--text-main)", margin: "8px 0" }}>
@@ -217,14 +223,20 @@ export default function HelpPage() {
                   <Mail size={14} /> Email Support
                 </span>
                 {emailSupport && (
-                  <span
-                    className={`badge ${emailSupport.isPublished !== false ? "badge-pub" : "badge-draft"}`}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleToggleSupport(emailSupport._id)}
-                    title="Click to toggle visibility"
-                  >
-                    {emailSupport.isPublished !== false ? "👁️ Published" : "👁️‍🗨️ Draft"}
-                  </span>
+                  <div className="status-toggle-wrap">
+                    <label className="switch-container switch-sm" title="Toggle visibility">
+                      <input
+                        type="checkbox"
+                        className="switch-input"
+                        checked={emailSupport.isPublished !== false}
+                        onChange={() => handleToggleSupport(emailSupport._id)}
+                      />
+                      <span className="switch-slider" />
+                    </label>
+                    <span className={`status-label ${emailSupport.isPublished !== false ? "published" : "draft"}`}>
+                      {emailSupport.isPublished !== false ? "Published" : "Draft"}
+                    </span>
+                  </div>
                 )}
               </div>
               <div style={{ fontSize: "1.2rem", fontWeight: "600", color: "var(--text-main)", margin: "8px 0", wordBreak: "break-all" }}>
@@ -280,16 +292,22 @@ export default function HelpPage() {
                 </div>
               </div>
               
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: 4, marginBottom: 8 }}>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", marginTop: 4, marginBottom: 8 }}>
                 {item.category && <span className="badge badge-active">{item.category}</span>}
-                <span
-                  className={`badge ${item.isPublished !== false ? "badge-pub" : "badge-draft"}`}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleTogglePublish(item._id)}
-                  title="Click to toggle visibility"
-                >
-                  {item.isPublished !== false ? "👁️ Published" : "👁️‍🗨️ Draft"}
-                </span>
+                <div className="status-toggle-wrap">
+                  <label className="switch-container switch-sm" title="Click to toggle publish status">
+                    <input
+                      type="checkbox"
+                      className="switch-input"
+                      checked={item.isPublished !== false}
+                      onChange={() => handleTogglePublish(item._id)}
+                    />
+                    <span className="switch-slider" />
+                  </label>
+                  <span className={`status-label ${item.isPublished !== false ? "published" : "draft"}`}>
+                    {item.isPublished !== false ? "Published" : "Draft"}
+                  </span>
+                </div>
               </div>
 
               <p className="doc-excerpt">{item.answer}</p>
@@ -346,17 +364,20 @@ export default function HelpPage() {
                   <option value="report-problem">Report Problem</option>
                 </select>
               </div>
-              <div className="form-row" style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8 }}>
-                <input
-                  type="checkbox"
-                  id="isPublished"
-                  checked={selected.isPublished !== false}
-                  disabled={mode === "view"}
-                  style={{ width: 18, height: 18, cursor: mode === "view" ? "not-allowed" : "pointer" }}
-                  onChange={(e) => setSelected({ ...selected, isPublished: e.target.checked })}
-                />
-                <label htmlFor="isPublished" className="form-label" style={{ margin: 0, cursor: mode === "view" ? "not-allowed" : "pointer" }}>
+              <div className="form-row" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 12, padding: "10px 14px", background: "var(--bg3)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                <span className="form-label" style={{ margin: 0, fontWeight: 600 }}>
                   Publish Article (Visible to users)
+                </span>
+                <label className="switch-container">
+                  <input
+                    type="checkbox"
+                    id="isPublished"
+                    className="switch-input"
+                    checked={selected.isPublished !== false}
+                    disabled={mode === "view"}
+                    onChange={(e) => setSelected({ ...selected, isPublished: e.target.checked })}
+                  />
+                  <span className="switch-slider" />
                 </label>
               </div>
               <div className="form-row">
