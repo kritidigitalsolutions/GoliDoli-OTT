@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Bell,
+  BellRing,
   Send,
   X,
   Trash2,
@@ -74,6 +75,35 @@ export default function NotificationsPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [toast, setToast] = useState(null);
   const [viewNotif, setViewNotif] = useState(null);
+
+  // ── Refs for Click-Outside Detection ───────────────────────────────────
+  const userDropdownRef = useRef(null);
+  const contentDropdownRef = useRef(null);
+
+  // ── Click-outside & Escape key handlers to close dropdowns ─────────────
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
+        setUserDropOpen(false);
+      }
+      if (contentDropdownRef.current && !contentDropdownRef.current.contains(e.target)) {
+        setContentDropOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setUserDropOpen(false);
+        setContentDropOpen(false);
+        setViewNotif(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   // ── Filters & Search for history ─────────────────────────────────────
   const [filterType, setFilterType] = useState("ALL");
@@ -316,8 +346,8 @@ export default function NotificationsPage() {
       <div className="pg-header notif-header-banner">
         <div className="notif-header-left">
           <h1 className="pg-title">
-            <span className="pg-title-icon brand-gold-icon">
-              <Bell size={24} />
+            <span className="pg-title-icon notif-title-icon">
+              <BellRing size={22} />
             </span>
             Notifications Hub
           </h1>
@@ -389,7 +419,7 @@ export default function NotificationsPage() {
             {/* Notification Type Segmented Toggle */}
             <div className="notif-field-group notif-col-12">
               <label className="notif-label">Notification Type</label>
-              <div className="segmented-control">
+              <div className="segmented-switch" style={{ alignSelf: "flex-start", flexWrap: "wrap" }}>
                 {[
                   { id: "GENERAL", label: "General" },
                   { id: "SYSTEM", label: "System" },
@@ -399,17 +429,17 @@ export default function NotificationsPage() {
                   <button
                     key={opt.id}
                     type="button"
-                    className={`segmented-item ${form.type === opt.id ? "active" : ""}`}
+                    className={`segmented-switch-btn ${form.type === opt.id ? "active" : ""}`}
                     onClick={() => setForm({ ...form, type: opt.id })}
                   >
                     {form.type === opt.id && (
                       <motion.div
                         layoutId="activeNotifTypePill"
-                        className="segmented-active-bg"
+                        className="segmented-switch-active-bg"
                         transition={{ type: "spring", stiffness: 450, damping: 35 }}
                       />
                     )}
-                    <span className="segmented-text">{opt.label}</span>
+                    <span className="segmented-switch-btn-text">{opt.label}</span>
                   </button>
                 ))}
               </div>
@@ -418,7 +448,7 @@ export default function NotificationsPage() {
             {/* Target Audience Segmented Toggle */}
             <div className="notif-field-group notif-col-12">
               <label className="notif-label">Target Audience</label>
-              <div className="segmented-control">
+              <div className="segmented-switch" style={{ alignSelf: "flex-start", flexWrap: "wrap" }}>
                 {[
                   { id: "All Users", label: "All Users" },
                   { id: "Subscribers Only", label: "Subscribed" },
@@ -429,7 +459,7 @@ export default function NotificationsPage() {
                   <button
                     key={opt.id}
                     type="button"
-                    className={`segmented-item ${form.sendTo === opt.id ? "active" : ""}`}
+                    className={`segmented-switch-btn ${form.sendTo === opt.id ? "active" : ""}`}
                     onClick={() => {
                       setForm({ ...form, sendTo: opt.id });
                       setSelectedUser(null);
@@ -439,55 +469,21 @@ export default function NotificationsPage() {
                     {form.sendTo === opt.id && (
                       <motion.div
                         layoutId="activeSendToPill"
-                        className="segmented-active-bg"
+                        className="segmented-switch-active-bg"
                         transition={{ type: "spring", stiffness: 450, damping: 35 }}
                       />
                     )}
-                    <span className="segmented-text">{opt.label}</span>
+                    <span className="segmented-switch-btn-text">{opt.label}</span>
                   </button>
                 ))}
               </div>
-            </div>
-            <div className="notif-field-group notif-col-6">
-              <label className="notif-label">Notification Type</label>
-              <select
-                className="form-input-styled notif-input notif-select"
-                name="type"
-                value={form.type}
-                onChange={ch}
-              >
-                <option value="GENERAL">📢 GENERAL (Standard Broadcast)</option>
-                <option value="SYSTEM">⚙️ SYSTEM (Maintenance & Updates)</option>
-                <option value="PLAN">💎 PLAN (Subscription & Offers)</option>
-                <option value="PROMOTIONAL">🔥 PROMOTIONAL (Content Alert)</option>
-              </select>
-            </div>
-
-            <div className="notif-field-group notif-col-6">
-              <label className="notif-label">Target Audience</label>
-              <select
-                className="form-input-styled notif-input notif-select"
-                name="sendTo"
-                value={form.sendTo}
-                onChange={(e) => {
-                  ch(e);
-                  setSelectedUser(null);
-                  setUserDropOpen(false);
-                }}
-              >
-                <option value="All Users">👥 All Users (Entire Audience)</option>
-                <option value="Subscribers Only">⭐ Subscribers Only (Active VIPs)</option>
-                <option value="Non-Subscribers">🆓 Non-Subscribers (Free Tier)</option>
-                <option value="Expiring Soon">⏳ Expiring Soon (Next 7 Days)</option>
-                <option value="Specific User">👤 Specific User (Individual Account)</option>
-              </select>
             </div>
 
             {/* Specific User Search */}
             {form.sendTo === "Specific User" && (
               <div className="notif-field-group notif-col-12 notif-fade-in">
                 <label className="notif-label">Search Target Account</label>
-                <div className="notif-user-search-wrap">
+                <div className="notif-user-search-wrap" ref={userDropdownRef}>
                   <input
                     className="form-input-styled notif-input"
                     name="userSearch"
@@ -614,7 +610,7 @@ export default function NotificationsPage() {
 
                     <div className="notif-field-group">
                       <label className="notif-label">Search {linkContentType.toUpperCase()}</label>
-                      <div className="notif-user-search-wrap">
+                      <div className="notif-user-search-wrap" ref={contentDropdownRef}>
                         <input
                           className="form-input-styled notif-input"
                           placeholder={`Type title to search ${linkContentType}...`}
@@ -837,7 +833,8 @@ export default function NotificationsPage() {
             <table className="custom-table notif-table">
               <thead>
                 <tr>
-                  <th>Notification Details</th>
+                  <th>Title</th>
+                  <th>Message Content</th>
                   <th>Type</th>
                   <th>Target Audience</th>
                   <th>Date & Time</th>
@@ -848,7 +845,7 @@ export default function NotificationsPage() {
               <tbody>
                 {displayedNotifications.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="notif-empty-td">
+                    <td colSpan={7} className="notif-empty-td">
                       <div className="notif-empty-state">
                         <Bell size={32} opacity={0.3} />
                         <p>No notification records found.</p>
@@ -871,10 +868,10 @@ export default function NotificationsPage() {
                     return (
                       <tr key={n._id} className="notif-tr">
                         <td>
-                          <div className="notif-cell-info">
-                            <span className="notif-row-title">{n.title}</span>
-                            <span className="notif-row-msg">{n.message}</span>
-                          </div>
+                          <span className="notif-row-title" title={n.title}>{n.title}</span>
+                        </td>
+                        <td>
+                          <span className="notif-row-msg" title={n.message}>{n.message}</span>
                         </td>
                         <td>
                           <span
@@ -916,14 +913,14 @@ export default function NotificationsPage() {
                         <td style={{ textAlign: "right" }}>
                           <div className="notif-actions-wrap">
                             <button
-                              className="action-btn notif-action-eye"
+                              className="icon-btn view"
                               title="View full details"
                               onClick={() => handleView(n)}
                             >
                               <Eye size={15} />
                             </button>
                             <button
-                              className="action-btn notif-action-del"
+                              className="icon-btn del"
                               title="Delete notification"
                               onClick={() => handleDelete(n._id)}
                             >
@@ -950,8 +947,8 @@ export default function NotificationsPage() {
           >
             <div className="notif-modal-header">
               <div className="notif-modal-header-title">
-                <span className="notif-card-icon brand-gold-icon">
-                  <Bell size={18} />
+                <span className="notif-card-icon notif-title-icon">
+                  <BellRing size={16} />
                 </span>
                 <h3>Notification Details</h3>
               </div>
