@@ -1,7 +1,27 @@
 import { useState, useEffect } from "react";
 import API from "../api/axios";
-import { MapPin, Save, Loader, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Building2,
+  Mail,
+  Phone,
+  Globe,
+  MapPin,
+  Compass,
+  Navigation,
+  ExternalLink,
+  Copyright,
+  Sparkles,
+  Save,
+  Loader,
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Hash,
+  Map,
+  Building
+} from "lucide-react";
 import "./Dashboard.css";
+import "./CompanyInfo.css";
 
 export default function CompanyInfoPage() {
   const [form, setForm] = useState({
@@ -109,254 +129,388 @@ export default function CompanyInfoPage() {
 
   if (fetching) {
     return (
-      <div className="page-section" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "300px" }}>
-        <p>
-          <Loader size={24} style={{ display: "inline-block", marginRight: 8 }} />
-          Loading company info...
-        </p>
+      <div className="company-info-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px" }}>
+        <div style={{ textAlign: "center", color: "#94a3b8" }}>
+          <Loader size={32} className="spin-icon" style={{ marginBottom: 12, color: "#ff7a1a" }} />
+          <p style={{ margin: 0, fontSize: "0.95rem" }}>Loading company information...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="add-content-page">
-      {/* Header */}
-      <div className="pg-header">
-        <h1 className="pg-title">
-          <MapPin size={28} style={{ display: "inline-block", marginRight: 8, verticalAlign: "middle" }} />
-          Company & Contact Information
-        </h1>
-        <p className="pg-sub">Manage platform branding, contact info, office address, and map location coordinates</p>
+    <div className="company-info-container">
+      {/* ── Page Header ── */}
+      <div className="ci-header">
+        <div className="ci-header-main">
+          <div className="ci-header-icon">
+            <Building2 size={26} />
+          </div>
+          <div className="ci-title-group">
+            <h1>Company & Contact Information</h1>
+            <p>Manage platform branding, contact info, office address, and map location coordinates</p>
+          </div>
+        </div>
+
+        <div className={`ci-status-badge ${form.status === "published" ? "published" : "draft"}`}>
+          <span className="ci-status-dot"></span>
+          <span>{form.status === "published" ? "Published Live" : "Draft Mode"}</span>
+        </div>
       </div>
 
-      {/* Alerts */}
+      {/* ── Status Alerts ── */}
       {message && (
-        <div className="alert alert-success" style={{ marginBottom: 20 }}>
-          <CheckCircle size={18} /> {message}
+        <div className="ci-alert ci-alert-success">
+          <CheckCircle2 size={20} />
+          <span>{message}</span>
         </div>
       )}
 
       {error && (
-        <div className="alert alert-error" style={{ marginBottom: 20 }}>
-          <AlertCircle size={18} /> {error}
+        <div className="ci-alert ci-alert-error">
+          <AlertCircle size={20} />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Form */}
+      {/* ── Main Form ── */}
       <form onSubmit={handleSubmit}>
-        <div className="form-card" style={{ maxWidth: "800px", marginBottom: 24 }}>
-          <h3>Company Branding & Contact Details</h3>
-          <div className="form-2col">
-            <div className="form-field">
-              <label className="form-label">Company / Brand Name</label>
-              <input
-                className="form-input-styled"
-                name="companyName"
-                placeholder="GoliDoli OTT"
-                value={form.companyName}
-                onChange={handleChange}
-                required
-              />
+        <div className="ci-form-grid">
+          {/* Card 1: Branding & Contact Details */}
+          <div className="ci-card">
+            <div className="ci-card-header">
+              <div className="ci-card-badge orange">
+                <Building2 size={18} />
+              </div>
+              <div>
+                <h3 className="ci-card-title">Company Branding & Contact Details</h3>
+                <p className="ci-card-subtitle">General platform metadata and support contact channels</p>
+              </div>
             </div>
 
-            <div className="form-field">
-              <label className="form-label">Support Email</label>
-              <input
-                className="form-input-styled"
-                name="supportEmail"
-                type="email"
-                placeholder="support@golidoliapp.in"
-                value={form.supportEmail}
-                onChange={handleChange}
-                required
-              />
+            <div className="ci-fields-2col">
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Company / Brand Name <span className="ci-label-required">*</span></span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="companyName"
+                    placeholder="GoliDoli OTT"
+                    value={form.companyName}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Building size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Support Email <span className="ci-label-required">*</span></span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="supportEmail"
+                    type="email"
+                    placeholder="support@golidoliapp.in"
+                    value={form.supportEmail}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Mail size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Support Phone Number</span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="supportPhone"
+                    placeholder="+91 99999 99999"
+                    value={form.supportPhone}
+                    onChange={handleChange}
+                  />
+                  <Phone size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Visibility Status</span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <select
+                    className="ci-input-styled"
+                    name="status"
+                    value={form.status}
+                    onChange={handleChange}
+                  >
+                    <option value="published">Published (Visible on Web & App)</option>
+                    <option value="draft">Draft (Admin Only)</option>
+                  </select>
+                  <Globe size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group ci-field-full">
+                <label className="ci-label">
+                  <span>Tagline / Brief Description</span>
+                  <span className="ci-hint">{form.tagline?.length || 0} characters</span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <textarea
+                    className="ci-input-styled"
+                    name="tagline"
+                    rows={3}
+                    placeholder="The ultimate destination for premium entertainment..."
+                    value={form.tagline}
+                    onChange={handleChange}
+                  />
+                  <FileText size={16} className="ci-input-icon" style={{ top: 14 }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Office Address & Maps */}
+          <div className="ci-card">
+            <div className="ci-card-header">
+              <div className="ci-card-badge blue">
+                <MapPin size={18} />
+              </div>
+              <div>
+                <h3 className="ci-card-title">Office Address & Map Location Coordinates</h3>
+                <p className="ci-card-subtitle">Headquarters physical location and map coordinates</p>
+              </div>
             </div>
 
-            <div className="form-field">
-              <label className="form-label">Support Phone Number</label>
-              <input
-                className="form-input-styled"
-                name="supportPhone"
-                placeholder="+91 99999 99999"
-                value={form.supportPhone}
-                onChange={handleChange}
-              />
+            <div className="ci-fields-2col">
+              <div className="ci-field-group ci-field-full">
+                <label className="ci-label">
+                  <span>Street Address <span className="ci-label-required">*</span></span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="address"
+                    placeholder="Floor No 12, 1202, Residences Tanaji Nagar, Tanaji Nagar Road No 1..."
+                    value={form.address}
+                    onChange={handleChange}
+                    required
+                  />
+                  <MapPin size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>City <span className="ci-label-required">*</span></span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="city"
+                    placeholder="Malad East, Mumbai"
+                    value={form.city}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Building size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>State / Province <span className="ci-label-required">*</span></span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="state"
+                    placeholder="Maharashtra"
+                    value={form.state}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Map size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Postal / ZIP Code <span className="ci-label-required">*</span></span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="postalCode"
+                    placeholder="400097"
+                    value={form.postalCode}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Hash size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Country <span className="ci-label-required">*</span></span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="country"
+                    placeholder="India"
+                    value={form.country}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Globe size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Latitude</span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="latitude"
+                    type="number"
+                    step="any"
+                    placeholder="19.186"
+                    value={form.latitude}
+                    onChange={handleChange}
+                  />
+                  <Compass size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Longitude</span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="longitude"
+                    type="number"
+                    step="any"
+                    placeholder="72.855"
+                    value={form.longitude}
+                    onChange={handleChange}
+                  />
+                  <Navigation size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group ci-field-full">
+                <label className="ci-label">
+                  <span>Google Maps URL</span>
+                </label>
+                <div className="ci-input-action-wrapper">
+                  <div className="ci-input-wrapper" style={{ flex: 1 }}>
+                    <input
+                      className="ci-input-styled"
+                      name="googleMapUrl"
+                      placeholder="https://maps.google.com/?q=..."
+                      value={form.googleMapUrl}
+                      onChange={handleChange}
+                    />
+                    <ExternalLink size={16} className="ci-input-icon" />
+                  </div>
+                  {form.googleMapUrl && (
+                    <a
+                      href={form.googleMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ci-btn-map-preview"
+                      title="Open Google Maps link"
+                    >
+                      <ExternalLink size={14} />
+                      Test Link
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Footer & Copyright Metadata */}
+          <div className="ci-card">
+            <div className="ci-card-header">
+              <div className="ci-card-badge purple">
+                <Copyright size={18} />
+              </div>
+              <div>
+                <h3 className="ci-card-title">Footer & Copyright Metadata</h3>
+                <p className="ci-card-subtitle">Legal text, copyright notices, and powered-by attribution</p>
+              </div>
             </div>
 
-            <div className="form-field">
-              <label className="form-label">Visibility Status</label>
-              <select
-                className="form-input-styled"
-                name="status"
-                value={form.status}
-                onChange={handleChange}
+            <div className="ci-fields-2col">
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Copyright Notice</span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="copyrightText"
+                    placeholder="© 2026 GoliDoli OTT All Rights Reserved"
+                    value={form.copyrightText}
+                    onChange={handleChange}
+                  />
+                  <Copyright size={16} className="ci-input-icon" />
+                </div>
+              </div>
+
+              <div className="ci-field-group">
+                <label className="ci-label">
+                  <span>Powered By Text</span>
+                </label>
+                <div className="ci-input-wrapper">
+                  <input
+                    className="ci-input-styled"
+                    name="poweredBy"
+                    placeholder="POWERED BY KRITI DIGITAL SOLUTIONS"
+                    value={form.poweredBy}
+                    onChange={handleChange}
+                  />
+                  <Sparkles size={16} className="ci-input-icon" />
+                </div>
+              </div>
+            </div>
+
+            {/* Form Actions Footer */}
+            <div className="ci-actions-bar">
+              <button
+                className="ci-btn-save"
+                type="submit"
+                disabled={loading}
               >
-                <option value="published">Published (Visible on Web & App)</option>
-                <option value="draft">Draft (Admin Only)</option>
-              </select>
-            </div>
-
-            <div className="form-field form-full">
-              <label className="form-label">Tagline / Brief Description</label>
-              <textarea
-                className="form-input-styled"
-                name="tagline"
-                rows={3}
-                placeholder="The ultimate destination for premium entertainment..."
-                value={form.tagline}
-                onChange={handleChange}
-              />
+                {loading ? (
+                  <>
+                    <Loader size={18} className="spin-icon" />
+                    <span>Saving Information...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    <span>Save Information</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
-        </div>
-
-        <div className="form-card" style={{ maxWidth: "800px", marginBottom: 24 }}>
-          <h3>Office Address & Map Location Coordinates</h3>
-
-          <div className="form-2col">
-            <div className="form-field form-full">
-              <label className="form-label">Street Address</label>
-              <input
-                className="form-input-styled"
-                name="address"
-                placeholder="Floor No 12, 1202, Residences Tanaji Nagar, Tanaji Nagar Road No 1, Near Time of India off, W.E. Highway"
-                value={form.address}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">City</label>
-              <input
-                className="form-input-styled"
-                name="city"
-                placeholder="Malad East, Mumbai"
-                value={form.city}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">State / Province</label>
-              <input
-                className="form-input-styled"
-                name="state"
-                placeholder="Maharashtra"
-                value={form.state}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">Postal / ZIP Code</label>
-              <input
-                className="form-input-styled"
-                name="postalCode"
-                placeholder="400097"
-                value={form.postalCode}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">Country</label>
-              <input
-                className="form-input-styled"
-                name="country"
-                placeholder="India"
-                value={form.country}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">Latitude (for Map integration)</label>
-              <input
-                className="form-input-styled"
-                name="latitude"
-                type="number"
-                step="any"
-                placeholder="19.186"
-                value={form.latitude}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">Longitude (for Map integration)</label>
-              <input
-                className="form-input-styled"
-                name="longitude"
-                type="number"
-                step="any"
-                placeholder="72.855"
-                value={form.longitude}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-field form-full">
-              <label className="form-label">Google Maps URL</label>
-              <input
-                className="form-input-styled"
-                name="googleMapUrl"
-                placeholder="https://maps.google.com/?q=..."
-                value={form.googleMapUrl}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-card" style={{ maxWidth: "800px" }}>
-          <h3>Footer Footer & Copyright Metadata</h3>
-          <div className="form-2col">
-            <div className="form-field">
-              <label className="form-label">Copyright Notice</label>
-              <input
-                className="form-input-styled"
-                name="copyrightText"
-                placeholder="© 2026 GoliDoli OTT All Rights Reserved"
-                value={form.copyrightText}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">Powered By Text</label>
-              <input
-                className="form-input-styled"
-                name="poweredBy"
-                placeholder="POWERED BY KRITI DIGITAL SOLUTIONS"
-                value={form.poweredBy}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <button
-            className="btn-lg"
-            type="submit"
-            style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader size={18} />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save size={18} />
-                Save Information
-              </>
-            )}
-          </button>
         </div>
       </form>
     </div>
