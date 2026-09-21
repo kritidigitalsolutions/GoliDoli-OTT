@@ -131,11 +131,19 @@ const getClientUploadConfig = () => {
     cdnUrl,
   } = getConfig();
 
+  const stream = getStreamConfig();
+
   return {
     storageZone,
     accessKey,
     storageHosts,
     cdnUrl,
+    stream: {
+      libraryId: stream.libraryId,
+      apiKey: stream.apiKey,
+      pullZone: stream.pullZone,
+      pullZoneUrl: stream.pullZoneUrl,
+    },
   };
 };
 
@@ -383,7 +391,171 @@ const uploadMulterFileToBunny = async (
 };
 
 /**
- * Delete file from Bunny.
+ * Get Bunny Stream configuration.
+ */
+const getStreamConfig = () => {
+  const libraryId = String(
+    process.env.BUNNY_STREAM_LIBRARY_ID || ""
+  ).trim();
+
+  const apiKey = String(
+    process.env.BUNNY_STREAM_API_KEY || ""
+  ).trim();
+
+  const pullZone = String(
+    process.env.BUNNY_STREAM_PULL_ZONE || ""
+  ).trim();
+
+  const pullZoneUrl = pullZone
+    ? `https://${pullZone}.b-cdn.net`
+    : "";
+
+  return {
+    libraryId,
+    apiKey,
+    pullZone,
+    pullZoneUrl,
+  };
+};
+
+/**
+ * Generate playback, thumbnail, and embed URLs for a Bunny Stream video guid.
+ */
+const getBunnyStreamPlayUrls = (videoGuid) => {
+  const { libraryId, pullZoneUrl } = getStreamConfig();
+
+  if (!videoGuid) return null;
+
+  return {
+    guid: videoGuid,
+    hlsUrl: pullZoneUrl ? `${pullZoneUrl}/${videoGuid}/playlist.m3u8` : "",
+    thumbnailUrl: pullZoneUrl ? `${pullZoneUrl}/${videoGuid}/thumbnail.jpg` : "",
+    previewUrl: pullZoneUrl ? `${pullZoneUrl}/${videoGuid}/preview.webp` : "",
+    embedUrl: libraryId ? `https://iframe.mediadelivery.net/embed/${libraryId}/${videoGuid}` : "",
+  };
+};
+
+/**
+ * Create a new video entry in Bunny Stream Library.
+ */
+const createBunnyStreamVideo = async (title, collectionId = "") => {
+  const { libraryId, apiKey } = getStreamConfig();
+
+  if (!libraryId || !apiKey) {
+    throw new Error("Bunny Stream credentials not configured (BUNNY_STREAM_LIBRARY_ID / BUNNY_STREAM_API_KEY)");
+  }
+
+  const payload = {
+    title: title || `Video-${Date.now()}`,
+  };
+
+  if (collectionId) {
+    payload.collectionId = collectionId;
+  }
+
+  const response = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos`, {
+    method: "POST",
+    headers: {
+      AccessKey: apiKey,
+      "Content-Type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    throw new Error(`Failed to create Bunny Stream video (${response.status}): ${errText}`);
+  }
+
+  return response.json();
+};
+
+/**
+ * Upload video buffer or stream directly to Bunny Stream video GUID.
+ */
+const uploadVideoToBunnyStream = async ({
+  buffer,
+  filePath,
+  title,
+  collectionId,
+}) => {
+  const { libraryId, apiKey } = getStreamConfig();
+  const videoData = await createBunnyStreamVideo(title, collectionId);
+  const videoGuid = videoData.guid;
+
+  let fileBuffer = buffer;
+  if (!fileBuffer && filePath) {
+    fileBuffer = await fs.readFile(filePath);
+  }
+
+  if (!fileBuffer) {
+    throw new Error("File buffer or filePath is required for Bunny Stream upload");
+  }
+
+  const uploadUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoGuid}`;
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      AccessKey: apiKey,
+      "Content-Type": "application/octet-stream",
+    },
+    body: fileBuffer,
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    throw new Error(`Failed to upload to Bunny Stream (${response.status}): ${errText}`);
+  }
+
+  const playUrls = getBunnyStreamPlayUrls(videoGuid);
+
+  return {
+    success: true,
+    guid: videoGuid,
+    ...playUrls,
+  };
+};
+
+/**
+ * Delete a video from Bunny Stream.
+ */
+const deleteFromBunnyStream = async (videoGuid) => {
+  const { libraryId, apiKey } = getStreamConfig();
+  if (!libraryId || !apiKey || !videoGuid) return false;
+
+  const response = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${videoGuid}`, {
+    method: "DELETE",
+    headers: {
+      AccessKey: apiKey,
+      accept: "application/json",
+    },
+  });
+
+  return response.ok;
+};
+
+/**
+ * Fetch Bunny Stream video details/status.
+ */
+const getBunnyStreamVideo = async (videoGuid) => {
+  const { libraryId, apiKey } = getStreamConfig();
+  if (!libraryId || !apiKey || !videoGuid) return null;
+
+  const response = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${videoGuid}`, {
+    method: "GET",
+    headers: {
+      AccessKey: apiKey,
+      accept: "application/json",
+    },
+  });
+
+  if (!response.ok) return null;
+  return response.json();
+};
+
+/**
+ * Delete file from Bunny (Storage or Stream).
  */
 const deleteFromBunny = async (
   remotePathOrUrl
@@ -437,7 +609,13 @@ const deleteFromBunny = async (
 module.exports = {
   buildPublicUrl,
   deleteFromBunny,
+  deleteFromBunnyStream,
   getClientUploadConfig,
+  getStreamConfig,
+  getBunnyStreamPlayUrls,
+  createBunnyStreamVideo,
+  uploadVideoToBunnyStream,
+  getBunnyStreamVideo,
   uploadBufferToBunny,
   uploadFileToBunny,
   uploadMulterFileToBunny,
