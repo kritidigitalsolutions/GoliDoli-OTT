@@ -11,6 +11,7 @@ import {
   Lock,
   ArrowUpCircle,
   Flame,
+  CheckCircle2,
 } from "lucide-react";
 
 export default function BasicInfoSection({
@@ -25,7 +26,6 @@ export default function BasicInfoSection({
       try {
         const res = await API.get("/admin/categories");
         if (res.data.success) {
-          // Show active categories only
           const list = (res.data.categories || []).filter(c => c.isActive !== false);
           setCategories(list);
         }
@@ -35,29 +35,37 @@ export default function BasicInfoSection({
     };
     fetchCategories();
   }, []);
+
+  const selectedCatCount = Array.isArray(form.category)
+    ? form.category.length
+    : form.category
+    ? 1
+    : 0;
+
   return (
-    <div className="premium-card">
-      <h3 className="section-title">
-        <span>
-          <Star size={18} />
-        </span>
+    <div className="form-card">
+      <div className="card-header-styled">
+        <h3 className="section-title">
+          <span className="title-icon-wrap">
+            <Star size={18} />
+          </span>
+          <div>
+            Basic Content Information
+            <small>Set main titles, genre categorization, ratings, and publish status</small>
+          </div>
+        </h3>
+      </div>
 
-        Basic Information
-      </h3>
-
-      <div
-        className="form-2col"
-        style={{ marginBottom: 20 }}
-      >
+      <div className="form-2col" style={{ marginBottom: 20 }}>
         <div className="form-row form-full">
           <label className="form-label">
-            Content Title *
+            Content Title <span className="req-star">*</span>
           </label>
 
           <input
             className="form-input-styled"
             name="title"
-            placeholder="e.g. Inception"
+            placeholder="e.g. Inception / Stranger Things"
             onChange={ch}
             value={form.title}
             required
@@ -66,17 +74,18 @@ export default function BasicInfoSection({
 
         <div className="form-row form-full">
           <label className="form-label">
-            Synopsis / Description *
+            Synopsis / Story Line <span className="req-star">*</span>
           </label>
 
           <textarea
             className="form-input-styled"
             name="description"
-            placeholder="A brief summary of the plot..."
+            placeholder="A compelling summary of the plot, characters, and storyline..."
             rows={3}
             onChange={ch}
             value={form.description}
             required
+            style={{ resize: "vertical", minHeight: "85px" }}
           />
         </div>
       </div>
@@ -84,18 +93,14 @@ export default function BasicInfoSection({
       <div className="form-grid-3">
         <div className="form-row">
           <label className="form-label">
-            <Globe
-              size={14}
-              style={{ marginRight: 4 }}
-            />
-
-            Language
+            <Globe size={14} style={{ marginRight: 6 }} />
+            Audio Language
           </label>
 
           <input
             className="form-input-styled"
             name="language"
-            placeholder="English, Hindi, etc."
+            placeholder="e.g. English, Hindi, Tamil"
             onChange={ch}
             value={form.language}
           />
@@ -103,11 +108,7 @@ export default function BasicInfoSection({
 
         <div className="form-row">
           <label className="form-label">
-            <Calendar
-              size={14}
-              style={{ marginRight: 4 }}
-            />
-
+            <Calendar size={14} style={{ marginRight: 6 }} />
             Release Year
           </label>
 
@@ -115,7 +116,7 @@ export default function BasicInfoSection({
             className="form-input-styled"
             name="releaseYear"
             type="number"
-            placeholder="2024"
+            placeholder="2026"
             onChange={ch}
             value={form.releaseYear}
           />
@@ -123,20 +124,14 @@ export default function BasicInfoSection({
 
         <div className="form-row">
           <label className="form-label">
-            <Clock
-              size={14}
-              style={{ marginRight: 4 }}
-            />
-
-            {form.type === "movie"
-              ? "Duration"
-              : "Avg. Ep Duration"}
+            <Clock size={14} style={{ marginRight: 6 }} />
+            {form.type === "movie" ? "Runtime Duration" : "Avg. Episode Duration"}
           </label>
 
           <input
             className="form-input-styled"
             name="duration"
-            placeholder="e.g. 2h 15m"
+            placeholder={form.type === "movie" ? "e.g. 2h 15m" : "e.g. 45m"}
             onChange={ch}
             value={form.duration}
           />
@@ -144,12 +139,8 @@ export default function BasicInfoSection({
 
         <div className="form-row">
           <label className="form-label">
-            <Tag
-              size={14}
-              style={{ marginRight: 4 }}
-            />
-
-            Genres
+            <Tag size={14} style={{ marginRight: 6 }} />
+            Genres (Comma separated)
           </label>
 
           <input
@@ -163,12 +154,8 @@ export default function BasicInfoSection({
 
         <div className="form-row">
           <label className="form-label">
-            <Star
-              size={14}
-              style={{ marginRight: 4 }}
-            />
-
-            IMDb Rating (0 - 10)
+            <Star size={14} style={{ marginRight: 6 }} />
+            IMDb Score (0 - 10)
           </label>
 
           <input
@@ -186,12 +173,8 @@ export default function BasicInfoSection({
 
         <div className="form-row">
           <label className="form-label">
-            <ArrowUpCircle
-              size={14}
-              style={{ marginRight: 4 }}
-            />
-
-            Priority (0 = Auto-assign)
+            <ArrowUpCircle size={14} style={{ marginRight: 6 }} />
+            Curated Priority Rank
           </label>
 
           <input
@@ -199,19 +182,26 @@ export default function BasicInfoSection({
             name="priority"
             type="number"
             min="0"
-            placeholder="0 = Automatic (bottom), manually enter 1, 2, 3... to rank"
+            placeholder="0 = Default (Auto-assigned)"
             onChange={ch}
             value={form.priority}
           />
         </div>
       </div>
 
-      {/* Category Multi-Selection Row */}
-      <div className="form-row form-full" style={{ marginTop: 20, marginBottom: 20 }}>
-        <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-          <Layers size={14} /> Selected Categories (Select Multiple)
-        </label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+      {/* Category Multi-Selection Section */}
+      <div className="category-selection-section" style={{ marginTop: 24, marginBottom: 24 }}>
+        <div className="category-header-row">
+          <label className="form-label" style={{ margin: 0 }}>
+            <Layers size={14} style={{ marginRight: 6 }} />
+            Target Categories
+          </label>
+          <span className="cat-count-badge">
+            {selectedCatCount} selected
+          </span>
+        </div>
+
+        <div className="category-chips-grid">
           {categories.map((c) => {
             const val = c.name.toLowerCase();
             const isSelected = Array.isArray(form.category)
@@ -222,154 +212,109 @@ export default function BasicInfoSection({
               <button
                 key={c._id}
                 type="button"
-                className={`badge ${isSelected ? "badge-active" : "badge-draft"}`}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "20px",
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  border: "1px solid",
-                  borderColor: isSelected ? "var(--neon-pink)" : "var(--border)",
-                  backgroundColor: isSelected ? "var(--neon-pink-dim)" : "rgba(255, 255, 255, 0.05)",
-                  color: isSelected ? "var(--neon-pink)" : "var(--text-soft)",
-                  transition: "all 0.2s ease"
-                }}
+                className={`category-chip-btn ${isSelected ? "active" : ""}`}
                 onClick={() => {
-                  let currentCats = Array.isArray(form.category) ? [...form.category] : (form.category ? [form.category] : []);
+                  let currentCats = Array.isArray(form.category)
+                    ? [...form.category]
+                    : form.category
+                    ? [form.category]
+                    : [];
                   if (currentCats.includes(val)) {
-                    currentCats = currentCats.filter(item => item !== val);
+                    currentCats = currentCats.filter((item) => item !== val);
                   } else {
                     currentCats.push(val);
                   }
-                  setForm(f => ({ ...f, category: currentCats }));
+                  setForm((f) => ({ ...f, category: currentCats }));
                 }}
               >
+                {isSelected && <CheckCircle2 size={14} style={{ flexShrink: 0 }} />}
                 {c.name}
               </button>
             );
           })}
           {categories.length === 0 && (
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic" }}>
-              No categories found. Configure them in the Categories page.
+            <p className="no-cat-text">
+              No categories found. Configure categories in the Admin Categories page.
             </p>
           )}
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 16,
-          marginTop: 24,
-        }}
-      >
-        <label
-          className="checkbox-row"
-          style={{
-            flex: 1,
-            minWidth: "200px",
-          }}
-        >
+      {/* Feature Flag Cards */}
+      <div className="flags-toggle-grid">
+        <label className={`flag-card ${form.isComingSoon ? "active-coming" : ""}`}>
           <input
             type="checkbox"
             name="isComingSoon"
             onChange={ch}
             checked={form.isComingSoon}
           />
-
-          <span>
-            <Rocket
-              size={16}
-              style={{ marginRight: 8 }}
-            />
-
-            Coming Soon
-          </span>
+          <div className="flag-content">
+            <Rocket size={18} className="flag-icon" />
+            <div>
+              <span className="flag-title">Coming Soon</span>
+              <small className="flag-desc">Mark as upcoming release</small>
+            </div>
+          </div>
         </label>
 
-        <label
-          className="checkbox-row"
-          style={{
-            flex: 1,
-            minWidth: "200px",
-            background: "rgba(229, 9, 20, 0.1)",
-            borderColor: "rgba(229, 9, 20, 0.2)",
-          }}
-        >
+        <label className={`flag-card ${form.isPremium ? "active-premium" : ""}`}>
           <input
             type="checkbox"
             name="isPremium"
             onChange={ch}
             checked={form.isPremium}
           />
-
-          <span style={{ color: "var(--primary)" }}>
-            <Lock size={16} style={{ marginRight: 8 }} />
-            Premium Content
-          </span>
+          <div className="flag-content">
+            <Lock size={18} className="flag-icon" />
+            <div>
+              <span className="flag-title">Premium Access</span>
+              <small className="flag-desc">Requires paid subscription</small>
+            </div>
+          </div>
         </label>
 
-        <label
-          className="checkbox-row"
-          style={{
-            flex: 1,
-            minWidth: "200px",
-            background: "rgba(255, 140, 0, 0.1)",
-            borderColor: "rgba(255, 140, 0, 0.2)",
-          }}
-        >
+        <label className={`flag-card ${form.isPopular ? "active-popular" : ""}`}>
           <input
             type="checkbox"
             name="isPopular"
             onChange={ch}
             checked={form.isPopular || false}
           />
-
-          <span style={{ color: "#ff8c00" }}>
-            <Flame size={16} style={{ marginRight: 8 }} />
-            Popular Content
-          </span>
+          <div className="flag-content">
+            <Flame size={18} className="flag-icon" />
+            <div>
+              <span className="flag-title">Popular / Trending</span>
+              <small className="flag-desc">Promote in popular rows</small>
+            </div>
+          </div>
         </label>
 
-        <label
-          className="checkbox-row"
-          style={{
-            flex: 1,
-            minWidth: "200px",
-            background: "rgba(10, 186, 115, 0.1)",
-            borderColor: "rgba(10, 186, 115, 0.2)",
-          }}
-        >
+        <label className={`flag-card ${form.isPublished !== false ? "active-published" : ""}`}>
           <input
             type="checkbox"
             name="isPublished"
             onChange={ch}
             checked={form.isPublished !== false}
           />
-
-          <span style={{ color: "#0aba73" }}>
-            <ArrowUpCircle size={16} style={{ marginRight: 8 }} />
-            Publish Content
-          </span>
+          <div className="flag-content">
+            <ArrowUpCircle size={18} className="flag-icon" />
+            <div>
+              <span className="flag-title">Live Published</span>
+              <small className="flag-desc">Visible on public apps</small>
+            </div>
+          </div>
         </label>
       </div>
 
       {form.isComingSoon && (
-        <div
-          className="form-row"
-          style={{
-            marginTop: 20,
-            animation: "pageIn 0.3s ease",
-          }}
-        >
+        <div className="form-row release-date-block" style={{ marginTop: 20 }}>
           <label className="form-label">
-            Scheduled Release Date & Time
+            Scheduled Release Date & Time <span className="req-star">*</span>
           </label>
 
           <input
-            className="form-input-styled"
+            className="form-input-styled coming-date-input"
             type="datetime-local"
             name="releaseDate"
             onChange={ch}
@@ -380,4 +325,4 @@ export default function BasicInfoSection({
       )}
     </div>
   );
-}
+}

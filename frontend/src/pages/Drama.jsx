@@ -516,15 +516,33 @@ export default function Drama() {
                       </div>
                     </label>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, justifyContent: "center" }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", cursor: "pointer" }}>
-                      <input type="checkbox" checked={newEp.isLocked} onChange={e => setNewEp(p => ({ ...p, isLocked: e.target.checked }))} />
-                      <Lock size={13} /> Locked
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", cursor: "pointer" }}>
-                      <input type="checkbox" checked={newEp.isVertical} onChange={e => setNewEp(p => ({ ...p, isVertical: e.target.checked }))} />
-                      Vertical
-                    </label>
+                  <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", padding: "8px 14px", background: "var(--bg3)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: "0.82rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                        <Lock size={13} color="var(--primary)" /> Locked
+                      </span>
+                      <label className="switch-container switch-sm switch-gold">
+                        <input
+                          type="checkbox"
+                          className="switch-input"
+                          checked={newEp.isLocked}
+                          onChange={e => setNewEp(p => ({ ...p, isLocked: e.target.checked }))}
+                        />
+                        <span className="switch-slider" />
+                      </label>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: "0.82rem", fontWeight: 600 }}>Vertical</span>
+                      <label className="switch-container switch-sm">
+                        <input
+                          type="checkbox"
+                          className="switch-input"
+                          checked={newEp.isVertical}
+                          onChange={e => setNewEp(p => ({ ...p, isVertical: e.target.checked }))}
+                        />
+                        <span className="switch-slider" />
+                      </label>
+                    </div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
@@ -694,15 +712,35 @@ export default function Drama() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 16 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                    <input type="checkbox" checked={!!editData.isPremium} onChange={e => setEditData(p => ({ ...p, isPremium: e.target.checked }))} />
-                    <Lock size={14} /> Premium
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: "#ff8c00" }}>
-                    <input type="checkbox" checked={!!editData.isPopular} onChange={e => setEditData(p => ({ ...p, isPopular: e.target.checked }))} />
-                    <Flame size={14} /> Popular
-                  </label>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "10px 14px", background: "var(--bg3)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "0.84rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                      <Lock size={14} color="var(--primary)" /> Premium (VIP)
+                    </span>
+                    <label className="switch-container switch-sm switch-gold">
+                      <input
+                        type="checkbox"
+                        className="switch-input"
+                        checked={!!editData.isPremium}
+                        onChange={e => setEditData(p => ({ ...p, isPremium: e.target.checked }))}
+                      />
+                      <span className="switch-slider" />
+                    </label>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "0.84rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 4, color: "#f59e0b" }}>
+                      <Flame size={14} /> Popular
+                    </span>
+                    <label className="switch-container switch-sm">
+                      <input
+                        type="checkbox"
+                        className="switch-input"
+                        checked={!!editData.isPopular}
+                        onChange={e => setEditData(p => ({ ...p, isPopular: e.target.checked }))}
+                      />
+                      <span className="switch-slider" />
+                    </label>
+                  </div>
                 </div>
 
                 {/* Media Uploads */}
@@ -806,15 +844,33 @@ export default function Drama() {
                   <label className="form-label">Description</label>
                   <textarea className="form-input-styled" rows={3} value={editData.description || ""} onChange={e => setEditData(p => ({ ...p, description: e.target.value }))} />
                 </div>
-                <div style={{ display: "flex", gap: 16 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: "0.9rem" }}>
-                    <input type="checkbox" checked={!!editData.isLocked} onChange={e => setEditData(p => ({ ...p, isLocked: e.target.checked }))} />
-                    <Lock size={14} /> Locked
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: "0.9rem" }}>
-                    <input type="checkbox" checked={!!editData.isVertical} onChange={e => setEditData(p => ({ ...p, isVertical: e.target.checked }))} />
-                    Vertical Video
-                  </label>
+                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", padding: "8px 14px", background: "var(--bg3)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "0.82rem", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                      <Lock size={13} color="var(--primary)" /> Locked
+                    </span>
+                    <label className="switch-container switch-sm switch-gold">
+                      <input
+                        type="checkbox"
+                        className="switch-input"
+                        checked={!!editData.isLocked}
+                        onChange={e => setEditData(p => ({ ...p, isLocked: e.target.checked }))}
+                      />
+                      <span className="switch-slider" />
+                    </label>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "0.82rem", fontWeight: 600 }}>Vertical</span>
+                    <label className="switch-container switch-sm">
+                      <input
+                        type="checkbox"
+                        className="switch-input"
+                        checked={!!editData.isVertical}
+                        onChange={e => setEditData(p => ({ ...p, isVertical: e.target.checked }))}
+                      />
+                      <span className="switch-slider" />
+                    </label>
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: 160 }}>

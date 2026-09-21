@@ -1,4 +1,4 @@
-import { Users, Upload, X } from "lucide-react";
+import { Users, Upload, Trash2, CheckCircle2 } from "lucide-react";
 
 export default function CastMemberCard({
   cast,
@@ -9,111 +9,83 @@ export default function CastMemberCard({
   chCast,
   handleCastFileChange,
 }) {
+  const photoSrc = castFile
+    ? URL.createObjectURL(castFile)
+    : cast.image
+    ? getFullUrl(cast.image)
+    : null;
+
   return (
     <div className="cast-member-card">
       <button
         type="button"
         className="remove-cast-btn"
         onClick={() => removeCast(index)}
+        title="Remove Cast Member"
       >
-        <X size={14} />
+        <Trash2 size={14} />
       </button>
 
       <div
-        className="cast-preview-circle"
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: "50%",
-          margin: "0 auto 12px",
-          background: "var(--bg3)",
-          border: "2px solid var(--border)",
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        className="cast-avatar-uploader"
+        onClick={() => document.getElementById(`cast-file-${index}`).click()}
       >
-        {(castFile || cast.image) ? (
-          <img
-            src={
-              castFile
-                ? URL.createObjectURL(castFile)
-                : getFullUrl(cast.image)
-            }
-            alt=""
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
+        {photoSrc ? (
+          <img src={photoSrc} alt={cast.name || "Cast Member"} className="cast-avatar-img" />
         ) : (
-          <Users size={24} style={{ opacity: 0.3 }} />
+          <div className="cast-avatar-placeholder">
+            <Users size={24} />
+            <span>Add Photo</span>
+          </div>
         )}
-      </div>
-
-      <div className="form-row">
-        <input
-          className="form-input-styled"
-          placeholder="Actor Name"
-          value={cast.name}
-          onChange={(e) =>
-            chCast(index, "name", e.target.value)
-          }
-        />
-      </div>
-
-      <div className="form-row">
-        <div
-          className={`file-upload-box ${
-            castFile ? "has-file" : ""
-          }`}
-          style={{ padding: "10px" }}
-          onClick={() =>
-            document
-              .getElementById(`cast-file-${index}`)
-              .click()
-          }
-        >
+        <div className="avatar-hover-overlay">
           <Upload size={16} />
+          <span>Upload</span>
+        </div>
+      </div>
 
-          <span style={{ fontSize: "0.75rem" }}>
-            {castFile
-              ? castFile.name
-              : "Upload Photo"}
-          </span>
+      <input
+        id={`cast-file-${index}`}
+        type="file"
+        hidden
+        accept="image/*"
+        onChange={(e) => handleCastFileChange(index, e)}
+      />
 
+      <div className="cast-inputs-block">
+        <div className="form-row">
           <input
-            id={`cast-file-${index}`}
-            type="file"
-            hidden
-            accept="image/*"
-            onChange={(e) =>
-              handleCastFileChange(index, e)
-            }
+            className="form-input-styled cast-name-input"
+            placeholder="Actor Name *"
+            value={cast.name || ""}
+            onChange={(e) => chCast(index, "name", e.target.value)}
+          />
+        </div>
+
+        <div className="form-row">
+          <input
+            className="form-input-styled cast-role-input"
+            placeholder="Character / Role (e.g. Lead)"
+            value={cast.role || ""}
+            onChange={(e) => chCast(index, "role", e.target.value)}
           />
         </div>
 
         {!castFile && (
           <input
-            className="form-input-styled"
-            style={{
-              fontSize: "0.8rem",
-              marginTop: 4,
-            }}
-            placeholder="Or Photo URL"
-            value={cast.image}
-            onChange={(e) =>
-              chCast(
-                index,
-                "image",
-                e.target.value
-              )
-            }
+            className="form-input-styled url-fallback-input"
+            placeholder="Or Photo Image URL"
+            value={cast.image || ""}
+            onChange={(e) => chCast(index, "image", e.target.value)}
           />
+        )}
+        {castFile && (
+          <span className="file-loaded-pill">
+            <CheckCircle2 size={12} color="#10B981" /> {castFile.name.slice(0, 18)}...
+          </span>
         )}
       </div>
     </div>
   );
 }
+

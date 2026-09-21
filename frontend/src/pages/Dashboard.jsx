@@ -1,38 +1,42 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import API from "../api/axios";
 import "./Dashboard.css";
 import {
-  BarChart3,
+  LayoutDashboard,
   Users,
   Film,
-  Radio,
-  TrendingUp, RefreshCw,
+  TrendingUp,
+  RefreshCw,
   BadgeCheck,
   UserX,
   Clock3,
   Sun,
   CalendarDays,
   CalendarRange,
-  Calendar,
   CalendarClock,
-  Wallet
+  Wallet,
+  PieChart as PieChartIcon,
+  CreditCard,
+  UserPlus
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
-  BarChart, Bar
+  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 
-// const GROWTH = growthData;
+const CHART_COLORS = ["#FFD11A", "#FF0F8A", "#10B981", "#3B82F6", "#8B5CF6"];
 
-const COLORS = ["#FFD11A", "#FF0F8A", "#1E88FF", "#FF2D55"];
-
-function ChartTip({ active, payload, label }) {
+function MinimalChartTip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
+  const count = payload[0]?.value || 0;
   return (
     <div className="ch-tooltip">
       <p className="ch-tooltip-label">{label}</p>
-      <p className="ch-tooltip-val">{payload[0].value}</p>
+      <p className="ch-tooltip-val">
+        <span className="ch-tooltip-dot"></span>
+        {count.toLocaleString("en-IN")} {count === 1 ? "User" : "Users"}
+      </p>
     </div>
   );
 }
@@ -59,283 +63,474 @@ export default function Dashboard() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState("weekly");
   const [growthData, setGrowthData] = useState([]);
-
-  const GROWTH = growthData.length ? growthData : [];
-
+  const [growthCache, setGrowthCache] = useState({});
   const [contentStats, setContentStats] = useState([]);
-  const PIE = contentStats.length ? contentStats : [];
 
-  // ✅ CORRECT BACKEND ENDPOINTS
+  const extractNum = (v) => {
+    if (typeof v === "number") return v;
+    if (typeof v === "object" && v !== null) return Number(v.total || v.amount || 0) || 0;
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  const formatCurrency = (value) => {
+    const num = extractNum(value);
+    return `₹${num.toLocaleString("en-IN")}`;
+  };
+
   async function fetchData() {
     setLoading(true);
     try {
-      // const [uRes, cRes] = await Promise.all([
-      //   API.get("/user"),       // ✅ correct: /api/user
-      //   API.get("/movies"),     // ✅ correct: /api/movies
-      // ]);
-      //     const [uRes, cRes, rRes, gRes, sRes] = await Promise.all([
-      //   API.get("/user"),
-      //   // API.get("/movies"),
-      //   API.get("/admin/content/stats"),
-      //   API.get("/admin/subscription/revenue"),
-      //   API.get("/admin/user/growth"),
-      //   API.get("/admin/content/stats"),
-      // ]);
       const [uRes, sRes, gRes, subStatsRes, incomeStatsRes, regStatsRes] = await Promise.all([
         API.get("/admin/users"),
         API.get("/admin/content/stats"),
-        API.get("/admin/user/growth"),
+        API.get(`/admin/user/growth?period=${timeframe}`),
         API.get("/admin/subscription/stats"),
         API.get("/admin/subscription/income-stats"),
         API.get("/admin/user/registration-stats"),
       ]);
 
-      setContentStats(sRes.data.data || []);
+      // Parse Content Stats
+      const rawStats = sRes.data?.stats || sRes.data?.data || sRes.data || {};
+      let parsedStats = [];
+      if (Array.isArray(rawStats)) {
+        parsedStats = rawStats;
+      } else if (typeof rawStats === "object") {
+        parsedStats = [
+          { name: "Movies", value: rawStats.movies || 0 },
+          { name: "Series", value: rawStats.series || 0 },
+          { name: "Microdramas", value: rawStats.microdramas || 0 },
+        ];
+      }
+      setContentStats(parsedStats);
 
-
-
-      setGrowthData(gRes.data.data || []);
+      const fetchedGrowth = gRes.data?.data || [];
+      setGrowthData(fetchedGrowth);
+      setGrowthCache((prev) => ({ ...prev, [timeframe]: fetchedGrowth }));
 
       setSubscriptionStats(subStatsRes.data?.data || {
         totalSubscribedUsers: 0,
         totalNotSubscribedUsers: 0,
         expirySubscriptionCount: 0,
       });
-      setIncomeStats(incomeStatsRes.data?.data || {
-        todayIncome: 0,
-        yesterdayIncome: 0,
-        weeklyIncome: 0,
-        monthlyIncome: 0,
-        yearlyIncome: 0,
-        totalIncome: 0,
+
+      const rawIncome = incomeStatsRes.data?.data || incomeStatsRes.data?.incomeStats || incomeStatsRes.data || {};
+      setIncomeStats({
+        todayIncome: extractNum(rawIncome.todayIncome),
+        yesterdayIncome: extractNum(rawIncome.yesterdayIncome),
+        weeklyIncome: extractNum(rawIncome.weeklyIncome),
+        monthlyIncome: extractNum(rawIncome.monthlyIncome),
+        yearlyIncome: extractNum(rawIncome.yearlyIncome),
+        totalIncome: extractNum(rawIncome.totalIncome),
       });
+
       setRegistrationStats(regStatsRes.data?.data || {
         todayRegistration: 0,
         yesterdayRegistration: 0,
         totalRegistration: 0,
       });
+
       setUsers(uRes.data?.users || uRes.data?.data || uRes.data || []);
-      // setContent(cRes.data?.data || cRes.data || []);
     } catch (err) {
-      console.log("Dashboard fetch error:", err);
+      console.error("Dashboard fetch error:", err);
     }
     setLoading(false);
   }
 
-  useEffect(() => { fetchData(); }, []);
+  const handleTimeframeChange = async (period) => {
+    if (period === timeframe) return;
+    setTimeframe(period);
 
-  const formatCurrency = (value) =>
-    `₹${Number(value || 0).toLocaleString("en-IN")}`;
+    // Instant UI switch if cached
+    if (growthCache[period]) {
+      setGrowthData(growthCache[period]);
+    }
+
+    try {
+      const gRes = await API.get(`/admin/user/growth?period=${period}`);
+      const fetchedData = gRes.data?.data || [];
+      setGrowthData(fetchedData);
+      setGrowthCache((prev) => ({ ...prev, [period]: fetchedData }));
+    } catch (err) {
+      console.error("User growth timeframe fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const moviesCount = contentStats.find(c => c.name === "Movies")?.value || 0;
   const seriesCount = contentStats.find(c => c.name === "Series")?.value || 0;
+  const microdramasCount = contentStats.find(c => c.name === "Microdramas")?.value || 0;
+  const totalContent = moviesCount + seriesCount + microdramasCount;
 
-  const totalContent = moviesCount + seriesCount;
+  const activePieItems = contentStats.filter(c => c.value > 0);
+  const PIE = activePieItems.length > 0
+    ? activePieItems
+    : [
+        { name: "Movies", value: moviesCount },
+        { name: "Series", value: seriesCount },
+        { name: "Microdramas", value: microdramasCount }
+      ];
 
+  const defaultWeekly = [
+    { day: "Sun", users: 0 },
+    { day: "Mon", users: 0 },
+    { day: "Tue", users: 0 },
+    { day: "Wed", users: 0 },
+    { day: "Thu", users: 0 },
+    { day: "Fri", users: 0 },
+    { day: "Sat", users: 0 },
+  ];
 
-  // const PIE = [
-  //   { name: "Movies", value: movies || 1 },
-  //   { name: "Series", value: series || 1 },
-  //   { name: "Other",  value: other  || 1 },
-  // ];
+  const defaultMonthly = [
+    { day: "Jan", users: 0 },
+    { day: "Feb", users: 0 },
+    { day: "Mar", users: 0 },
+    { day: "Apr", users: 0 },
+    { day: "May", users: 0 },
+    { day: "Jun", users: 0 },
+    { day: "Jul", users: 0 },
+    { day: "Aug", users: 0 },
+    { day: "Sep", users: 0 },
+    { day: "Oct", users: 0 },
+    { day: "Nov", users: 0 },
+    { day: "Dec", users: 0 },
+  ];
 
-  const activeUsers = Array.isArray(users) ? users.filter(u => !u.isBlocked).length : 0;
+  const currYear = new Date().getFullYear();
+  const defaultYearly = [
+    { day: (currYear - 4).toString(), users: 0 },
+    { day: (currYear - 3).toString(), users: 0 },
+    { day: (currYear - 2).toString(), users: 0 },
+    { day: (currYear - 1).toString(), users: 0 },
+    { day: currYear.toString(), users: 0 },
+  ];
+
+  const getDefaultGrowth = (period) => {
+    if (period === "yearly") return defaultYearly;
+    if (period === "monthly") return defaultMonthly;
+    return defaultWeekly;
+  };
+
+  const GROWTH = growthData.length ? growthData : getDefaultGrowth(timeframe);
+
+  const totalUsersCount = Array.isArray(users) ? users.length : (registrationStats.totalRegistration || 0);
 
   return (
     <div className="page-section">
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="pg-header">
         <div>
-          <h1 className="pg-title"><BarChart3 style={{ display: "inline-block", marginRight: 8 }} size={32} /> Platform Overview</h1>
-          <p className="pg-sub">Real-time stats and analytics for GoliDoli</p>
+          <h1 className="pg-title">
+            <LayoutDashboard size={22} className="pg-title-icon" />
+            Dashboard Overview
+          </h1>
+          <p className="pg-sub">Real-time metrics, user growth, and revenue statistics</p>
         </div>
-        <button className="btn btn-ghost" onClick={fetchData}>
-          {loading ? <><TrendingUp size={18} style={{ marginRight: 6 }} /> Loading...</> : <><RefreshCw size={18} style={{ marginRight: 6 }} /> Refresh</>}
+        <button className="btn btn-ghost" onClick={fetchData} disabled={loading}>
+          <RefreshCw size={14} className={loading ? "spin-icon" : ""} />
+          <span>{loading ? "Syncing..." : "Refresh"}</span>
         </button>
       </div>
 
-      {/* ─── Stat Cards ─── */}
-      <div className="stat-grid">
-        <div className="stat-card s-red">
-          <div className="stat-icon"><Users size={32} /></div>
-          <div className="stat-label">Total Users</div>
-          <div className="stat-value">{loading ? "..." : (Array.isArray(users) ? users.length : 0)}</div>
-          <div className="stat-trend up">↑ +12% this week</div>
-        </div>
-        <div className="stat-card s-blue">
-          <div className="stat-icon"><Film size={32} /></div>
-          <div className="stat-label">Content Library</div>
-          {/* <div className="stat-value">{loading ? "..." : (Array.isArray(content) ? content.length : 0)}</div> */}
-          <div className="stat-value">
-            {loading ? "..." : totalContent}
+      {/* ── Section 1: Executive KPI Grid (4 Columns Symmetrical) ── */}
+      <div className="kpi-grid">
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Total Users</span>
+            <div className="kpi-icon-badge icon-amber">
+              <Users size={16} />
+            </div>
           </div>
-          <div className="stat-trend up">↑ +8% this week</div>
+          <div className="kpi-value">{loading ? "..." : totalUsersCount.toLocaleString("en-IN")}</div>
+          <div className="kpi-footer text-success">
+            <TrendingUp size={13} />
+            <span>Active user base</span>
+          </div>
         </div>
-        <div className="stat-card s-green">
-          <div className="stat-icon"><Radio size={32} /></div>
-          <div className="stat-label">Active Users</div>
-          <div className="stat-value">{loading ? "..." : activeUsers}</div>
-          <div className="stat-trend up">↑ Live now</div>
-        </div>
-      </div>
 
-      <div className="content-box">
-        <h3>Registration</h3>
-        <div className="stat-grid">
-          <div className="stat-card s-red">
-            <div className="stat-icon"><Sun size={28} /></div>
-            <div className="stat-label">Today Registration</div>
-            <div className="stat-value">{loading ? "..." : registrationStats.todayRegistration}</div>
-            <div className="stat-trend up">New users today</div>
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Subscribed Users</span>
+            <div className="kpi-icon-badge icon-emerald">
+              <BadgeCheck size={16} />
+            </div>
           </div>
-          <div className="stat-card s-blue">
-            <div className="stat-icon"><CalendarDays size={28} /></div>
-            <div className="stat-label">Yesterday Registration</div>
-            <div className="stat-value">{loading ? "..." : registrationStats.yesterdayRegistration}</div>
-            <div className="stat-trend up">New users yesterday</div>
-          </div>
-          <div className="stat-card s-green">
-            <div className="stat-icon"><Users size={28} /></div>
-            <div className="stat-label">Total Registration counts</div>
-            <div className="stat-value">{loading ? "..." : registrationStats.totalRegistration}</div>
-            <div className="stat-trend up">All registered users</div>
+          <div className="kpi-value">{loading ? "..." : subscriptionStats.totalSubscribedUsers.toLocaleString("en-IN")}</div>
+          <div className="kpi-footer text-muted">
+            <span>{totalUsersCount > 0 ? `${Math.round((subscriptionStats.totalSubscribedUsers / totalUsersCount) * 100)}% conversion rate` : "0% conversion rate"}</span>
           </div>
         </div>
-      </div>
 
-      <div className="content-box">
-        <h3>Subscriptions</h3>
-        <div className="stat-grid">
-          <div className="stat-card s-green">
-            <div className="stat-icon"><BadgeCheck size={28} /></div>
-            <div className="stat-label">Total Subscribe Users</div>
-            <div className="stat-value">{loading ? "..." : subscriptionStats.totalSubscribedUsers}</div>
-            <div className="stat-trend up">Active subscription users</div>
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Content Library</span>
+            <div className="kpi-icon-badge icon-blue">
+              <Film size={16} />
+            </div>
           </div>
-          <div className="stat-card s-blue">
-            <div className="stat-icon"><UserX size={28} /></div>
-            <div className="stat-label">Total Not Subscribe Users</div>
-            <div className="stat-value">{loading ? "..." : subscriptionStats.totalNotSubscribedUsers}</div>
-            <div className="stat-trend down">No active subscription</div>
+          <div className="kpi-value">{loading ? "..." : totalContent.toLocaleString("en-IN")}</div>
+          <div className="kpi-footer text-muted">
+            <span>{moviesCount} Movies • {seriesCount} Series</span>
           </div>
-          <div className="stat-card s-orange">
-            <div className="stat-icon"><Clock3 size={28} /></div>
-            <div className="stat-label">Expiry Subscription counts</div>
-            <div className="stat-value">{loading ? "..." : subscriptionStats.expirySubscriptionCount}</div>
-            <div className="stat-trend down">Expired subscriptions</div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">Total Revenue</span>
+            <div className="kpi-icon-badge icon-pink">
+              <Wallet size={16} />
+            </div>
+          </div>
+          <div className="kpi-value">{loading ? "..." : formatCurrency(incomeStats.totalIncome)}</div>
+          <div className="kpi-footer text-success">
+            <TrendingUp size={13} />
+            <span>All-time earnings</span>
           </div>
         </div>
       </div>
 
-      <div className="content-box">
-        <h3>Income</h3>
-        <div className="stat-grid">
-          <div className="stat-card s-red">
-            <div className="stat-icon"><Sun size={28} /></div>
-            <div className="stat-label">Today Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.todayIncome)}</div>
-            <div className="stat-trend up">Current day earnings</div>
+      {/* ── Section 2: Symmetric Dual Metrics Grid ── */}
+      <div className="dual-grid">
+        {/* Registration & Subscriptions Breakdown */}
+        <div className="content-box">
+          <div className="box-header">
+            <UserPlus size={16} className="box-icon text-gold" />
+            <h3>User & Subscription Activity</h3>
           </div>
-          <div className="stat-card s-blue">
-            <div className="stat-icon"><CalendarDays size={28} /></div>
-            <div className="stat-label">Yesterday Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.yesterdayIncome)}</div>
-            <div className="stat-trend up">Previous day earnings</div>
+          <div className="stat-subgrid">
+            <div className="sub-card">
+              <div className="sub-icon"><Sun size={16} /></div>
+              <div>
+                <div className="sub-label">Today Registrations</div>
+                <div className="sub-val">{loading ? "..." : registrationStats.todayRegistration}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><CalendarDays size={16} /></div>
+              <div>
+                <div className="sub-label">Yesterday Registrations</div>
+                <div className="sub-val">{loading ? "..." : registrationStats.yesterdayRegistration}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><UserX size={16} /></div>
+              <div>
+                <div className="sub-label">Unsubscribed Users</div>
+                <div className="sub-val">{loading ? "..." : subscriptionStats.totalNotSubscribedUsers}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><Clock3 size={16} /></div>
+              <div>
+                <div className="sub-label">Expired Subscriptions</div>
+                <div className="sub-val text-warning">{loading ? "..." : subscriptionStats.expirySubscriptionCount}</div>
+              </div>
+            </div>
           </div>
-          <div className="stat-card s-green">
-            <div className="stat-icon"><CalendarRange size={28} /></div>
-            <div className="stat-label">Weekly Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.weeklyIncome)}</div>
-            <div className="stat-trend up">This week earnings</div>
+        </div>
+
+        {/* Financial Income Breakdown */}
+        <div className="content-box">
+          <div className="box-header">
+            <CreditCard size={16} className="box-icon text-emerald" />
+            <h3>Revenue Breakdown</h3>
           </div>
-          <div className="stat-card s-orange">
-            <div className="stat-icon"><Calendar size={28} /></div>
-            <div className="stat-label">Monthly Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.monthlyIncome)}</div>
-            <div className="stat-trend up">This month earnings</div>
-          </div>
-          <div className="stat-card s-blue">
-            <div className="stat-icon"><CalendarClock size={28} /></div>
-            <div className="stat-label">Yearly Income</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.yearlyIncome)}</div>
-            <div className="stat-trend up">This year earnings</div>
-          </div>
-          <div className="stat-card s-green">
-            <div className="stat-icon"><Wallet size={28} /></div>
-            <div className="stat-label">Total Income Counts</div>
-            <div className="stat-value">{loading ? "..." : formatCurrency(incomeStats.totalIncome)}</div>
-            <div className="stat-trend up">Overall revenue</div>
+          <div className="stat-subgrid">
+            <div className="sub-card">
+              <div className="sub-icon"><Sun size={16} /></div>
+              <div>
+                <div className="sub-label">Today Earnings</div>
+                <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.todayIncome)}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><CalendarDays size={16} /></div>
+              <div>
+                <div className="sub-label">Yesterday Earnings</div>
+                <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.yesterdayIncome)}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><CalendarRange size={16} /></div>
+              <div>
+                <div className="sub-label">Weekly Earnings</div>
+                <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.weeklyIncome)}</div>
+              </div>
+            </div>
+
+            <div className="sub-card">
+              <div className="sub-icon"><CalendarClock size={16} /></div>
+              <div>
+                <div className="sub-label">Monthly Earnings</div>
+                <div className="sub-val">{loading ? "..." : formatCurrency(incomeStats.monthlyIncome)}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ─── Charts Row ─── */}
+      {/* ── Section 3: Charts Row ── */}
       <div className="charts-row">
-        {/* Area Chart */}
+        {/* Area Chart - User Growth */}
         <div className="content-box">
-          <h3>📈 User Growth — This Week</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={GROWTH} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-              <defs>
-                <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#FFD11A" stopOpacity={0.45} />
-                  <stop offset="95%" stopColor="#FF0F8A" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="day" stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis stroke="var(--text-muted)" tick={{ fill: "var(--text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTip />} cursor={{ stroke: "var(--border2)" }} />
-              <Area type="monotone" dataKey="users" stroke="#FFD11A" strokeWidth={2.5}
-                fill="url(#goldGrad)"
-                activeDot={{ r: 6, fill: "#FFD11A", stroke: "var(--bg2)", strokeWidth: 3 }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="box-header box-header-between">
+            <div className="box-header-title">
+              <TrendingUp size={16} className="box-icon text-gold" />
+              <h3>User Growth Trend</h3>
+            </div>
+            <div className="timeframe-toggle-group">
+              {[
+                { key: "weekly", label: "Weekly" },
+                { key: "monthly", label: "Monthly" },
+                { key: "yearly", label: "Yearly" },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`timeframe-btn ${timeframe === item.key ? "active" : ""}`}
+                  onClick={() => handleTimeframeChange(item.key)}
+                >
+                  {timeframe === item.key && (
+                    <motion.div
+                      layoutId="activeTimeframePill"
+                      className="timeframe-pill-active-bg"
+                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    />
+                  )}
+                  <span className="timeframe-btn-text">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={GROWTH} margin={{ top: 10, right: 10, left: -24, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey="day"
+                  stroke="var(--text-muted)"
+                  tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  domain={[0, "auto"]}
+                  stroke="var(--text-muted)"
+                  tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<MinimalChartTip />} cursor={{ stroke: "var(--border2)", strokeWidth: 1 }} />
+                <Area
+                  type="monotone"
+                  dataKey="users"
+                  stroke="#FFD11A"
+                  strokeWidth={2.2}
+                  fill="#FFD11A"
+                  fillOpacity={0.12}
+                  activeDot={{ r: 5, fill: "#FFD11A", stroke: "var(--bg2)", strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Pie Chart */}
+        {/* Pie Chart - Content Split */}
         <div className="content-box">
-          <h3>🎬 Content Split</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie data={PIE} cx="50%" cy="50%"
-                innerRadius={55} outerRadius={88}
-                paddingAngle={4} dataKey="value" stroke="none">
-                {PIE.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ background: "var(--bg3)", border: "1px solid var(--border2)", borderRadius: 8, color: "var(--text)" }} />
-              <Legend iconType="circle" formatter={v => <span style={{ color: "var(--text-soft)", fontSize: "0.8rem" }}>{v}</span>} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="box-header">
+            <PieChartIcon size={16} className="box-icon text-emerald" />
+            <h3>Content Split</h3>
+          </div>
+          <div className="chart-container">
+            {totalContent === 0 ? (
+              <div className="tbl-placeholder" style={{ padding: "60px 0" }}>
+                No content in library yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={PIE} cx="50%" cy="45%"
+                    innerRadius={48} outerRadius={72}
+                    paddingAngle={4} dataKey="value" stroke="none">
+                    {PIE.map((_, i) => (
+                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: "var(--bg2)", border: "1px solid var(--border2)", borderRadius: 8, color: "var(--text)", fontSize: "0.8rem" }} />
+                  <Legend iconType="circle" iconSize={7} formatter={v => <span style={{ color: "var(--text-soft)", fontSize: "0.78rem", fontWeight: 500 }}>{v}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ─── Recent Activity ─── */}
+      {/* ── Section 4: Recent Users Table ── */}
       <div className="content-box">
-        <h3>🕐 Recent Users</h3>
+        <div className="box-header">
+          <Clock3 size={16} className="box-icon text-soft" />
+          <h3>Recent User Signups</h3>
+        </div>
         {loading ? (
-          <p style={{ color: "var(--text-muted)", padding: "20px 0" }}>Loading...</p>
+          <div className="tbl-placeholder">Loading recent signups...</div>
         ) : !Array.isArray(users) || users.length === 0 ? (
-          <p style={{ color: "var(--text-muted)", padding: "20px 0" }}>No users yet</p>
+          <div className="tbl-placeholder">No user signups found</div>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
-              <thead><tr><th>#</th><th>User</th><th>Email</th><th>Joined</th></tr></thead>
+              <thead>
+                <tr>
+                  <th style={{ width: "50px" }}>#</th>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Joined Date</th>
+                  <th style={{ textAlign: "right" }}>Status</th>
+                </tr>
+              </thead>
               <tbody>
                 {users.slice(0, 5).map((u, i) => (
                   <tr key={u._id || i}>
-                    <td style={{ color: "var(--text-muted)" }}>{i + 1}</td>
+                    <td className="text-muted">{i + 1}</td>
                     <td>
                       <div className="user-cell">
-                        <div className="u-avatar">{u.name?.[0]?.toUpperCase() || "U"}</div>
+                        <div className="u-avatar">
+                          <img
+                            src={
+                              u.profileImage || u.profilePic || u.avatar || u.photo
+                                ? (u.profileImage || u.profilePic || u.avatar || u.photo).startsWith("http")
+                                  ? (u.profileImage || u.profilePic || u.avatar || u.photo)
+                                  : `https://golidoli.com/${u.profileImage || u.profilePic || u.avatar || u.photo}`
+                                : `https://i.pravatar.cc/150?u=${encodeURIComponent(u._id || u.email || u.name || i)}`
+                            }
+                            alt={u.name || "User"}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = `https://i.pravatar.cc/150?u=${encodeURIComponent(u._id || u.email || u.name || i)}`;
+                            }}
+                          />
+                        </div>
                         <span className="u-name">{u.name || "User"}</span>
                       </div>
                     </td>
-                    <td style={{ color: "var(--text-soft)" }}>{u.email}</td>
-                    <td style={{ color: "var(--text-muted)" }}>{new Date(u.createdAt).toLocaleDateString("en-IN")}</td>
+                    <td className="text-soft">{u.email}</td>
+                    <td className="text-muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "N/A"}</td>
+                    <td style={{ textAlign: "right" }}>
+                      <span className={`badge ${u.isBlocked ? "badge-blocked" : "badge-active"}`}>
+                        {u.isBlocked ? "Blocked" : "Active"}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

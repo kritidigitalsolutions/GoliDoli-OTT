@@ -1,5 +1,7 @@
+const mongoose = require("mongoose");
 const User = require("../../models/user.model");
 const Subscription = require("../../models/subscription.model");
+const Plan = require("../../models/plan.model");
 const Watchlist = require("../../models/watchlist.model");
 const SupportTicket = require("../../models/supportTicket.model");
 const SupportMessage = require("../../models/supportMessage.model");
@@ -254,30 +256,67 @@ exports.getRegistrationStats = async (req, res) => {
 
 exports.getUserGrowth = async (req, res) => {
     try {
+        const period = (req.query.period || req.query.timeframe || "weekly").toLowerCase();
         const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-        const growthData = [];
+        const monthsOfYear = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const growthPromises = [];
 
-        // Loop for the last 7 days
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            d.setHours(0, 0, 0, 0);
+        if (period === "yearly" || period === "year") {
+            const currentYear = new Date().getFullYear();
+            const startYear = currentYear - 4;
 
-            const nextD = new Date(d);
-            nextD.setDate(nextD.getDate() + 1);
+            for (let yr = startYear; yr <= currentYear; yr++) {
+                const start = new Date(yr, 0, 1, 0, 0, 0, 0);
+                const end = new Date(yr + 1, 0, 1, 0, 0, 0, 0);
 
-            const count = await User.countDocuments({
-                createdAt: { $gte: d, $lt: nextD },
-            });
+                growthPromises.push(
+                    User.countDocuments({ createdAt: { $gte: start, $lt: end } }).then((count) => ({
+                        day: yr.toString(),
+                        label: yr.toString(),
+                        users: count,
+                    }))
+                );
+            }
+        } else if (period === "monthly" || period === "month") {
+            const currentYear = new Date().getFullYear();
 
-            growthData.push({
-                day: daysOfWeek[d.getDay()],
-                users: count,
-            });
+            for (let m = 0; m < 12; m++) {
+                const start = new Date(currentYear, m, 1, 0, 0, 0, 0);
+                const end = new Date(currentYear, m + 1, 1, 0, 0, 0, 0);
+
+                growthPromises.push(
+                    User.countDocuments({ createdAt: { $gte: start, $lt: end } }).then((count) => ({
+                        day: monthsOfYear[m],
+                        label: monthsOfYear[m],
+                        users: count,
+                    }))
+                );
+            }
+        } else {
+            // Weekly: Last 7 days
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                d.setHours(0, 0, 0, 0);
+
+                const nextD = new Date(d);
+                nextD.setDate(nextD.getDate() + 1);
+
+                growthPromises.push(
+                    User.countDocuments({ createdAt: { $gte: d, $lt: nextD } }).then((count) => ({
+                        day: daysOfWeek[d.getDay()],
+                        label: daysOfWeek[d.getDay()],
+                        users: count,
+                    }))
+                );
+            }
         }
+
+        const growthData = await Promise.all(growthPromises);
 
         res.status(200).json({
             success: true,
+            period,
             data: growthData,
         });
     } catch (error) {
@@ -318,3 +357,118 @@ exports.toggleBlockUser = async (req, res) => {
         });
     }
 };
+
+// ========================================
+// UPDATE USER DETAILS
+// ========================================
+exports.updateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, phone, status, authProvider, plan } = req.body;
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        if (email !== undefined && email !== "" && email !== user.email) {
+            const existingEmail = await User.findOne({ email, _id: { $ne: id } });
+            if (existingEmail) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Email address is already in use by another account",
+                });
+            }
+            user.email = email;
+        } else if (email === "") {
+            user.email = undefined;
+        }
+
+        if (phone !== undefined && phone !== "" && phone !== user.phone) {
+            const existingPhone = await User.findOne({ phone, _id: { $ne: id } });
+            if (existingPhone) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Phone number is already in use by another account",
+                });
+            }
+            user.phone = phone;
+        }
+
+        if (name !== undefined) {
+            user.name = name;
+        }
+
+        if (status && ["Active", "Blocked"].includes(status)) {
+            user.status = status;
+        }
+
+        if (authProvider && ["PHONE", "GOOGLE", "FACEBOOK"].includes(authProvider)) {
+            user.authProvider = authProvider;
+        }
+
+        // Handle Subscription Plan updates
+        if (plan !== undefined) {
+            if (!plan || plan === "Free" || plan === "free") {
+                await Subscription.updateMany(
+                    { user: user._id, status: "active" },
+                    { $set: { status: "expired" } }
+                );
+            } else {
+                const planDoc = await Plan.findOne({
+                    $or: [
+                        { _id: mongoose.isValidObjectId(plan) ? plan : null },
+                        { name: plan }
+                    ]
+                });
+
+                if (planDoc) {
+                    await Subscription.updateMany(
+                        { user: user._id, status: "active" },
+                        { $set: { status: "expired" } }
+                    );
+
+                    const startDate = new Date();
+                    const endDate = new Date();
+                    endDate.setDate(endDate.getDate() + (planDoc.duration || 30));
+
+                    await Subscription.create({
+                        user: user._id,
+                        plan: planDoc._id,
+                        status: "active",
+                        amount: planDoc.price || 0,
+                        currency: "INR",
+                        startDate,
+                        endDate,
+                    });
+                }
+            }
+        }
+
+        await user.save();
+
+        // Fetch plan info to return complete object
+        const activeSub = await Subscription.findOne({ user: user._id, status: "active" }).populate("plan");
+        const userObj = {
+            ...user.toObject(),
+            plan: activeSub && activeSub.plan ? activeSub.plan.name : "Free"
+        };
+
+        res.status(200).json({
+            success: true,
+            message: "User updated successfully",
+            user: userObj,
+        });
+
+    } catch (error) {
+        console.error("Update User Error:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message || "Server error while updating user",
+        });
+    }
+};
+
