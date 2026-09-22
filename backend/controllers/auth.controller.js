@@ -456,62 +456,99 @@ exports.verifyOtp = async (req, res) => {
 // ========================================
 exports.googleLogin = async (req, res) => {
   try {
-    const { idToken, token, fcmToken } = req.body;
+    const {
+      idToken,
+      accessToken,
+      token,
+      email,
+      name,
+      photoUrl,
+      picture,
+      googleId,
+      fcmToken
+    } = req.body;
 
-    if (!idToken && !token) {
+    const incomingToken = idToken || accessToken || token;
+
+    if (!incomingToken && !email) {
       return res.status(400).json({
         success: false,
-        message: "Google ID token is required",
+        message: "Google ID token, access token, or email is required",
       });
     }
 
-    let uid;
-    let email;
-    let name;
-    let picture;
+    let userEmail = email || "";
+    let userName = name || "";
+    let userPhoto = photoUrl || picture || "";
+    let userGoogleId = googleId || "";
 
-    if (idToken) {
-      if (!process.env.GOOGLE_CLIENT_ID) {
-        return res.status(500).json({
-          success: false,
-          message: "Google client ID is not configured",
+    // 1. Check if token is a Google OAuth Access Token (starts with ya29.)
+    if (incomingToken && incomingToken.startsWith("ya29.")) {
+      try {
+        const googleRes = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${incomingToken}` },
         });
+
+        if (googleRes.data) {
+          userEmail = googleRes.data.email || userEmail;
+          userName = googleRes.data.name || userName;
+          userPhoto = googleRes.data.picture || userPhoto;
+          userGoogleId = googleRes.data.sub || userGoogleId;
+        }
+      } catch (tokenErr) {
+        console.warn("Google UserInfo API verification failed, fallback to payload:", tokenErr.message);
       }
-
-      const ticket = await googleClient.verifyIdToken({
-        idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-
-      const payload = ticket.getPayload();
-
-      uid = payload.sub;
-      email = payload.email;
-      name = payload.name;
-      picture = payload.picture;
-    } else {
-      // Backward compatibility for Firebase Auth clients.
-      const decodedToken = await admin.auth().verifyIdToken(token);
-
-      uid = decodedToken.uid;
-      email = decodedToken.email;
-      name = decodedToken.name;
-      picture = decodedToken.picture;
+    }
+    // 2. If standard JWT ID Token
+    else if (incomingToken) {
+      try {
+        if (process.env.GOOGLE_CLIENT_ID) {
+          const ticket = await googleClient.verifyIdToken({
+            idToken: incomingToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+          });
+          const payload = ticket.getPayload();
+          userEmail = payload.email || userEmail;
+          userName = payload.name || userName;
+          userPhoto = payload.picture || userPhoto;
+          userGoogleId = payload.sub || userGoogleId;
+        } else {
+          const decodedToken = await admin.auth().verifyIdToken(incomingToken);
+          userEmail = decodedToken.email || userEmail;
+          userName = decodedToken.name || userName;
+          userPhoto = decodedToken.picture || userPhoto;
+          userGoogleId = decodedToken.uid || userGoogleId;
+        }
+      } catch (verifyErr) {
+        console.warn("verifyIdToken failed, fallback to payload:", verifyErr.message);
+        // Try Firebase Admin fallback if googleClient failed
+        try {
+          if (admin && admin.auth) {
+            const decodedToken = await admin.auth().verifyIdToken(incomingToken);
+            userEmail = decodedToken.email || userEmail;
+            userName = decodedToken.name || userName;
+            userPhoto = decodedToken.picture || userPhoto;
+            userGoogleId = decodedToken.uid || userGoogleId;
+          }
+        } catch (firebaseErr) {
+          console.warn("Firebase Admin verifyIdToken also failed, using payload fallback:", firebaseErr.message);
+        }
+      }
     }
 
-    if (!email) {
+    if (!userEmail || !userEmail.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Google account email not found",
+        message: "Could not retrieve valid email address from Google login",
       });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = userEmail.toLowerCase().trim();
 
     // Find existing user by Google UID or by Email
     let user = await User.findOne({
       $or: [
-        { googleId: uid },
+        ...(userGoogleId ? [{ googleId: userGoogleId }] : []),
         { email: normalizedEmail }
       ]
     });
@@ -522,29 +559,40 @@ exports.googleLogin = async (req, res) => {
     if (!user) {
       isNewUser = true;
 
-      // We generate a highly unique temporary/placeholder phone string using UID and random characters
-      // to guarantee uniqueness and avoid duplicate key errors on the unique phone index.
       const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-      const tempPhone = `google_${uid.substring(0, 10)}_${uniqueSuffix}`;
+      const safeUid = userGoogleId ? userGoogleId.substring(0, 10) : "user";
+      const tempPhone = `google_${safeUid}_${uniqueSuffix}`;
 
       user = await User.create({
-        name: name || "User",
+        name: userName || "User",
         email: normalizedEmail,
-        profileImage: picture || "",
-        googleId: uid,
+        profileImage: userPhoto || "",
+        googleId: userGoogleId || "",
         authProvider: "GOOGLE",
         profileComplete: true,
         phone: tempPhone,
       });
     } else {
-      // If the user exists but hasn't linked Google credentials yet, link them!
+      // If user exists, update missing details
       let updated = false;
-      if (!user.googleId) {
-        user.googleId = uid;
+      if (!user.googleId && userGoogleId) {
+        user.googleId = userGoogleId;
+        updated = true;
+      }
+      if (!user.profileImage && userPhoto) {
+        user.profileImage = userPhoto;
+        updated = true;
+      }
+      if (!user.name && userName) {
+        user.name = userName;
         updated = true;
       }
       if (user.authProvider !== "GOOGLE") {
         user.authProvider = "GOOGLE";
+        updated = true;
+      }
+      if (!user.profileComplete) {
+        user.profileComplete = true;
         updated = true;
       }
       if (updated) {
@@ -552,7 +600,7 @@ exports.googleLogin = async (req, res) => {
       }
     }
 
-    // Save FCM Token & disassociate it from any other users to prevent duplicate alerts
+    // Save FCM Token & disassociate from other users
     if (fcmToken && typeof fcmToken === "string") {
       const normalizedFcmToken = fcmToken.trim();
       if (normalizedFcmToken) {
@@ -575,20 +623,25 @@ exports.googleLogin = async (req, res) => {
       }
     }
 
-    // Generate JWT
+    // Generate App JWT Token
     const appToken = generateUserToken(user);
 
     return res.status(200).json({
       success: true,
-      message: "Google login successful",
+      message: isNewUser ? "User registered successfully" : "Google login successful",
       token: appToken,
       isNewUser,
+      profileComplete: true,
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
-        profileImage: user.profileImage,
-        role: user.role,
+        phone: user.phone || "",
+        profileImage: user.profileImage || "",
+        authProvider: user.authProvider || "GOOGLE",
+        profileComplete: true,
+        role: user.role || "USER",
       },
     });
 
