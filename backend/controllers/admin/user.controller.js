@@ -10,6 +10,13 @@ const Rating = require("../../models/rating.model");
 const Interaction = require("../../models/interaction.model");
 const Notification = require("../../models/notification.model");
 const Voucher = require("../../models/voucher.model");
+const OTP = require("../../models/user.otp.model");
+const WatchProgress = require("../../models/watchProgress.model");
+const AudioProgress = require("../../models/audioProgress.model");
+const Comment = require("../../models/comment.model");
+const AIReelWatch = require("../../models/aiReelWatch.model");
+const AIReelUserState = require("../../models/aiReelUserState.model");
+const AIReelFeedSession = require("../../models/aiReelFeedSession.model");
 
 
 // ========================================
@@ -193,6 +200,25 @@ exports.deleteUser = async (
                 }
             }
         );
+
+        // Watch progress (videos)
+        await WatchProgress.deleteMany({ user: userId });
+
+        // Audio progress (audio stories)
+        await AudioProgress.deleteMany({ user: userId });
+
+        // Comments
+        await Comment.deleteMany({ user: userId });
+
+        // AI Reels Watch history & state
+        await AIReelWatch.deleteMany({ user: userId });
+        await AIReelUserState.deleteMany({ user: userId });
+        await AIReelFeedSession.deleteMany({ user: userId });
+
+        // OTP records by phone
+        if (user.phone) {
+            await OTP.deleteMany({ phone: user.phone });
+        }
 
         // Unlink/Reset Voucher usedBy field
         await Voucher.updateMany(

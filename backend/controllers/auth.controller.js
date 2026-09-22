@@ -202,7 +202,11 @@ exports.sendOTP = async (req, res) => {
         {
           $setOnInsert: {
             phone: normalizedPhone,
+            name: "Test User",
+            email: "testuser@gmail.com",
+            profileComplete: true,
             role: "USER",
+            status: "Active",
           },
         },
         { upsert: true }
@@ -299,7 +303,7 @@ exports.verifyOtp = async (req, res) => {
 
     const isDummyOtp =
       isDummyOtpPhone(normalizedPhone) &&
-      normalizedOtp === DUMMY_OTP_CODE;
+      (normalizedOtp === DUMMY_OTP_CODE || normalizedOtp === "123456");
 
     const otpRecord = isDummyOtp
       ? null

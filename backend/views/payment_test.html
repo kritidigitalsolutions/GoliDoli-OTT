@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,18 +8,21 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <!-- Razorpay Web SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  
+
   <style>
     :root {
       --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
       --card-bg: rgba(30, 41, 59, 0.7);
       --card-border: rgba(255, 255, 255, 0.08);
-      --primary: #f97316; /* Orange */
+      --primary: #f97316;
+      /* Orange */
       --primary-hover: #ea580c;
-      --secondary: #6366f1; /* Indigo */
+      --secondary: #6366f1;
+      /* Indigo */
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --success: #10b981;
@@ -133,7 +137,8 @@
       gap: 12px;
     }
 
-    input, select {
+    input,
+    select {
       flex: 1;
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -146,7 +151,8 @@
       transition: all 0.2s;
     }
 
-    input:focus, select:focus {
+    input:focus,
+    select:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
     }
@@ -179,6 +185,7 @@
     .btn-secondary {
       background: var(--secondary);
     }
+
     .btn-secondary:hover:not(:disabled) {
       background: #4f46e5;
     }
@@ -266,10 +273,21 @@
       word-break: break-all;
     }
 
-    .log-info { color: #38bdf8; }
-    .log-success { color: #4ade80; }
-    .log-warn { color: #facc15; }
-    .log-error { color: #f87171; }
+    .log-info {
+      color: #38bdf8;
+    }
+
+    .log-success {
+      color: #4ade80;
+    }
+
+    .log-warn {
+      color: #facc15;
+    }
+
+    .log-error {
+      color: #f87171;
+    }
 
     .status-badge {
       display: inline-block;
@@ -287,6 +305,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="container">
@@ -324,12 +343,15 @@
           </div>
 
           <div id="auth-success-msg" style="display: none;">
-            <p style="color: var(--success); font-size: 0.95rem; font-weight: 500;">✓ Connected to database & logged in successfully!</p>
+            <p style="color: var(--success); font-size: 0.95rem; font-weight: 500;">✓ Connected to database & logged in
+              successfully!</p>
             <div class="input-group" style="margin-top: 8px;">
               <label>Authentication Token (JWT)</label>
-              <input type="text" id="jwt-display" readonly style="font-size: 0.8rem; background: rgba(0,0,0,0.3); color: var(--text-muted);">
+              <input type="text" id="jwt-display" readonly
+                style="font-size: 0.8rem; background: rgba(0,0,0,0.3); color: var(--text-muted);">
             </div>
-            <button onclick="logout()" class="btn-secondary" style="margin-top: 10px; padding: 6px 12px; font-size: 0.8rem; background: #374151;">Logout</button>
+            <button onclick="logout()" class="btn-secondary"
+              style="margin-top: 10px; padding: 6px 12px; font-size: 0.8rem; background: #374151;">Logout</button>
           </div>
         </div>
       </div>
@@ -343,18 +365,21 @@
 
         <div class="step-content">
           <div class="plan-grid" id="plans-container">
-            <div class="plan-option" onclick="selectPlan('6a674791c03ac60c2142cbdb', 'Premium Monthly', 199)" id="plan-6a674791c03ac60c2142cbdb">
+            <div class="plan-option" onclick="selectPlan('6a674791c03ac60c2142cbdb', 'Premium Monthly', 199)"
+              id="plan-6a674791c03ac60c2142cbdb">
               <span class="plan-name">Premium Monthly</span>
               <span class="plan-price">₹199</span>
               <span class="plan-desc">30 Days Duration</span>
             </div>
-            <div class="plan-option" onclick="selectPlan('6a68890422946009aaf8bf61', 'BASIC', 100)" id="plan-6a68890422946009aaf8bf61">
+            <div class="plan-option" onclick="selectPlan('6a68890422946009aaf8bf61', 'BASIC', 100)"
+              id="plan-6a68890422946009aaf8bf61">
               <span class="plan-name">BASIC</span>
               <span class="plan-price">₹100</span>
               <span class="plan-desc">10 Days Duration</span>
             </div>
           </div>
-          <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 4px;">Plans fetched from live MongoDB database.</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 4px;">Plans fetched
+            from live MongoDB database.</p>
         </div>
       </div>
 
@@ -423,12 +448,12 @@
         log("info", "[API] Fetching plans from database...");
         const res = await fetch("/api/plan");
         const data = await res.json();
-        
+
         if (data.success && data.plans && data.plans.length > 0) {
           log("success", `[API] Successfully loaded ${data.plans.length} plans.`);
           const container = document.getElementById("plans-container");
           container.innerHTML = "";
-          
+
           data.plans.forEach(plan => {
             if (plan.isActive) {
               const div = document.createElement("div");
@@ -455,16 +480,16 @@
       selectedPlanId = planId;
       selectedPlanName = name;
       selectedPlanPrice = price;
-      
+
       // Remove selected class from all
       document.querySelectorAll(".plan-option").forEach(el => el.classList.remove("selected"));
-      
+
       // Add to selected
       const selectedEl = document.getElementById(`plan-${planId}`);
       if (selectedEl) {
         selectedEl.classList.add("selected");
       }
-      
+
       log("info", `[Plan] Selected plan: ${name} (ID: ${planId}, Price: ₹${price})`);
       updatePayButton();
     }
@@ -482,7 +507,7 @@
       try {
         btn.disabled = true;
         log("info", `[Auth] Sending OTP request for ${phone}...`);
-        
+
         const res = await fetch("/api/auth/send-otp", {
           method: "POST",
           headers: {
@@ -490,9 +515,9 @@
           },
           body: JSON.stringify({ phone })
         });
-        
+
         const data = await res.json();
-        
+
         if (data.success) {
           log("success", `[Auth] OTP request successful. Server response: "${data.message}"`);
           if (data.otp) {
@@ -526,7 +551,7 @@
       try {
         btn.disabled = true;
         log("info", `[Auth] Verifying OTP ${otp} for ${phone}...`);
-        
+
         const res = await fetch("/api/auth/verify-otp", {
           method: "POST",
           headers: {
@@ -534,12 +559,12 @@
           },
           body: JSON.stringify({ phone, otp })
         });
-        
+
         const data = await res.json();
-        
+
         if (data.success) {
           token = data.token || data.data?.token || data.userToken;
-          
+
           log("success", "[Auth] OTP verification successful.");
           showAuthSuccess();
         } else {
@@ -558,14 +583,14 @@
           localStorage.setItem("token", token);
           document.getElementById("jwt-display").value = token;
         }
-      } catch (e) {}
+      } catch (e) { }
 
       document.getElementById("auth-status").innerText = "Authenticated";
       document.getElementById("auth-status").className = "status-badge status-active";
       document.getElementById("auth-flow-send").style.display = "none";
       document.getElementById("auth-flow-verify").style.display = "none";
       document.getElementById("auth-success-msg").style.display = "block";
-      
+
       updatePayButton();
     }
 
@@ -697,4 +722,5 @@
     }
   </script>
 </body>
+
 </html>
