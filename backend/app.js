@@ -41,7 +41,8 @@ const defaultAllowed = [
   "http://localhost:5173",
   "http://localhost:5174",
   "https://golidoli.netlify.app",
-  "https://goli-doli-ott-admin-panel.vercel.app"
+  "https://goli-doli-ott-admin-panel.vercel.app",
+  "https://lustrous-gingersnap-f94a80.netlify.app"
 ];
 
 const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...defaultAllowed])];
