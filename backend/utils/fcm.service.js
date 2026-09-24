@@ -82,10 +82,10 @@ const sendPushNotification = async ({ token, title, body, imageUrl, data }) => {
         },
         ...(imageUrl
           ? {
-              fcmOptions: {
-                imageUrl,
-              },
-            }
+            fcmOptions: {
+              imageUrl,
+            },
+          }
           : {}),
       },
     };

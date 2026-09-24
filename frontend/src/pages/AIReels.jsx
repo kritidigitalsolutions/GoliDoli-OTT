@@ -567,24 +567,26 @@ export default function AIReels() {
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
+                              flexShrink: 0,
                             }}
                           >
-                            {thumbUrl ? (
+                            <Film size={18} style={{ color: "var(--text-muted)", opacity: 0.6 }} />
+                            {thumbUrl && (
                               <img
                                 src={thumbUrl}
                                 alt={reel.title || "AI Reel"}
                                 style={{
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
                                   width: "100%",
                                   height: "100%",
                                   objectFit: "cover",
                                 }}
                                 onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = "/placeholder-image.jpg";
+                                  e.currentTarget.style.display = "none";
                                 }}
                               />
-                            ) : (
-                              <Film size={18} style={{ color: "var(--text-muted)" }} />
                             )}
                           </div>
                         </td>

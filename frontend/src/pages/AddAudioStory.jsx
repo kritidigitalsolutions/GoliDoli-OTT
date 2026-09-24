@@ -782,18 +782,17 @@ export default function AddAudioStory() {
                             {String(idx + 1).padStart(2, "0")}
                           </span>
 
-                          <div className="ep-thumb-card">
-                            {thumbSrc ? (
+                          <div className="ep-thumb-card" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Music size={15} style={{ color: "var(--text-muted)", opacity: 0.5 }} />
+                            {thumbSrc && (
                               <img
                                 src={thumbSrc}
                                 alt={ep.title || "Episode"}
+                                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }}
                                 onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = "/placeholder-image.jpg";
+                                  e.currentTarget.style.display = "none";
                                 }}
                               />
-                            ) : (
-                              <Music size={15} style={{ color: "var(--text-muted)", opacity: 0.5 }} />
                             )}
                           </div>
 

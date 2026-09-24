@@ -21,7 +21,10 @@ const AdminLogin = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await API.post("/admin/auth/login", form);
+      const res = await API.post("/admin/auth/login", {
+        email: form.email.trim(),
+        password: form.password
+      });
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
         if (res.data.admin?.name) localStorage.setItem("adminName", res.data.admin.name);
@@ -91,6 +94,7 @@ const AdminLogin = () => {
         <button type="submit" className="login-btn" disabled={loading}>
           {loading ? "Signing in..." : "Sign In →"}
         </button>
+
         <p
           className="text-sm text-right text-blue-400 cursor-pointer"
           onClick={() => navigate("/forgot-password")}
@@ -102,5 +106,5 @@ const AdminLogin = () => {
     </div>
   );
 };
-// this 
+
 export default AdminLogin;
