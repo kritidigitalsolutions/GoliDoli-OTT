@@ -4,21 +4,13 @@ const router = express.Router();
 const {
   sendOTP,
   verifyOtp,
-
-  
   googleLogin,
   logout,
 } = require("../../controllers/auth.controller");
 
 const {
   websiteLogin,
-  websiteMe,
-  websiteLogout,
 } = require("../../controllers/websiteAuth.controller");
-
-const {
-  websiteLoginRateLimiter,
-} = require("../../middlewares/websiteRateLimit.middleware");
 
 // ========================================
 // MOBILE AUTH (PHONE OTP)
@@ -38,10 +30,8 @@ router.post("/logout", logout);
 router.post("/log-out", logout);
 
 // ========================================
-// WEBSITE SSO (USING MOBILE JWT)
+// WEBSITE LOGIN (ONLY POST /website-login)
 // ========================================
-router.post("/website-login", websiteLoginRateLimiter, websiteLogin);
-router.get("/website-me", websiteMe);
-router.post("/website-logout", websiteLogout);
+router.post("/website-login", websiteLogin);
 
 module.exports = router;
