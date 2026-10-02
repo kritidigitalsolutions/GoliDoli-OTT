@@ -120,22 +120,28 @@ export default function SubscriptionPage() {
     return `${serverUrl}/${cleanPath}`;
   };
 
-  // Helper for computing active, expired, cancelled counts
+  // Helper for computing active, expired, cancelled, pending, failed counts
   const calculatedStats = useMemo(() => {
     const now = new Date();
     let active = 0;
     let expired = 0;
     let cancelled = 0;
+    let pending = 0;
+    let failed = 0;
 
     subs.forEach(s => {
-      const isAct = s.status === "active" && new Date(s.endDate) > now;
+      const isAct = (s.status === "active" || s.status === "success") && s.endDate && new Date(s.endDate) > now;
       const isCan = s.status === "cancelled";
+      const isPen = s.status === "pending";
+      const isFai = s.status === "failed";
       if (isAct) active++;
       else if (isCan) cancelled++;
+      else if (isPen) pending++;
+      else if (isFai) failed++;
       else expired++;
     });
 
-    return { active, expired, cancelled, total: subs.length };
+    return { active, expired, cancelled, pending, failed, total: subs.length };
   }, [subs]);
 
   // Cancel subscription action
@@ -192,11 +198,15 @@ export default function SubscriptionPage() {
     const now = new Date();
 
     return subs.filter((sub) => {
-      const isActive = sub.status === "active" && new Date(sub.endDate) > now;
+      const isActive = (sub.status === "active" || sub.status === "success") && sub.endDate && new Date(sub.endDate) > now;
       const isCancelled = sub.status === "cancelled";
-      const isExpired = sub.status === "expired" || (sub.status === "active" && new Date(sub.endDate) <= now);
+      const isPending = sub.status === "pending";
+      const isFailed = sub.status === "failed";
+      const isExpired = sub.status === "expired" || ((sub.status === "active" || sub.status === "success") && sub.endDate && new Date(sub.endDate) <= now);
 
       if (statusFilter === "active" && !isActive) return false;
+      if (statusFilter === "pending" && !isPending) return false;
+      if (statusFilter === "failed" && !isFailed) return false;
       if (statusFilter === "cancelled" && !isCancelled) return false;
       if (statusFilter === "expired" && !isExpired) return false;
 
@@ -458,6 +468,8 @@ export default function SubscriptionPage() {
               {[
                 { value: "all", label: "All" },
                 { value: "active", label: "Active" },
+                { value: "pending", label: "Pending" },
+                { value: "failed", label: "Failed" },
                 { value: "expired", label: "Expired" },
                 { value: "cancelled", label: "Cancelled" },
               ].map((opt) => (
@@ -570,7 +582,9 @@ export default function SubscriptionPage() {
                       const fallbackAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(sub.user?._id || sub.user?.email || sub._id)}`;
                       const now = new Date();
                       const endDate = sub.endDate ? new Date(sub.endDate) : null;
-                      const isActive = sub.status === "active" && endDate && endDate > now;
+                      const isPending = sub.status === "pending";
+                      const isFailed = sub.status === "failed";
+                      const isActive = (sub.status === "active" || sub.status === "success") && endDate && endDate > now;
                       const isCancelled = sub.status === "cancelled";
                       const daysRemaining = endDate ? Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)) : 0;
 
@@ -630,12 +644,26 @@ export default function SubscriptionPage() {
                           {/* Validity Period */}
                           <td>
                             <div className="sub-date-info">
-                              <span className="sub-date-primary">
-                                {endDate ? endDate.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) : "—"}
-                              </span>
+                              {isPending ? (
+                                <span style={{ fontSize: "0.8rem", color: "#f59e0b", fontWeight: 600 }}>
+                                  Awaiting Payment
+                                </span>
+                              ) : isFailed ? (
+                                <span style={{ fontSize: "0.8rem", color: "#ef4444", fontWeight: 600 }}>
+                                  Payment Incomplete
+                                </span>
+                              ) : (
+                                <span className="sub-date-primary">
+                                  {endDate ? endDate.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) : "—"}
+                                </span>
+                              )}
                               {isActive ? (
                                 <span className={`sub-days-tag ${daysRemaining <= 5 ? "active-soon" : "active-good"}`}>
                                   {daysRemaining} {daysRemaining === 1 ? "day" : "days"} left
+                                </span>
+                              ) : isPending || isFailed ? (
+                                <span className="sub-date-meta">
+                                  Initiated: {sub.createdAt ? new Date(sub.createdAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) : "—"}
                                 </span>
                               ) : (
                                 <span className="sub-date-meta">
@@ -647,8 +675,26 @@ export default function SubscriptionPage() {
 
                           {/* Status */}
                           <td>
-                            <span className={`badge ${isActive ? "badge-active" : isCancelled ? "badge-cancelled" : "badge-expired"}`}>
-                              {isActive ? "Active" : isCancelled ? "Cancelled" : "Expired"}
+                            <span className={`badge ${
+                              isPending
+                                ? "badge-pending"
+                                : isFailed
+                                ? "badge-failed"
+                                : isActive
+                                ? "badge-active"
+                                : isCancelled
+                                ? "badge-cancelled"
+                                : "badge-expired"
+                            }`}>
+                              {isPending
+                                ? "Pending"
+                                : isFailed
+                                ? "Failed"
+                                : isActive
+                                ? "Active"
+                                : isCancelled
+                                ? "Cancelled"
+                                : "Expired"}
                             </span>
                           </td>
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./Dashboard.css";
 import API from "../api/axios";
-import { uploadToBunny } from "../features/services/bunnyUpload";
+import { uploadToBunny, uploadToBunnyStream } from "../features/services/bunnyUpload";
 import {
   Plus,
   Rocket,
@@ -148,7 +148,11 @@ export default function AddDrama() {
       // 4. Upload main trailer
       let trailerUrl = "";
       if (trailerFile) {
-        trailerUrl = await uploadToBunny(trailerFile, "shortdramas", "trailers");
+        trailerUrl = await uploadToBunnyStream(
+          trailerFile,
+          `${form.title || "Drama"} Trailer`,
+          "microdramas"
+        );
       }
 
       // 5. Build form payload with direct CDN URL strings
@@ -184,7 +188,11 @@ export default function AddDrama() {
           let epThumbnailUrl = "";
 
           if (episodeVideoFiles[i]) {
-            epVideoUrl = await uploadToBunny(episodeVideoFiles[i], "dramaepisodes", "videos");
+            epVideoUrl = await uploadToBunnyStream(
+              episodeVideoFiles[i],
+              ep.title || `${form.title || "Drama"} Episode ${ep.episodeNumber}`,
+              "microdramas"
+            );
           }
           if (episodeThumbnailFiles[i]) {
             epThumbnailUrl = await uploadToBunny(episodeThumbnailFiles[i], "dramaepisodes", "posters");

@@ -178,3 +178,55 @@ export const uploadToBunny = async (
     );
   }
 };
+
+export const uploadToBunnyStream = async (
+  file,
+  title,
+  contentType,
+  onProgress
+) => {
+  if (!file) return "";
+
+  console.log(
+    "STARTING BUNNY STREAM UPLOAD FOR:",
+    contentType,
+    title || file.name
+  );
+
+  // 1. Initialize video entry in Bunny Stream via Backend (resolves collectionId without exposing API key)
+  const initResponse = await API.post("/admin/auth/bunny-stream-init", {
+    title: title || file.name,
+    contentType: contentType || "movies",
+  });
+
+  const { videoGuid, hlsUrl } = initResponse.data;
+  if (!videoGuid) {
+    throw new Error("Failed to initialize video slot in Bunny Stream");
+  }
+
+  // 2. Stream video file binary through backend upload endpoint (pipes directly to Bunny Stream)
+  const formData = new FormData();
+  formData.append("videoGuid", videoGuid);
+  formData.append("file", file);
+
+  const uploadResponse = await API.post(
+    "/admin/auth/bunny-stream-upload",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          onProgress(percentCompleted);
+        }
+      },
+    }
+  );
+
+  return uploadResponse.data?.url || uploadResponse.data?.videoUrl || hlsUrl;
+};
+

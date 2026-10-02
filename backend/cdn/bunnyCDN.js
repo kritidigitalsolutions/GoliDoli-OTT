@@ -140,7 +140,6 @@ const getClientUploadConfig = () => {
     cdnUrl,
     stream: {
       libraryId: stream.libraryId,
-      apiKey: stream.apiKey,
       pullZone: stream.pullZone,
       pullZoneUrl: stream.pullZoneUrl,
     },
@@ -402,19 +401,34 @@ const getStreamConfig = () => {
     process.env.BUNNY_STREAM_API_KEY || ""
   ).trim();
 
-  const pullZone = String(
+  const rawPullZone = String(
     process.env.BUNNY_STREAM_PULL_ZONE || ""
   ).trim();
 
-  const pullZoneUrl = pullZone
-    ? `https://${pullZone}.b-cdn.net`
-    : "";
+  let pullZone = rawPullZone.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  let pullZoneUrl = "";
+
+  if (pullZone) {
+    if (pullZone.includes(".b-cdn.net")) {
+      pullZoneUrl = `https://${pullZone}`;
+    } else {
+      pullZoneUrl = `https://${pullZone}.b-cdn.net`;
+    }
+  }
+
+  const collections = {
+    movies: String(process.env.BUNNY_STREAM_COLLECTION_MOVIES || "").trim(),
+    series: String(process.env.BUNNY_STREAM_COLLECTION_SERIES || "").trim(),
+    microdramas: String(process.env.BUNNY_STREAM_COLLECTION_MICRODRAMAS || "").trim(),
+    aireels: String(process.env.BUNNY_STREAM_COLLECTION_AIREELS || "").trim(),
+  };
 
   return {
     libraryId,
     apiKey,
     pullZone,
     pullZoneUrl,
+    collections,
   };
 };
 
@@ -469,6 +483,81 @@ const createBunnyStreamVideo = async (title, collectionId = "") => {
   }
 
   return response.json();
+};
+
+/**
+ * Streams directly from a readable stream to Bunny Stream video GUID using HTTPS request.
+ * Avoids buffering large video files in server memory.
+ */
+const uploadStreamToBunnyVideo = ({
+  stream,
+  videoGuid,
+  contentType = "application/octet-stream",
+  contentLength,
+  timeoutMs = 60 * 60 * 1000,
+}) => {
+  return new Promise((resolve, reject) => {
+    const { libraryId, apiKey } = getStreamConfig();
+
+    if (!libraryId || !apiKey) {
+      return reject(new Error("Bunny Stream credentials not configured"));
+    }
+
+    if (!videoGuid) {
+      return reject(new Error("Video GUID is required for Bunny Stream upload"));
+    }
+
+    const headers = {
+      AccessKey: apiKey,
+      "Content-Type": contentType,
+    };
+
+    if (contentLength) {
+      headers["Content-Length"] = String(contentLength);
+    }
+
+    const uploadUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoGuid}`;
+
+    const req = https.request(
+      uploadUrl,
+      {
+        method: "PUT",
+        headers,
+        timeout: timeoutMs,
+      },
+      (res) => {
+        let body = "";
+        res.setEncoding("utf8");
+
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+
+        res.on("end", () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            const playUrls = getBunnyStreamPlayUrls(videoGuid);
+            resolve({
+              success: true,
+              guid: videoGuid,
+              ...playUrls,
+            });
+          } else {
+            const errorMessage = body || res.statusMessage || `HTTP ${res.statusCode}`;
+            reject(new Error(`Bunny Stream upload failed (${res.statusCode}): ${errorMessage}`));
+          }
+        });
+      }
+    );
+
+    req.on("timeout", () => {
+      req.destroy(new Error("Bunny Stream upload timed out"));
+    });
+
+    req.on("error", reject);
+    stream.on("error", reject);
+
+    stream.pipe(req);
+  });
 };
 
 /**
@@ -615,6 +704,7 @@ module.exports = {
   getBunnyStreamPlayUrls,
   createBunnyStreamVideo,
   uploadVideoToBunnyStream,
+  uploadStreamToBunnyVideo,
   getBunnyStreamVideo,
   uploadBufferToBunny,
   uploadFileToBunny,

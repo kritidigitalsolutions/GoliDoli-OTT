@@ -9,7 +9,7 @@ const {
   checkSubscription,
 } = require("../../controllers/subscription.controller");
 
-// ❌ COMMENTED (Razorpay)
+// Legacy commented routes
 // router.post("/create-plan", createPlan);
 // router.post("/create-subscription", createSubscription);
 

@@ -1,4 +1,4 @@
-const { deleteFromBunny } = require("../cdn/bunnyCDN");
+const { deleteFromBunny, deleteFromBunnyStream } = require("../cdn/bunnyCDN");
 
 /**
  * Returns the CDN URL for a multer-processed file, or the fallback value.
@@ -14,7 +14,7 @@ const getMediaUrl = (file, fallback = "") => {
 };
 
 /**
- * Deletes a media file from BunnyCDN.
+ * Deletes a media file from BunnyCDN (Storage or Stream).
  *
  * @param {string} filePath - CDN URL to delete
  */
@@ -23,7 +23,15 @@ const deleteMedia = async (filePath) => {
 
   if (typeof filePath === "string" && filePath.startsWith("http")) {
     try {
-      await deleteFromBunny(filePath);
+      const streamMatch = filePath.match(
+        /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
+      );
+      if (streamMatch && (filePath.includes("playlist.m3u8") || filePath.includes("vz-") || filePath.includes("mediadelivery"))) {
+        const videoGuid = streamMatch[1];
+        await deleteFromBunnyStream(videoGuid);
+      } else {
+        await deleteFromBunny(filePath);
+      }
     } catch (err) {
       console.error("BunnyCDN delete error:", err.message);
     }

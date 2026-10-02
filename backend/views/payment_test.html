@@ -4,29 +4,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Razorpay Payment Gateway Test - GoliDoli OTT</title>
+  <title>SabPaisa Payment Gateway Test - GoliDoli OTT</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
-  <!-- Razorpay Web SDK -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <style>
     :root {
-      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-      --card-bg: rgba(30, 41, 59, 0.7);
+      --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #1e1b4b 100%);
+      --card-bg: rgba(30, 41, 59, 0.75);
       --card-border: rgba(255, 255, 255, 0.08);
       --primary: #f97316;
-      /* Orange */
       --primary-hover: #ea580c;
       --secondary: #6366f1;
-      /* Indigo */
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --success: #10b981;
       --error: #ef4444;
+      --warning: #f59e0b;
       --border-radius: 16px;
     }
 
@@ -49,19 +46,19 @@
 
     .container {
       width: 100%;
-      max-width: 650px;
+      max-width: 760px;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       backdrop-filter: blur(16px);
       border-radius: var(--border-radius);
-      padding: 40px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      padding: 36px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     }
 
     h1 {
-      font-size: 2.2rem;
+      font-size: 2.1rem;
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       text-align: center;
       background: linear-gradient(to right, #f97316, #a855f7);
       -webkit-background-clip: text;
@@ -71,19 +68,19 @@
     .subtitle {
       color: var(--text-muted);
       text-align: center;
-      font-size: 1rem;
-      margin-bottom: 32px;
+      font-size: 0.95rem;
+      margin-bottom: 28px;
     }
 
     .step-container {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
     .step-card {
-      background: rgba(15, 23, 42, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 12px;
       padding: 20px;
       position: relative;
@@ -93,7 +90,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .step-num {
@@ -106,11 +103,11 @@
       justify-content: center;
       align-items: center;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
     .step-title {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 600;
     }
 
@@ -134,16 +131,16 @@
 
     .input-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
 
     input,
     select {
       flex: 1;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
-      padding: 12px 16px;
+      padding: 10px 14px;
       color: var(--text-main);
       font-size: 0.95rem;
       font-family: inherit;
@@ -162,7 +159,7 @@
       color: white;
       border: none;
       border-radius: 8px;
-      padding: 12px 24px;
+      padding: 11px 20px;
       font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
@@ -190,6 +187,18 @@
       background: #4f46e5;
     }
 
+    .btn-outline {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-muted);
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      border-color: var(--text-main);
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
     .plan-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -211,7 +220,7 @@
       flex-direction: column;
       gap: 4px;
       transition: all 0.2s;
-      background: rgba(15, 23, 42, 0.3);
+      background: rgba(15, 23, 42, 0.4);
     }
 
     .plan-option:hover {
@@ -220,7 +229,7 @@
 
     .plan-option.selected {
       border-color: var(--primary);
-      background: rgba(249, 115, 22, 0.1);
+      background: rgba(249, 115, 22, 0.12);
     }
 
     .plan-name {
@@ -260,7 +269,7 @@
     }
 
     .console-logs {
-      max-height: 180px;
+      max-height: 190px;
       overflow-y: auto;
       font-size: 0.85rem;
       display: flex;
@@ -309,8 +318,8 @@
 <body>
 
   <div class="container">
-    <h1>Razorpay Integration Test</h1>
-    <div class="subtitle">GoliDoli OTT Payment Gateway Verification Panel</div>
+    <h1>SabPaisa Integration Test</h1>
+    <div class="subtitle">GoliDoli OTT Official Staging Payment Verification &amp; Enquiry Panel</div>
 
     <div class="step-container">
       <!-- STEP 1: AUTHENTICATION -->
@@ -343,8 +352,7 @@
           </div>
 
           <div id="auth-success-msg" style="display: none;">
-            <p style="color: var(--success); font-size: 0.95rem; font-weight: 500;">✓ Connected to database & logged in
-              successfully!</p>
+            <p style="color: var(--success); font-size: 0.95rem; font-weight: 500;">✓ Connected to database &amp; logged in successfully!</p>
             <div class="input-group" style="margin-top: 8px;">
               <label>Authentication Token (JWT)</label>
               <input type="text" id="jwt-display" readonly
@@ -378,16 +386,15 @@
               <span class="plan-desc">10 Days Duration</span>
             </div>
           </div>
-          <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 4px;">Plans fetched
-            from live MongoDB database.</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 4px;">Plans fetched from live MongoDB database.</p>
         </div>
       </div>
 
-      <!-- STEP 3: PAYMENT PROCESS -->
+      <!-- STEP 3: SABPAISA PAYMENT PROCESS -->
       <div class="step-card" id="card-payment">
         <div class="step-header">
           <div class="step-num">3</div>
-          <span class="step-title">Razorpay Checkout</span>
+          <span class="step-title">SabPaisa Staging Checkout</span>
         </div>
 
         <div class="step-content">
@@ -395,12 +402,38 @@
             <label for="promo-input">Promo Code (Optional)</label>
             <input type="text" id="promo-input" placeholder="e.g. GET50" style="text-transform: uppercase;">
           </div>
-          <button id="btn-pay" onclick="startPayment()" disabled style="width: 100%; height: 50px; font-size: 1.1rem;">
-            Authenticate First to Pay
-          </button>
+          <div style="display: flex; gap: 10px; margin-top: 6px;">
+            <button id="btn-pay" onclick="initiateSabPaisaPayment()" disabled style="flex: 2; height: 48px; font-size: 1.05rem;">
+              Authenticate First to Pay
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: ENQUIRY & STATUS CHECK -->
+      <div class="step-card" id="card-enquiry">
+        <div class="step-header">
+          <div class="step-num">4</div>
+          <span class="step-title">Transaction Enquiry</span>
+        </div>
+
+        <div class="step-content">
+          <div class="input-group">
+            <label for="enquiry-txnid">Client Transaction ID</label>
+            <div class="input-row">
+              <input type="text" id="enquiry-txnid" placeholder="e.g. TXN_1727768400000_AB12">
+              <button class="btn-secondary" onclick="checkStatusManual()">Check Status</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- HIDDEN FORM FOR SABPAISA GATEWAY SUBMISSION -->
+    <form id="sabpaisa-form" method="POST" action="" style="display: none;">
+      <input type="hidden" name="clientCode" id="sp-clientCode" value="">
+      <input type="hidden" name="encData" id="sp-encData" value="">
+    </form>
 
     <!-- LIVE CONSOLE -->
     <div class="console-card">
@@ -409,7 +442,7 @@
         <span style="cursor: pointer; text-decoration: underline;" onclick="clearLogs()">Clear Log</span>
       </div>
       <div class="console-logs" id="console-logs">
-        <div class="log-item log-info">[System] Ready to test Razorpay payment gateway.</div>
+        <div class="log-item log-info">[System] Ready to test SabPaisa payment gateway.</div>
       </div>
     </div>
   </div>
@@ -419,8 +452,8 @@
     let selectedPlanId = null;
     let selectedPlanName = "";
     let selectedPlanPrice = 0;
+    let lastClientTxnId = "";
 
-    // Check token on load
     window.addEventListener("DOMContentLoaded", () => {
       if (token) {
         log("info", "[Auth] Saved token found in local storage.");
@@ -442,7 +475,6 @@
       document.getElementById("console-logs").innerHTML = `<div class="log-item log-info">[System] Logs cleared.</div>`;
     }
 
-    // Dynamic Plan Fetching
     async function fetchPlans() {
       try {
         log("info", "[API] Fetching plans from database...");
@@ -481,10 +513,8 @@
       selectedPlanName = name;
       selectedPlanPrice = price;
 
-      // Remove selected class from all
       document.querySelectorAll(".plan-option").forEach(el => el.classList.remove("selected"));
 
-      // Add to selected
       const selectedEl = document.getElementById(`plan-${planId}`);
       if (selectedEl) {
         selectedEl.classList.add("selected");
@@ -564,7 +594,6 @@
 
         if (data.success) {
           token = data.token || data.data?.token || data.userToken;
-
           log("success", "[Auth] OTP verification successful.");
           showAuthSuccess();
         } else {
@@ -618,21 +647,21 @@
         btn.style.background = "var(--primary)";
       } else {
         btn.disabled = false;
-        btn.innerText = `Pay ₹${selectedPlanPrice} via Razorpay`;
+        btn.innerText = `Pay ₹${selectedPlanPrice} via SabPaisa (Staging)`;
         btn.style.background = "var(--success)";
       }
     }
 
-    // Step 3: Trigger payment gateway
-    async function startPayment() {
+    // Step 3: Trigger SabPaisa Gateway
+    async function initiateSabPaisaPayment() {
       if (!token || !selectedPlanId) return;
       const promoInput = document.getElementById("promo-input");
       const promoCode = promoInput.value.trim().toUpperCase();
 
-      log("info", `[Payment] Initiating order creation for Plan ID ${selectedPlanId}...`);
+      log("info", `[SabPaisa] Initiating payment request for Plan ID: ${selectedPlanId}...`);
 
       try {
-        const orderRes = await fetch("/api/payment/create-order", {
+        const res = await fetch("/api/payment/initiate", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -644,80 +673,74 @@
           })
         });
 
-        const orderData = await orderRes.json();
+        const data = await res.json();
 
-        if (!orderData.success) {
-          log("error", `[Payment] Create Order Failed: ${orderData.message}`);
+        if (!data.success) {
+          log("error", `[SabPaisa] Initiate Failed: ${data.message}`);
           return;
         }
 
-        const { order, key, finalAmount } = orderData;
-        log("success", `[Payment] Order created successfully: ID: ${order.id}, Amount: ₹${finalAmount}`);
+        const { paymentUrl, clientCode, clientTxnId, encData, finalAmount, checkoutUrl } = data;
+        lastClientTxnId = clientTxnId;
+        document.getElementById("enquiry-txnid").value = clientTxnId;
 
-        // Open Razorpay Checkout Option
-        const options = {
-          key: key,
-          amount: order.amount,
-          currency: order.currency,
-          name: "GoliDoli OTT",
-          description: `Test Purchase - ${selectedPlanName}`,
-          image: "https://golidoli-website.vercel.app/logo.png",
-          order_id: order.id,
-          handler: async function (response) {
-            log("success", `[Razorpay] Payment complete! Signature: ${response.razorpay_signature}`);
-            log("info", "[Payment] Verifying signature with backend...");
+        log("success", `[SabPaisa] Payment initiated! ClientTxnId: ${clientTxnId}, Amount: ₹${finalAmount}`);
 
-            try {
-              const verifyRes = await fetch("/api/payment/verify", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  planId: selectedPlanId
-                })
-              });
+        // Direct PG 3.0 Checkout URL redirect (Solution B)
+        if (checkoutUrl || (paymentUrl && !encData)) {
+          const directUrl = checkoutUrl || paymentUrl;
+          log("info", `[SabPaisa PG 3.0] Direct checkout URL received. Redirecting to: ${directUrl}...`);
+          window.location.href = directUrl;
+          return;
+        }
 
-              const verifyData = await verifyRes.json();
+        log("info", `[SabPaisa] Encrypted payload ready. Redirecting to SabPaisa gateway...`);
 
-              if (verifyData.success) {
-                log("success", "🎉 PAYMENT VERIFIED SUCCESSFULLY! Subscription activated in MongoDB database.");
-                log("success", `[Subscription] ID: ${verifyData.subscription._id}, End Date: ${new Date(verifyData.subscription.endDate).toLocaleDateString()}`);
-                alert("🎉 Subscription activated successfully!");
-              } else {
-                log("error", `[Payment] Verification Failed: ${verifyData.message}`);
-                alert(`❌ Verification Failed: ${verifyData.message}`);
-              }
-            } catch (err) {
-              log("error", `[Payment] Verification API Error: ${err.message}`);
-            }
-          },
-          prefill: {
-            name: "Test User",
-            email: "testuser@gmail.com",
-            contact: "9999999999"
-          },
-          notes: order.notes,
-          theme: {
-            color: "#f97316"
-          },
-          modal: {
-            ondismiss: function () {
-              log("warn", "[Razorpay] Checkout modal dismissed by user.");
-            }
-          }
-        };
+        // Submit form to SabPaisa Gateway (Classic AES)
+        const form = document.getElementById("sabpaisa-form");
+        form.action = paymentUrl;
+        document.getElementById("sp-clientCode").value = clientCode;
+        document.getElementById("sp-encData").value = encData;
 
-        log("info", "[Razorpay] Launching Razorpay Modal...");
-        const rzp = new Razorpay(options);
-        rzp.open();
-
+        form.submit();
       } catch (err) {
-        log("error", `[Payment] API Error creating order: ${err.message}`);
+        log("error", `[SabPaisa] API Error initiating payment: ${err.message}`);
+      }
+    }
+
+    // Step 4: Transaction Enquiry
+    async function checkStatusManual() {
+      const clientTxnId = document.getElementById("enquiry-txnid").value.trim() || lastClientTxnId;
+      if (!clientTxnId) {
+        log("error", "[Enquiry] Please enter a Client Transaction ID.");
+        return;
+      }
+      if (!token) {
+        log("error", "[Enquiry] Please authenticate first to check status.");
+        return;
+      }
+
+      log("info", `[Enquiry] Checking transaction status for ${clientTxnId}...`);
+
+      try {
+        const res = await fetch(`/api/payment/status/${encodeURIComponent(clientTxnId)}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          log("success", `[Enquiry] Result: Status=${data.status}, Code=${data.statusCode || "N/A"}`);
+          if (data.subscription) {
+            log("success", `[Subscription] Active! Sub ID: ${data.subscription._id}, End Date: ${new Date(data.subscription.endDate).toLocaleDateString()}`);
+          }
+        } else {
+          log("warn", `[Enquiry] ${data.message}`);
+        }
+      } catch (err) {
+        log("error", `[Enquiry] Request failed: ${err.message}`);
       }
     }
   </script>

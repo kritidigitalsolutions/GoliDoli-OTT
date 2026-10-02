@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const cookieParser = require("cookie-parser");
 const path = require("path");
 const connectDB = require("./config/db");
 const createDefaultAdmin = require("./utils/createDefaultAdmin");
@@ -39,10 +40,12 @@ const adminUrls = process.env.ADMIN_URL
 
 const defaultAllowed = [
   "http://localhost:5173",
-  "http://localhost:5174",
-  "https://golidoli.netlify.app",
-  "https://goli-doli-ott-admin-panel.vercel.app",
-  "https://lustrous-gingersnap-f94a80.netlify.app"
+  "https://golidoli.com",
+  "https://admin.golidoli.com",
+  "http://www.golidoli.com",
+  
+  
+
 ];
 
 const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...defaultAllowed])];
@@ -82,13 +85,21 @@ app.use((req, res, next) => {
   return next();
 });
 
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 app.use(
   express.urlencoded({
     extended: true,
   })
 );
+
+app.use(cookieParser());
 
 // ========================================
 // HEALTH CHECK
@@ -338,6 +349,8 @@ const adminSubscriptionRoutes = require("./routes/admin/subscription.routes");
 const userSubscriptionRoutes = require("./routes/user/subscription.routes");
 
 app.use("/api/admin/subscription", adminSubscriptionRoutes);
+app.use("/api/admin/payment", adminSubscriptionRoutes);
+app.use("/api/admin/payments", adminSubscriptionRoutes);
 app.use("/api/subscription", userSubscriptionRoutes);
 
 //watchlist routes
@@ -357,7 +370,7 @@ app.use("/api/interaction", interactionRoutes);
 const userAIReelRoutes = require("./routes/user/aiReel.routes");
 app.use("/api/ai-reels", userAIReelRoutes);
 
-// ================Razor Pay===============
+// ================SabPaisa Payment Gateway===============
 const paymentRoutes = require("./routes/user/payment.routes");
 app.use("/api/payment", paymentRoutes);
 

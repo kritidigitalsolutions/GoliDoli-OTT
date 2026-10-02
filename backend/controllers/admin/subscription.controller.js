@@ -337,44 +337,131 @@ exports.getIncomeStats =
 
 
 // =====================================================
-// 📋 GET ALL SUBSCRIPTIONS
+// 📋 GET ALL SUBSCRIPTIONS & PAYMENT TRANSACTIONS
 // =====================================================
-exports.getAllSubscriptions =
-  async (req, res) => {
-    try {
+exports.getAllSubscriptions = async (req, res) => {
+  try {
+    // auto cleanup
+    await expireOldSubscriptions();
 
-      // auto cleanup
-      await expireOldSubscriptions();
+    const Payment = require("../../models/payment.model");
 
-      const subscriptions =
-        await Subscription.find()
-          .populate(
-            "user",
-            "name email phone profileImage"
-          )
-          .populate("plan")
-          .sort({
-            createdAt: -1,
-          });
+    // 1. Fetch all Payment records populated with user, plan, and linked subscription
+    const payments = await Payment.find()
+      .populate("user", "name email phone profileImage")
+      .populate("plan")
+      .populate("subscription")
+      .sort({ createdAt: -1 });
 
-      res.status(200).json({
-        success: true,
-        subscriptions,
-      });
+    // 2. Fetch all legacy Subscription records
+    const subscriptions = await Subscription.find()
+      .populate("user", "name email phone profileImage")
+      .populate("plan")
+      .sort({ createdAt: -1 });
 
-    } catch (error) {
+    const seenTxnIds = new Set();
+    const formattedList = [];
 
-      console.error(
-        "Get All Subscriptions Error:",
-        error
-      );
+    // Map all Payment records
+    for (const p of payments) {
+      if (p.clientTxnId) seenTxnIds.add(String(p.clientTxnId));
+      if (p.paymentId) seenTxnIds.add(String(p.paymentId));
 
-      res.status(500).json({
-        success: false,
-        message: error.message,
+      const linkedSub = p.subscription;
+      let displayStatus = p.status;
+      if (p.status === "success") {
+        displayStatus = linkedSub ? linkedSub.status : "active";
+      }
+
+      formattedList.push({
+        _id: p._id,
+        user: p.user,
+        plan: p.plan,
+        amount: p.amount,
+        currency: p.currency || "INR",
+        paymentGateway: p.paymentGateway || "SabPaisa",
+        status: displayStatus,
+        rawPaymentStatus: p.status,
+        subscriptionId: p.clientTxnId,
+        paymentId: p.paymentId || p.clientTxnId,
+        clientTxnId: p.clientTxnId,
+        merchantTxnId: p.merchantTxnId,
+        startDate: linkedSub?.startDate || p.paidAt || p.createdAt,
+        endDate: linkedSub?.endDate || null,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+        isPaymentRecord: true,
       });
     }
-  };
+
+    // Add legacy subscriptions that don't have a matching payment record
+    for (const s of subscriptions) {
+      const txn = s.subscriptionId || s.paymentId;
+      if (!txn || !seenTxnIds.has(String(txn))) {
+        formattedList.push({
+          _id: s._id,
+          user: s.user,
+          plan: s.plan,
+          amount: s.amount,
+          currency: s.currency || "INR",
+          paymentGateway: "SabPaisa",
+          status: s.status,
+          rawPaymentStatus: s.status === "active" ? "success" : s.status,
+          subscriptionId: s.subscriptionId || s.paymentId,
+          paymentId: s.paymentId || s.subscriptionId,
+          clientTxnId: s.subscriptionId,
+          merchantTxnId: s.subscriptionId,
+          startDate: s.startDate,
+          endDate: s.endDate,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+          isPaymentRecord: false,
+        });
+      }
+    }
+
+    // Sort newest first
+    formattedList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json({
+      success: true,
+      subscriptions: formattedList,
+      total: formattedList.length,
+    });
+  } catch (error) {
+    console.error("Get All Subscriptions Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// =====================================================
+// 💳 GET ALL PURE PAYMENT RECORDS (ADMIN)
+// =====================================================
+exports.getAllPayments = async (req, res) => {
+  try {
+    const Payment = require("../../models/payment.model");
+    const payments = await Payment.find()
+      .populate("user", "name email phone profileImage")
+      .populate("plan")
+      .populate("subscription")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      payments,
+      total: payments.length,
+    });
+  } catch (err) {
+    console.error("Get All Payments Error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 
 // =====================================================
 // ⏳ EXTEND SUBSCRIPTION (ADMIN)

@@ -1,0 +1,24 @@
+# Root .gitignore for GoliDoli OTT
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Backend credentials & sensitive files
+backend/firebase/*.json
+backend/firebase/*.js.map
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Frontend env
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

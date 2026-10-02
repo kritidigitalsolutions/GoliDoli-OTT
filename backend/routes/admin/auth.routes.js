@@ -8,6 +8,11 @@ const { isAdmin } = require("../../middlewares/admin.middleware");
 const {
   getClientUploadConfig,
   uploadStreamToBunny,
+  createBunnyStreamVideo,
+  uploadStreamToBunnyVideo,
+  getStreamConfig,
+  getBunnyStreamPlayUrls,
+  deleteFromBunnyStream,
 } = require("../../cdn/bunnyCDN");
 
 const {
@@ -43,6 +48,7 @@ const allowedMimeTypes = new Set([
   "video/mkv",
   "video/webm",
   "video/quicktime",
+  "video/x-matroska",
 ]);
 
 const safeExtension = (file) => {
@@ -102,7 +108,7 @@ const bunnyStorage = {
 const bunnyUpload = multer({
   storage: bunnyStorage,
   limits: {
-    fileSize: Number(process.env.MAX_UPLOAD_SIZE),
+    fileSize: Number(process.env.MAX_UPLOAD_SIZE) || 5368709120,
   },
 });
 
@@ -124,6 +130,90 @@ const handleBunnyUpload = (req, res, next) => {
   });
 };
 
+// ==========================================
+// BUNNY STREAM DIRECT VIDEO UPLOAD HANDLING
+// ==========================================
+const allowedVideoMimeTypes = new Set([
+  "video/mp4",
+  "video/mkv",
+  "video/webm",
+  "video/quicktime",
+  "video/x-matroska",
+]);
+
+const bunnyStreamStorage = {
+  _handleFile: async (req, file, cb) => {
+    try {
+      if (!allowedVideoMimeTypes.has(file.mimetype)) {
+        return cb(
+          new Error(
+            "Invalid video file type. Supported formats: MP4, MKV, MOV, WEBM"
+          )
+        );
+      }
+
+      const videoGuid = String(req.body.videoGuid || "").trim();
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      if (!uuidRegex.test(videoGuid)) {
+        return cb(new Error("Invalid or missing videoGuid"));
+      }
+
+      const result = await uploadStreamToBunnyVideo({
+        stream: file.stream,
+        videoGuid,
+        contentType: file.mimetype,
+      });
+
+      cb(null, {
+        videoGuid,
+        hlsUrl: result.hlsUrl,
+        thumbnailUrl: result.thumbnailUrl,
+        previewUrl: result.previewUrl,
+        embedUrl: result.embedUrl,
+      });
+    } catch (err) {
+      if (req.body.videoGuid) {
+        await deleteFromBunnyStream(req.body.videoGuid).catch(() => {});
+      }
+      cb(err);
+    }
+  },
+
+  _removeFile: (req, file, cb) => {
+    cb(null);
+  },
+};
+
+const bunnyStreamUpload = multer({
+  storage: bunnyStreamStorage,
+  limits: {
+    fileSize: Number(process.env.MAX_UPLOAD_SIZE) || 5368709120,
+  },
+});
+
+const handleBunnyStreamUpload = (req, res, next) => {
+  bunnyStreamUpload.single("file")(req, res, async (err) => {
+    if (!err) {
+      return next();
+    }
+
+    if (req.body?.videoGuid) {
+      await deleteFromBunnyStream(req.body.videoGuid).catch(() => {});
+    }
+
+    const isClientError =
+      err instanceof multer.MulterError ||
+      err.message.includes("Invalid video file type") ||
+      err.message.includes("Invalid or missing videoGuid");
+
+    return res.status(isClientError ? 400 : 500).json({
+      success: false,
+      message: err.message,
+    });
+  });
+};
 
 // Admin Login
 router.post(
@@ -174,6 +264,110 @@ router.post(
         path: req.file.remotePath,
       });
     } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  }
+);
+
+// ==========================================
+// BUNNY STREAM ENDPOINTS (Protected)
+// ==========================================
+router.post(
+  "/bunny-stream-init",
+  isAdmin,
+  async (req, res) => {
+    try {
+      const { title, contentType } = req.body;
+      const normalizedType = String(contentType || "").trim().toLowerCase();
+
+      let targetKey = "";
+      if (normalizedType === "movies" || normalizedType === "movie") {
+        targetKey = "movies";
+      } else if (normalizedType === "series") {
+        targetKey = "series";
+      } else if (
+        normalizedType === "microdramas" ||
+        normalizedType === "microdrama" ||
+        normalizedType === "shortdramas" ||
+        normalizedType === "shortdrama" ||
+        normalizedType === "drama" ||
+        normalizedType === "dramaepisodes"
+      ) {
+        targetKey = "microdramas";
+      } else if (
+        normalizedType === "aireels" ||
+        normalizedType === "aireel" ||
+        normalizedType === "reels" ||
+        normalizedType === "reel" ||
+        normalizedType === "ai-reels"
+      ) {
+        targetKey = "aireels";
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid contentType. Allowed types: movies, series, microdramas, aireels",
+        });
+      }
+
+      const { collections, libraryId } = getStreamConfig();
+      const collectionId = collections[targetKey] || "";
+
+      const videoData = await createBunnyStreamVideo(
+        title || `Video-${Date.now()}`,
+        collectionId
+      );
+
+      const playUrls = getBunnyStreamPlayUrls(videoData.guid);
+
+      return res.status(201).json({
+        success: true,
+        videoGuid: videoData.guid,
+        libraryId,
+        hlsUrl: playUrls?.hlsUrl || "",
+        thumbnailUrl: playUrls?.thumbnailUrl || "",
+        previewUrl: playUrls?.previewUrl || "",
+      });
+    } catch (err) {
+      console.error("Bunny Stream Init Error:", err.message);
+      return res.status(500).json({
+        success: false,
+        message: err.message || "Failed to initialize Bunny Stream video",
+      });
+    }
+  }
+);
+
+router.post(
+  "/bunny-stream-upload",
+  isAdmin,
+  handleBunnyStreamUpload,
+  async (req, res) => {
+    try {
+      if (!req.file?.hlsUrl) {
+        if (req.body.videoGuid) {
+          await deleteFromBunnyStream(req.body.videoGuid).catch(() => {});
+        }
+        return res.status(400).json({
+          success: false,
+          message: "Video file is required",
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        url: req.file.hlsUrl,
+        videoUrl: req.file.hlsUrl,
+        videoGuid: req.file.videoGuid,
+        thumbnailUrl: req.file.thumbnailUrl,
+        previewUrl: req.file.previewUrl,
+      });
+    } catch (err) {
+      if (req.body.videoGuid) {
+        await deleteFromBunnyStream(req.body.videoGuid).catch(() => {});
+      }
       return res.status(500).json({
         success: false,
         message: err.message,

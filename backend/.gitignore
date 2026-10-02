@@ -7,9 +7,9 @@ node_modules/
 !.env.example
 
 # Firebase credentials
-firebase/serviceAccountkey.json
-firebase/serviceAccountKey.json
-firebase/*service*account*.json
+firebase/*.json
+firebase/*.js.map
+*.json.bak
 
 # Logs
 logs/
@@ -31,4 +31,4 @@ temp/
 .DS_Store
 Thumbs.db
 .vscode/
-.idea/
+.idea/

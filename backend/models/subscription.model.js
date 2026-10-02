@@ -68,7 +68,7 @@ const subscriptionSchema =
       },
 
       // ========================================
-      // RAZORPAY ORDER ID
+      // TRANSACTION / SUBSCRIPTION ID
       // ========================================
 
       subscriptionId: {

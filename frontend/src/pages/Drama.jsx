@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import API, { BASE_URL } from "../api/axios";
-import { uploadToBunny } from "../features/services/bunnyUpload";
+import { uploadToBunny, uploadToBunnyStream } from "../features/services/bunnyUpload";
 import "./Content.css";
 import {
   Eye, Edit2, Trash2, X, Play, Film,
@@ -198,7 +198,11 @@ export default function Drama() {
       // 4. Direct upload trailer
       let trailerUrl = editData.trailerUrl || "";
       if (uploadData.trailer) {
-        trailerUrl = await uploadToBunny(uploadData.trailer, "shortdramas", "trailers");
+        trailerUrl = await uploadToBunnyStream(
+          uploadData.trailer,
+          `${editData.title || "Drama"} Trailer`,
+          "microdramas"
+        );
       }
 
       const formData = new FormData();
@@ -231,7 +235,11 @@ export default function Drama() {
       // 1. Direct upload episode video file
       let videoUrl = editData.videoUrl || "";
       if (epUpload.video) {
-        videoUrl = await uploadToBunny(epUpload.video, "dramaepisodes", "videos");
+        videoUrl = await uploadToBunnyStream(
+          epUpload.video,
+          editData.title || `${selectedDrama?.title || "Drama"} Episode ${editData.episodeNumber}`,
+          "microdramas"
+        );
       }
 
       // 2. Direct upload thumbnail file
@@ -265,7 +273,11 @@ export default function Drama() {
       // 1. Direct upload new episode video
       let videoUrl = "";
       if (newEpVideo) {
-        videoUrl = await uploadToBunny(newEpVideo, "dramaepisodes", "videos");
+        videoUrl = await uploadToBunnyStream(
+          newEpVideo,
+          newEp.title || `${selectedDrama?.title || "Drama"} Episode ${newEp.episodeNumber}`,
+          "microdramas"
+        );
       }
 
       // 2. Direct upload new episode thumbnail

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import API, { BASE_URL } from "../api/axios";
-import { uploadToBunny } from "../features/services/bunnyUpload";
+import { uploadToBunny, uploadToBunnyStream } from "../features/services/bunnyUpload";
 
 import "./Content.css";
 import "./Dashboard.css";
@@ -443,7 +443,12 @@ export default function Content() {
       let thumbnailUrl = newEpisodeThumbnailUrl || "";
 
       if (newEpisodeVideo) {
-        videoUrl = await uploadToBunny(newEpisodeVideo, "episodes", "videos");
+        const streamType = contentType === "microdramas" ? "microdramas" : "series";
+        videoUrl = await uploadToBunnyStream(
+          newEpisodeVideo,
+          epData.title || `${selectedSeries?.title || "Series"} S${epData.seasonNumber}E${epData.episodeNumber}`,
+          streamType
+        );
       }
       if (newEpisodeThumbnail) {
         thumbnailUrl = await uploadToBunny(newEpisodeThumbnail, "episodes", "posters");
@@ -613,20 +618,25 @@ export default function Content() {
       // 4. Direct upload trailer
       let trailerUrl = uploadData.trailerUrl || "";
       if (uploadData.trailer) {
-        trailerUrl = await uploadToBunny(
+        trailerUrl = await uploadToBunnyStream(
           uploadData.trailer,
+          `${editData.title || "Content"} Trailer`,
           typeFolder,
-          "trailers",
-          (percent) => setUploadProgress(percent)   // Γ£à add this
+          (percent) => setUploadProgress(percent)
         );
       }
 
       // 5. Direct upload video (movies only)
       let videoUrl = uploadData.videoUrl || "";
       if (contentType === "movies" && uploadData.video) {
-        videoUrl = await uploadToBunny(uploadData.video, "movies", "videos", (percent) => {
-          setUploadProgress(percent);
-        });
+        videoUrl = await uploadToBunnyStream(
+          uploadData.video,
+          editData.title || "Movie Video",
+          "movies",
+          (percent) => {
+            setUploadProgress(percent);
+          }
+        );
       }
 
       const formData = new FormData();
@@ -690,9 +700,15 @@ export default function Content() {
       // 1. Direct upload episode video file
       let videoUrl = uploadData.videoUrl || "";
       if (uploadData.video) {
-        videoUrl = await uploadToBunny(uploadData.video, "episodes", "videos", (percent) => {
-          setUploadProgress(percent);
-        });
+        const streamType = contentType === "microdramas" ? "microdramas" : "series";
+        videoUrl = await uploadToBunnyStream(
+          uploadData.video,
+          editData.title || `Episode ${editData.episodeNumber}`,
+          streamType,
+          (percent) => {
+            setUploadProgress(percent);
+          }
+        );
       }
 
       // 2. Direct upload thumbnail file

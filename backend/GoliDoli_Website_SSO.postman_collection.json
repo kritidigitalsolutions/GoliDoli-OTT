@@ -1,0 +1,236 @@
+{
+  "info": {
+    "_postman_id": "golidoli-website-sso-v1",
+    "name": "GoliDoli OTT - Website SSO APIs",
+    "description": "Postman Collection for GoliDoli OTT Website Single Sign-On (SSO) using Mobile JWT.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Prerequisite - Mobile Login (Get Mobile JWT)",
+      "item": [
+        {
+          "name": "1. Send Mobile OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919999999999\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "send-otp"]
+            },
+            "description": "Sends an OTP to the mobile phone number."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Verify Mobile OTP (Auto-saves mobileJwt)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const token = res.token || (res.data && res.data.token) || res.userToken;",
+                  "if (token) {",
+                  "    pm.collectionVariables.set('mobileJwt', token);",
+                  "    console.log('Mobile JWT Token saved to collection variable: mobileJwt');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919999999999\",\n  \"otp\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify-otp"]
+            },
+            "description": "Verifies OTP and automatically extracts the mobile JWT into {{mobileJwt}}."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. Website SSO Login (POST /website-login)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.token) {",
+              "    pm.collectionVariables.set('websiteSessionToken', res.token);",
+              "    console.log('Website session token saved.');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mobileJwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"redirectUrl\": \"https://golidoli.com/dashboard\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/website-login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "website-login"]
+        },
+        "description": "Exchanges a verified mobile JWT for a secure website session token and HttpOnly cookie."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Website Session Check (GET /website-me)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{websiteSessionToken}}",
+            "description": "Optional fallback if cookie is not sent by client"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/website-me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "website-me"]
+        },
+        "description": "Verifies active website session cookie (or Bearer header) and returns safe user profile."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Website Logout (POST /website-logout)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{websiteSessionToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/website-logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "website-logout"]
+        },
+        "description": "Clears website session cookie and revokes session token."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Negative Tests (Security)",
+      "item": [
+        {
+          "name": "Login with Invalid Token (Expect 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer this.is.an.invalid.token"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/website-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "website-login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login with Missing Token (Expect 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/website-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "website-login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "mobileJwt",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "websiteSessionToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

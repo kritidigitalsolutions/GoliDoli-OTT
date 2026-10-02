@@ -6,6 +6,7 @@ const {
   getSubscriptionStats,
   getIncomeStats,
   getAllSubscriptions,
+  getAllPayments,
   extendSubscription,
   cancelSubscriptionAdmin,
   deleteSubscriptionAdmin,
@@ -16,6 +17,7 @@ router.get("/revenue", isAdmin, getRevenue);
 router.get("/stats", isAdmin, getSubscriptionStats);
 router.get("/income-stats", isAdmin, getIncomeStats);
 router.get("/all", isAdmin, getAllSubscriptions);
+router.get("/payments", isAdmin, getAllPayments);
 router.patch("/:id/extend", isAdmin, extendSubscription);
 router.patch("/:id/cancel", isAdmin, cancelSubscriptionAdmin);
 router.delete("/:id", isAdmin, deleteSubscriptionAdmin);

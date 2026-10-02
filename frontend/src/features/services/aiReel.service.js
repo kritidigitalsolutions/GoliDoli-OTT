@@ -1,5 +1,5 @@
 import API from "../../api/axios";
-import { uploadToBunny } from "./bunnyUpload";
+import { uploadToBunny, uploadToBunnyStream } from "./bunnyUpload";
 
 export const getAIReels = async () => {
   const response = await API.get("/admin/ai-reels");
@@ -7,18 +7,23 @@ export const getAIReels = async () => {
 };
 
 export const createAIReel = async ({ form, videoFile, thumbnailFile, onProgress, onPhase }) => {
-  // 1. Upload thumbnail
+  // 1. Upload thumbnail to Bunny Storage
   let thumbnailUrl = form.thumbnail || form.thumbnailUrl || "";
   if (thumbnailFile) {
     if (onPhase) onPhase("thumbnail");
     thumbnailUrl = await uploadToBunny(thumbnailFile, "aireels", "posters");
   }
 
-  // 2. Upload video
+  // 2. Upload video to Bunny Stream
   let videoUrl = form.videoUrl || "";
   if (videoFile) {
     if (onPhase) onPhase("video");
-    videoUrl = await uploadToBunny(videoFile, "aireels", "videos", onProgress);
+    videoUrl = await uploadToBunnyStream(
+      videoFile,
+      form.title || "AI Reel",
+      "aireels",
+      onProgress
+    );
   }
 
   if (onPhase) onPhase("saving");
@@ -42,18 +47,23 @@ export const createAIReel = async ({ form, videoFile, thumbnailFile, onProgress,
 };
 
 export const updateAIReel = async (id, { form, videoFile, thumbnailFile, onProgress, onPhase }) => {
-  // 1. Upload thumbnail if updated
+  // 1. Upload thumbnail to Bunny Storage if updated
   let thumbnailUrl = form.thumbnail || form.thumbnailUrl || "";
   if (thumbnailFile) {
     if (onPhase) onPhase("thumbnail");
     thumbnailUrl = await uploadToBunny(thumbnailFile, "aireels", "posters");
   }
 
-  // 2. Upload video if updated
+  // 2. Upload video to Bunny Stream if updated
   let videoUrl = form.videoUrl || "";
   if (videoFile) {
     if (onPhase) onPhase("video");
-    videoUrl = await uploadToBunny(videoFile, "aireels", "videos", onProgress);
+    videoUrl = await uploadToBunnyStream(
+      videoFile,
+      form.title || "AI Reel",
+      "aireels",
+      onProgress
+    );
   }
 
   if (onPhase) onPhase("saving");

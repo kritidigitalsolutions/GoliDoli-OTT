@@ -71,6 +71,18 @@ body.light .sub-plan-badge {
 }
 
 /* ── Status Badges ── */
+.badge-pending {
+  background: rgba(245, 158, 11, 0.14) !important;
+  color: #f59e0b !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+.badge-failed {
+  background: rgba(239, 68, 68, 0.14) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+
 .badge-cancelled {
   background: rgba(244, 63, 94, 0.12) !important;
   color: #f43f5e !important;

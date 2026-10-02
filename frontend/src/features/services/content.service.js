@@ -1,5 +1,5 @@
 import API from "../../api/axios";
-import { uploadToBunny } from "./bunnyUpload";
+import { uploadToBunny, uploadToBunnyStream } from "./bunnyUpload";
 
 export const createContent = async ({
   form,
@@ -23,7 +23,7 @@ export const createContent = async ({
                      form.type === "series" ? "series" :
                      form.type === "microdrama" ? "microdramas" : "movies";
 
-  // 1. Upload Cast Images directly to Bunny CDN
+  // 1. Upload Cast Images directly to Bunny CDN (Storage)
   const updatedCast = [...form.cast];
   const castKeys = Object.keys(castFiles);
   for (const key of castKeys) {
@@ -38,37 +38,47 @@ export const createContent = async ({
     }
   }
 
-  // 2. Upload Main Poster directly to Bunny CDN
+  // 2. Upload Main Poster directly to Bunny CDN (Storage)
   let posterUrl = form.poster || "";
   if (posterFile) {
     if (onVideoProgress) onVideoProgress(15);
     posterUrl = await uploadToBunny(posterFile, typeFolder, "posters");
   }
 
-  // 3. Upload Main Banner directly to Bunny CDN
+  // 3. Upload Main Banner directly to Bunny CDN (Storage)
   let bannerUrl = form.banner || "";
   if (bannerFile) {
     if (onVideoProgress) onVideoProgress(25);
     bannerUrl = await uploadToBunny(bannerFile, typeFolder, "banners");
   }
 
-  // 4. Upload Trailer directly to Bunny CDN
+  // 4. Upload Trailer directly to Bunny Stream
   let trailerUrl = form.trailerUrl || "";
   if (trailerFile) {
-    trailerUrl = await uploadToBunny(trailerFile, typeFolder, "trailers", (percent) => {
-      const scaledPercent = 25 + Math.round(percent * 0.15); // maps to 25%→40% range
-      if (onTrailerProgress) onTrailerProgress(scaledPercent);
-    });
+    trailerUrl = await uploadToBunnyStream(
+      trailerFile,
+      `${form.title || "Content"} Trailer`,
+      typeFolder,
+      (percent) => {
+        const scaledPercent = 25 + Math.round(percent * 0.15); // maps to 25%→40% range
+        if (onTrailerProgress) onTrailerProgress(scaledPercent);
+      }
+    );
   }
 
-  // 5. Upload the movie video directly to Bunny CDN
+  // 5. Upload the movie video directly to Bunny Stream
   let videoUrl = form.videoUrl || "";
   if (isMovie && videoFile) {
     // Pipe the progress event to onVideoProgress (between 50% and 100%)
-    videoUrl = await uploadToBunny(videoFile, typeFolder, "videos", (percent) => {
-      const scaledPercent = 50 + Math.round(percent / 2);
-      if (onVideoProgress) onVideoProgress(scaledPercent);
-    });
+    videoUrl = await uploadToBunnyStream(
+      videoFile,
+      form.title || "Movie Video",
+      "movies",
+      (percent) => {
+        const scaledPercent = 50 + Math.round(percent / 2);
+        if (onVideoProgress) onVideoProgress(scaledPercent);
+      }
+    );
   } else if (onVideoProgress) {
     onVideoProgress(100);
   }
@@ -138,6 +148,7 @@ export const createContent = async ({
   // 7. Upload individual episodes for series and microdramas.
   if (!isMovie && form.seasons.length > 0) {
     const seriesId = form.type === "series" ? response.data.series._id : response.data.microdrama._id;
+    const streamType = form.type === "microdrama" ? "microdramas" : "series";
 
     let totalEpisodes = 0;
     form.seasons.forEach((season) => {
@@ -154,12 +165,12 @@ export const createContent = async ({
         // Track episode uploading status
         const epNum = currentEpisodeNum++;
 
-        // Direct upload episode video file
+        // Direct upload episode video file to Bunny Stream
         if (episodeVideoFiles[episodeKey]) {
-          epVideoUrl = await uploadToBunny(
+          epVideoUrl = await uploadToBunnyStream(
             episodeVideoFiles[episodeKey],
-            "episodes",
-            "videos",
+            ep.title || `${form.title || "Series"} S${season.seasonNumber || 1}E${ei + 1}`,
+            streamType,
             (percent) => {
               if (onEpisodeProgress) {
                 // Video takes up 80% of the upload progress
@@ -170,7 +181,7 @@ export const createContent = async ({
           );
         }
 
-        // Direct upload episode thumbnail
+        // Direct upload episode thumbnail to Bunny Storage
         if (episodeThumbnailFiles[episodeKey]) {
           epThumbnailUrl = await uploadToBunny(
             episodeThumbnailFiles[episodeKey],
