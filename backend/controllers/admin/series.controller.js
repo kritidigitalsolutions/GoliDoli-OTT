@@ -254,26 +254,26 @@ const updateSeries = async (req, res) => {
     if (req.files?.poster?.[0]) {
       await deleteMedia(series.poster);
       series.poster = getMediaUrl(req.files.poster[0]);
-    } else if (req.body.posterUrl !== undefined) {
-      series.poster = req.body.posterUrl;
-    } else if (req.body.poster !== undefined) {
-      series.poster = req.body.poster;
+    } else if (req.body.posterUrl !== undefined && typeof req.body.posterUrl === "string" && req.body.posterUrl.trim() !== "") {
+      series.poster = req.body.posterUrl.trim();
+    } else if (req.body.poster !== undefined && typeof req.body.poster === "string" && req.body.poster.trim() !== "") {
+      series.poster = req.body.poster.trim();
     }
 
     if (req.files?.banner?.[0]) {
       await deleteMedia(series.banner);
       series.banner = getMediaUrl(req.files.banner[0]);
-    } else if (req.body.bannerUrl !== undefined) {
-      series.banner = req.body.bannerUrl;
-    } else if (req.body.banner !== undefined) {
-      series.banner = req.body.banner;
+    } else if (req.body.bannerUrl !== undefined && typeof req.body.bannerUrl === "string" && req.body.bannerUrl.trim() !== "") {
+      series.banner = req.body.bannerUrl.trim();
+    } else if (req.body.banner !== undefined && typeof req.body.banner === "string" && req.body.banner.trim() !== "") {
+      series.banner = req.body.banner.trim();
     }
 
     if (req.files?.trailer?.[0]) {
       await deleteMedia(series.trailerUrl);
       series.trailerUrl = getMediaUrl(req.files.trailer[0]);
-    } else if (req.body.trailerUrl !== undefined) {
-      series.trailerUrl = req.body.trailerUrl;
+    } else if (req.body.trailerUrl !== undefined && typeof req.body.trailerUrl === "string" && req.body.trailerUrl.trim() !== "") {
+      series.trailerUrl = req.body.trailerUrl.trim();
     }
 
 

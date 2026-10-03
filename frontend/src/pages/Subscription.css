@@ -266,3 +266,37 @@ body.light .sub-detail-item {
   margin: 0 auto !important;
   width: 100% !important;
 }
+
+/* ── Actions Column Alignment ── */
+.sub-actions-col {
+  width: 110px !important;
+  min-width: 110px !important;
+  max-width: 110px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 10px 8px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+.sub-actions-wrap {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  vertical-align: middle !important;
+}
+
+.sub-actions-wrap .icon-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}

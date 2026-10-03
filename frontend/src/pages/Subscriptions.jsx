@@ -10,6 +10,7 @@ import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import API, { API_BASE_URL } from "../api/axios";
+import { getInitialsAvatar } from "../utils/avatar";
 import { useToast } from "../App";
 import "./Dashboard.css";
 import "./Subscription.css";
@@ -559,7 +560,7 @@ export default function SubscriptionPage() {
                     <th>Validity Period</th>
                     <th>Status</th>
                     <th>Payment Ref</th>
-                    <th style={{ textAlign: "right", paddingRight: 16 }}>Actions</th>
+                    <th className="sub-actions-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -579,7 +580,7 @@ export default function SubscriptionPage() {
                     paginatedSubs.map((sub, i) => {
                       const itemIndex = (currentPage - 1) * ITEMS_PER_PAGE + i + 1;
                       const avatarSrc = sub.user?.profileImage || sub.user?.profilePic || sub.user?.avatar;
-                      const fallbackAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(sub.user?._id || sub.user?.email || sub._id)}`;
+                      const fallbackAvatar = getInitialsAvatar(sub.user?.name || sub.user?.email || "Subscriber");
                       const now = new Date();
                       const endDate = sub.endDate ? new Date(sub.endDate) : null;
                       const isPending = sub.status === "pending";
@@ -722,17 +723,17 @@ export default function SubscriptionPage() {
                           </td>
 
                           {/* Action Buttons */}
-                          <td>
-                            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
+                          <td className="sub-actions-col">
+                            <div className="sub-actions-wrap">
                               {/* View Details */}
                               <button
                                 className="icon-btn view"
                                 onClick={() => setViewSub(sub)}
                                 title="View Subscription Details"
+                                aria-label="View Subscription Details"
                               >
                                 <Eye size={15} />
                               </button>
-
 
                               {/* Cancel Subscription if active, else delete */}
                               {isActive ? (
@@ -740,6 +741,7 @@ export default function SubscriptionPage() {
                                   className="icon-btn del"
                                   onClick={() => handleCancelSubscription(sub)}
                                   title="Cancel Subscription"
+                                  aria-label="Cancel Subscription"
                                 >
                                   <Ban size={15} />
                                 </button>
@@ -748,6 +750,7 @@ export default function SubscriptionPage() {
                                   className="icon-btn del"
                                   onClick={() => handleDeleteSubscription(sub)}
                                   title="Delete Subscription Record"
+                                  aria-label="Delete Subscription Record"
                                 >
                                   <Trash2 size={15} />
                                 </button>
@@ -835,12 +838,12 @@ export default function SubscriptionPage() {
                 src={
                   viewSub.user?.profileImage || viewSub.user?.profilePic || viewSub.user?.avatar
                     ? getImageUrl(viewSub.user?.profileImage || viewSub.user?.profilePic || viewSub.user?.avatar)
-                    : `https://i.pravatar.cc/150?u=${encodeURIComponent(viewSub.user?._id || viewSub._id)}`
+                    : getInitialsAvatar(viewSub.user?.name || viewSub.user?.email || "Subscriber")
                 } 
                 alt={viewSub.user?.name || "Subscriber"}
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = `https://i.pravatar.cc/150?u=${encodeURIComponent(viewSub.user?._id || viewSub._id)}`;
+                  e.target.src = getInitialsAvatar(viewSub.user?.name || viewSub.user?.email || "Subscriber");
                 }}
               />
               <div className="up-min-user-meta">

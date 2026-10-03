@@ -533,9 +533,11 @@ export default function Content() {
         if (c._previewUrl) URL.revokeObjectURL(c._previewUrl);
       });
     }
+    if (uploadData?.posterPreview && uploadData.posterPreview.startsWith("blob:")) URL.revokeObjectURL(uploadData.posterPreview);
+    if (uploadData?.bannerPreview && uploadData.bannerPreview.startsWith("blob:")) URL.revokeObjectURL(uploadData.bannerPreview);
     setSelectedItem(null); setModalMode(null); setEditData(null);
     setSelectedEpisode(null);
-    setUploadData({ poster: null, banner: null, trailer: null, video: null });
+    setUploadData({ poster: null, banner: null, trailer: null, video: null, posterUrl: "", bannerUrl: "", trailerUrl: "", videoUrl: "" });
     setCastFiles({});
   };
 
@@ -557,8 +559,19 @@ export default function Content() {
   };
 
   /* ===================== UPLOAD ===================== */
-  const handleUploadChange = (field, file) => {
-    setUploadData(prev => ({ ...prev, [field]: file }));
+  const handleUploadChange = (field, fileOrValue) => {
+    setUploadData(prev => {
+      const updated = { ...prev, [field]: fileOrValue };
+      if (field === "poster" && fileOrValue instanceof File) {
+        if (prev.posterPreview && prev.posterPreview.startsWith("blob:")) URL.revokeObjectURL(prev.posterPreview);
+        updated.posterPreview = URL.createObjectURL(fileOrValue);
+      }
+      if (field === "banner" && fileOrValue instanceof File) {
+        if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) URL.revokeObjectURL(prev.bannerPreview);
+        updated.bannerPreview = URL.createObjectURL(fileOrValue);
+      }
+      return updated;
+    });
   };
 
 
@@ -571,10 +584,14 @@ export default function Content() {
     setUploadPhase("saving");
 
     try {
-      const typeFolder = contentType === "movies" ? "movies" :
+      const itemType = selectedItem?._type || (
+        contentType === "movies" ? "movie" :
         contentType === "series" ? "series" :
-          contentType === "microdramas" ? "microdramas" :
-            "movies";
+        contentType === "microdramas" ? "microdrama" : "movie"
+      );
+      const route = itemType === "series" ? "series" :
+        itemType === "microdrama" ? "microdramas" : "movies";
+      const typeFolder = route;
 
       // 1. Direct upload cast image files and update payload URLs
       const invalidCast = (editData.cast || []).find((c, idx) => {
@@ -604,19 +621,19 @@ export default function Content() {
       }
 
       // 2. Direct upload poster
-      let posterUrl = uploadData.posterUrl || "";
+      let posterUrl = uploadData.posterUrl !== undefined ? uploadData.posterUrl : (editData.poster || selectedItem?.poster || "");
       if (uploadData.poster) {
         posterUrl = await uploadToBunny(uploadData.poster, typeFolder, "posters");
       }
 
       // 3. Direct upload banner
-      let bannerUrl = uploadData.bannerUrl || "";
+      let bannerUrl = uploadData.bannerUrl !== undefined ? uploadData.bannerUrl : (editData.banner || selectedItem?.banner || "");
       if (uploadData.banner) {
         bannerUrl = await uploadToBunny(uploadData.banner, typeFolder, "banners");
       }
 
       // 4. Direct upload trailer
-      let trailerUrl = uploadData.trailerUrl || "";
+      let trailerUrl = uploadData.trailerUrl !== undefined ? uploadData.trailerUrl : (editData.trailerUrl || selectedItem?.trailerUrl || "");
       if (uploadData.trailer) {
         trailerUrl = await uploadToBunnyStream(
           uploadData.trailer,
@@ -627,8 +644,8 @@ export default function Content() {
       }
 
       // 5. Direct upload video (movies only)
-      let videoUrl = uploadData.videoUrl || "";
-      if (contentType === "movies" && uploadData.video) {
+      let videoUrl = uploadData.videoUrl !== undefined ? uploadData.videoUrl : (editData.videoUrl || selectedItem?.videoUrl || "");
+      if (itemType === "movie" && uploadData.video) {
         videoUrl = await uploadToBunnyStream(
           uploadData.video,
           editData.title || "Movie Video",
@@ -663,16 +680,13 @@ export default function Content() {
       if (editData.category) formData.append("category", JSON.stringify(editData.category));
 
       formData.append("cast", JSON.stringify(castPayload));
-      formData.append("poster", posterUrl);
-      formData.append("banner", bannerUrl);
-      formData.append("trailerUrl", trailerUrl);
-      if (contentType === "movies") {
+      if (posterUrl) formData.append("poster", posterUrl);
+      if (bannerUrl) formData.append("banner", bannerUrl);
+      if (trailerUrl) formData.append("trailerUrl", trailerUrl);
+      if (itemType === "movie" && videoUrl) {
         formData.append("videoUrl", videoUrl);
       }
 
-      const route = contentType === "movies" ? "movies" :
-        contentType === "series" ? "series" :
-          "microdramas";
       await API.patch(`/admin/${route}/${selectedItem._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -848,10 +862,15 @@ export default function Content() {
     );
     if (!confirmed) return;
     try {
-      if (contentType === "movies") await API.delete(`/admin/movies/${item._id}`);
-      else if (contentType === "series") await API.delete(`/admin/series/${item._id}`);
-      else if (contentType === "microdramas") await API.delete(`/admin/microdramas/${item._id}`);
-      else if (contentType === "movies") await API.delete(`/admin/movies/${item._id}`);
+      const itemType = item?._type || (
+        contentType === "movies" ? "movie" :
+        contentType === "series" ? "series" :
+        contentType === "microdramas" ? "microdrama" : "movie"
+      );
+      const deleteRoute = itemType === "series" ? "series" :
+        itemType === "microdrama" ? "microdramas" : "movies";
+
+      await API.delete(`/admin/${deleteRoute}/${item._id}`);
 
       showCustomAlert("Item deleted successfully", "Deleted", "success");
       fetchData();
@@ -2091,46 +2110,197 @@ export default function Content() {
                       \u26A0\uFE0F Video upload is locked until release. Trailer and images are allowed.
                     </p>
                   )}
-                  <div className="form-grid-2">
-                    <div className="form-row">
-                      <label className="form-label">Poster</label>
-                      <div className="file-input-wrapper">
-                        <input type="file" accept="image/*" id="edit-poster" className="file-input" onChange={e => handleUploadChange("poster", e.target.files[0])} />
-                        <label htmlFor="edit-poster" className="file-label">{uploadData.poster ? `\u2713 ${uploadData.poster.name}` : "Change Poster"}</label>
-                      </div>
-                      <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" value={uploadData.posterUrl} onChange={e => handleUploadChange("posterUrl", e.target.value)} />
-                    </div>
-                    <div className="form-row">
-                      <label className="form-label">Banner</label>
-                      <div className="file-input-wrapper">
-                        <input type="file" accept="image/*" id="edit-banner" className="file-input" onChange={e => handleUploadChange("banner", e.target.files[0])} />
-                        <label htmlFor="edit-banner" className="file-label">{uploadData.banner ? `\u2713 ${uploadData.banner.name}` : "Change Banner"}</label>
-                      </div>
-                      <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" value={uploadData.bannerUrl} onChange={e => handleUploadChange("bannerUrl", e.target.value)} />
-                    </div>
-                    {contentType !== "microdramas" && (
-                      <div className="form-row">
-                        <label className="form-label">Trailer</label>
-                        <div className="file-input-wrapper">
-                          <input type="file" accept="video/*" id="edit-trailer" className="file-input" onChange={e => handleUploadChange("trailer", e.target.files[0])} />
-                          <label htmlFor="edit-trailer" className="file-label">{uploadData.trailer ? `✓ ${uploadData.trailer.name}` : "Change Trailer"}</label>
+                  {(() => {
+                    const posterPreview = uploadData.posterPreview || (uploadData.posterUrl !== undefined ? uploadData.posterUrl : (editData?.poster || selectedItem?.poster || ""));
+                    const bannerPreview = uploadData.bannerPreview || (uploadData.bannerUrl !== undefined ? uploadData.bannerUrl : (editData?.banner || selectedItem?.banner || ""));
+                    const trailerPreview = uploadData.trailerUrl !== undefined ? uploadData.trailerUrl : (editData?.trailerUrl || selectedItem?.trailerUrl || "");
+                    const videoPreview = uploadData.videoUrl !== undefined ? uploadData.videoUrl : (editData?.videoUrl || selectedItem?.videoUrl || "");
+
+                    return (
+                      <div className="form-grid-2">
+                        {/* Poster */}
+                        <div className="form-row">
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                            <label className="form-label" style={{ margin: 0 }}>Poster</label>
+                            {posterPreview && (
+                              <span style={{ fontSize: "0.72rem", color: "var(--primary)", fontWeight: 600 }}>
+                                {uploadData.poster ? "✓ New File Selected" : "✓ Saved Poster"}
+                              </span>
+                            )}
+                          </div>
+                          {posterPreview && (
+                            <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: "var(--bg3)", borderRadius: 8, border: "1px solid var(--border)" }}>
+                              <img
+                                src={getFullUrl(posterPreview)}
+                                alt="Poster Preview"
+                                style={{ width: 44, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", flexShrink: 0 }}
+                                onError={(e) => { e.target.style.display = "none"; }}
+                              />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {uploadData.poster ? uploadData.poster.name : posterPreview}
+                                </div>
+                                <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                                  {uploadData.poster ? "Ready to upload to BunnyCDN" : "Currently linked poster asset"}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          <div className="file-input-wrapper">
+                            <input type="file" accept="image/*" id="edit-poster" className="file-input" onChange={e => handleUploadChange("poster", e.target.files[0])} />
+                            <label htmlFor="edit-poster" className="file-label">
+                              {uploadData.poster ? `✓ ${uploadData.poster.name}` : (posterPreview ? "Replace Poster File" : "Choose Poster File")}
+                            </label>
+                          </div>
+                          <input
+                            className="form-input"
+                            style={{ marginTop: 8 }}
+                            placeholder="Or Paste URL"
+                            value={uploadData.posterUrl !== undefined ? uploadData.posterUrl : (editData?.poster || "")}
+                            onChange={e => handleUploadChange("posterUrl", e.target.value)}
+                          />
                         </div>
-                        <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" value={uploadData.trailerUrl} onChange={e => handleUploadChange("trailerUrl", e.target.value)} />
-                      </div>
-                    )}
-                    {contentType === "movies" && (
-                      <div className="form-row">
-                        <label className="form-label" style={{ opacity: isLocked(selectedItem) ? 0.5 : 1 }}>Full {contentType === "movies" ? "Movie" : "Film"} Video</label>
-                        <div className="file-input-wrapper">
-                          <input type="file" accept="video/*" id="edit-video" className="file-input" disabled={isLocked(selectedItem)} onChange={e => handleUploadChange("video", e.target.files[0])} />
-                          <label htmlFor="edit-video" className={`file-label ${isLocked(selectedItem) ? "file-label-locked" : ""}`}>
-                            {isLocked(selectedItem) ? "≡ƒöÆ Locked" : uploadData.video ? `\u2713 ${uploadData.video.name}` : "Change Video"}
-                          </label>
+
+                        {/* Banner */}
+                        <div className="form-row">
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                            <label className="form-label" style={{ margin: 0 }}>Banner</label>
+                            {bannerPreview && (
+                              <span style={{ fontSize: "0.72rem", color: "var(--primary)", fontWeight: 600 }}>
+                                {uploadData.banner ? "✓ New File Selected" : "✓ Saved Banner"}
+                              </span>
+                            )}
+                          </div>
+                          {bannerPreview && (
+                            <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: "var(--bg3)", borderRadius: 8, border: "1px solid var(--border)" }}>
+                              <img
+                                src={getFullUrl(bannerPreview)}
+                                alt="Banner Preview"
+                                style={{ width: 88, height: 48, objectFit: "cover", borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", flexShrink: 0 }}
+                                onError={(e) => { e.target.style.display = "none"; }}
+                              />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {uploadData.banner ? uploadData.banner.name : bannerPreview}
+                                </div>
+                                <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                                  {uploadData.banner ? "Ready to upload to BunnyCDN" : "Currently linked banner asset"}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          <div className="file-input-wrapper">
+                            <input type="file" accept="image/*" id="edit-banner" className="file-input" onChange={e => handleUploadChange("banner", e.target.files[0])} />
+                            <label htmlFor="edit-banner" className="file-label">
+                              {uploadData.banner ? `✓ ${uploadData.banner.name}` : (bannerPreview ? "Replace Banner File" : "Choose Banner File")}
+                            </label>
+                          </div>
+                          <input
+                            className="form-input"
+                            style={{ marginTop: 8 }}
+                            placeholder="Or Paste URL"
+                            value={uploadData.bannerUrl !== undefined ? uploadData.bannerUrl : (editData?.banner || "")}
+                            onChange={e => handleUploadChange("bannerUrl", e.target.value)}
+                          />
                         </div>
-                        <input className="form-input" style={{ marginTop: 8 }} placeholder="Or Paste URL" disabled={isLocked(selectedItem)} value={uploadData.videoUrl} onChange={e => handleUploadChange("videoUrl", e.target.value)} />
+
+                        {/* Trailer */}
+                        {(contentType !== "microdramas" && selectedItem?._type !== "microdrama") && (
+                          <div className="form-row">
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                              <label className="form-label" style={{ margin: 0 }}>Trailer</label>
+                              {trailerPreview && (
+                                <span style={{ fontSize: "0.72rem", color: "var(--primary)", fontWeight: 600 }}>
+                                  {uploadData.trailer ? "✓ New File Selected" : "✓ Active Trailer"}
+                                </span>
+                              )}
+                            </div>
+                            {trailerPreview && (
+                              <div style={{ marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "var(--bg3)", borderRadius: 8, border: "1px solid var(--border)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1, marginRight: 8 }}>
+                                  <Film size={16} style={{ color: "var(--primary)", flexShrink: 0 }} />
+                                  <span style={{ fontSize: "0.78rem", color: "var(--text-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {uploadData.trailer ? uploadData.trailer.name : trailerPreview}
+                                  </span>
+                                </div>
+                                {!uploadData.trailer && (
+                                  <a
+                                    href={getFullUrl(trailerPreview)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ fontSize: "0.72rem", color: "var(--primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: 4, flexShrink: 0, textDecoration: "none" }}
+                                  >
+                                    <Eye size={12} /> Preview
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                            <div className="file-input-wrapper">
+                              <input type="file" accept="video/*" id="edit-trailer" className="file-input" onChange={e => handleUploadChange("trailer", e.target.files[0])} />
+                              <label htmlFor="edit-trailer" className="file-label">
+                                {uploadData.trailer ? `✓ ${uploadData.trailer.name}` : (trailerPreview ? "Replace Trailer File" : "Choose Trailer Video")}
+                              </label>
+                            </div>
+                            <input
+                              className="form-input"
+                              style={{ marginTop: 8 }}
+                              placeholder="Or Paste URL"
+                              value={uploadData.trailerUrl !== undefined ? uploadData.trailerUrl : (editData?.trailerUrl || "")}
+                              onChange={e => handleUploadChange("trailerUrl", e.target.value)}
+                            />
+                          </div>
+                        )}
+
+                        {/* Full Movie Video */}
+                        {(contentType === "movies" || selectedItem?._type === "movie") && (
+                          <div className="form-row">
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                              <label className="form-label" style={{ margin: 0, opacity: isLocked(selectedItem) ? 0.5 : 1 }}>Full Movie Video</label>
+                              {videoPreview && (
+                                <span style={{ fontSize: "0.72rem", color: "var(--emerald, #10B981)", fontWeight: 600 }}>
+                                  {uploadData.video ? "✓ New Video Selected" : "✓ Stream Video Configured"}
+                                </span>
+                              )}
+                            </div>
+                            {videoPreview && (
+                              <div style={{ marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "var(--bg3)", borderRadius: 8, border: "1px solid var(--border)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1, marginRight: 8 }}>
+                                  <Video size={16} style={{ color: "#10B981", flexShrink: 0 }} />
+                                  <span style={{ fontSize: "0.78rem", color: "var(--text-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {uploadData.video ? uploadData.video.name : videoPreview}
+                                  </span>
+                                </div>
+                                {!uploadData.video && (
+                                  <a
+                                    href={getFullUrl(videoPreview)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ fontSize: "0.72rem", color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", gap: 4, flexShrink: 0, textDecoration: "none" }}
+                                  >
+                                    <Eye size={12} /> Test Stream
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                            <div className="file-input-wrapper">
+                              <input type="file" accept="video/*" id="edit-video" className="file-input" disabled={isLocked(selectedItem)} onChange={e => handleUploadChange("video", e.target.files[0])} />
+                              <label htmlFor="edit-video" className={`file-label ${isLocked(selectedItem) ? "file-label-locked" : ""}`}>
+                                {isLocked(selectedItem) ? "🔒 Locked" : uploadData.video ? `✓ ${uploadData.video.name}` : (videoPreview ? "Replace Video File" : "Choose Video File")}
+                              </label>
+                            </div>
+                            <input
+                              className="form-input"
+                              style={{ marginTop: 8 }}
+                              placeholder="Or Paste URL"
+                              disabled={isLocked(selectedItem)}
+                              value={uploadData.videoUrl !== undefined ? uploadData.videoUrl : (editData?.videoUrl || "")}
+                              onChange={e => handleUploadChange("videoUrl", e.target.value)}
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -2270,9 +2440,9 @@ export default function Content() {
                   <div className="side-drawer-info">
                     <div className="side-drawer-badges-row">
                       <span className="side-drawer-type-badge">
-                        {contentType === "movies" ? "MOVIE" :
-                          contentType === "microdramas" ? "MICRODRAMA" :
-                            contentType === "series" ? "SERIES" : "CONTENT"}
+                        {(selectedItem?._type === "movie" || contentType === "movies") ? "MOVIE" :
+                          (selectedItem?._type === "microdrama" || contentType === "microdramas") ? "MICRODRAMA" :
+                            (selectedItem?._type === "series" || contentType === "series") ? "SERIES" : "CONTENT"}
                       </span>
                       {selectedItem.isPremium && <span className="vp-pill vp-pill-gold">★ Premium</span>}
                       {selectedItem.isPopular && <span className="vp-pill vp-pill-popular"><Flame size={11} style={{ marginRight: 3, verticalAlign: "middle" }} />Popular</span>}
@@ -2387,7 +2557,7 @@ export default function Content() {
               <div className="side-drawer-foot">
                 <button
                   className="btn btn-primary"
-                  onClick={() => { setEditData({ ...selectedItem, cast: selectedItem.cast ? [...selectedItem.cast.map(c => ({ ...c }))] : [] }); setModalMode("edit"); }}
+                  onClick={() => openEdit(selectedItem)}
                   style={{ gap: 8 }}
                 >
                   <Edit2 size={15} /> Edit Content

@@ -251,26 +251,36 @@ const updateMicrodramaEpisode =
       // VIDEO
       const video = req.files?.video?.[0] || req.files?.videoUrl?.[0];
       if (video) {
-
         deleteMedia(
           episode.videoUrl
         );
-
         episode.videoUrl =
           getMediaUrl(video);
+      } else if (req.body.videoUrl !== undefined) {
+        if (episode.videoUrl && req.body.videoUrl && req.body.videoUrl !== episode.videoUrl) {
+          deleteMedia(episode.videoUrl);
+        }
+        episode.videoUrl = req.body.videoUrl;
       }
-
 
       // THUMBNAIL
       const thumbnail = req.files?.thumbnail?.[0] || req.files?.thumbnailUrl?.[0];
       if (thumbnail) {
-
         deleteMedia(
           episode.thumbnail
         );
-
         episode.thumbnail =
           getMediaUrl(thumbnail);
+      } else if (req.body.thumbnailUrl !== undefined) {
+        if (episode.thumbnail && req.body.thumbnailUrl && req.body.thumbnailUrl !== episode.thumbnail) {
+          deleteMedia(episode.thumbnail);
+        }
+        episode.thumbnail = req.body.thumbnailUrl;
+      } else if (req.body.thumbnail !== undefined) {
+        if (episode.thumbnail && req.body.thumbnail && req.body.thumbnail !== episode.thumbnail) {
+          deleteMedia(episode.thumbnail);
+        }
+        episode.thumbnail = req.body.thumbnail;
       }
 
       await episode.save();

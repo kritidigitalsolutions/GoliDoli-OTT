@@ -10,6 +10,7 @@ import {
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getInitialsAvatar } from "../utils/avatar";
 import "./Dashboard.css";
 
 export default function UsersPage() {
@@ -509,7 +510,7 @@ export default function UsersPage() {
                     <th>Auth Provider</th>
                     <th>Plan</th>
                     <th>Status</th>
-                    <th style={{ textAlign: "right", paddingRight: 16 }}>Actions</th>
+                    <th style={{ width: "160px", minWidth: "160px", textAlign: "center", verticalAlign: "middle" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -526,7 +527,7 @@ export default function UsersPage() {
                     users.map((u, i) => {
                       const itemIndex = (page - 1) * limit + i + 1;
                       const avatarSrc = u.profileImage || u.profilePic || u.avatar || u.photo;
-                      const fallbackAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(u._id || u.email || u.name || i)}`;
+                      const fallbackAvatar = getInitialsAvatar(u.name || u.email || "User");
                       const isSubscribed = u.plan && u.plan !== "Free";
 
                       return (
@@ -597,8 +598,8 @@ export default function UsersPage() {
                               {u.status === "Blocked" ? "Blocked" : "Active"}
                             </span>
                           </td>
-                          <td>
-                            <div className="tbl-actions" style={{ justifyContent: "flex-end" }}>
+                          <td style={{ width: "160px", minWidth: "160px", textAlign: "center", verticalAlign: "middle", padding: "10px 8px" }}>
+                            <div className="tbl-actions" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", flexWrap: "nowrap", margin: "0 auto", width: "100%" }}>
                               <button 
                                 className="icon-btn view" 
                                 onClick={() => setSelected(u)} 
@@ -703,12 +704,12 @@ export default function UsersPage() {
                 src={
                   selected.profileImage || selected.profilePic || selected.avatar || selected.photo
                     ? getImageUrl(selected.profileImage || selected.profilePic || selected.avatar || selected.photo)
-                    : `https://i.pravatar.cc/150?u=${encodeURIComponent(selected._id || selected.email || selected.name)}`
+                    : getInitialsAvatar(selected.name || selected.email)
                 } 
                 alt={selected.name || "User Profile"} 
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = `https://i.pravatar.cc/150?u=${encodeURIComponent(selected._id || selected.email || selected.name)}`;
+                  e.target.src = getInitialsAvatar(selected.name || selected.email);
                 }}
               />
               <div className="up-min-user-meta">
@@ -885,12 +886,12 @@ export default function UsersPage() {
                 src={
                   editingUser.profileImage || editingUser.profilePic || editingUser.avatar || editingUser.photo
                     ? getImageUrl(editingUser.profileImage || editingUser.profilePic || editingUser.avatar || editingUser.photo)
-                    : `https://i.pravatar.cc/150?u=${encodeURIComponent(editingUser._id || editingUser.email || editingUser.name)}`
+                    : getInitialsAvatar(editingUser.name || editingUser.email)
                 } 
                 alt={editingUser.name || "User"} 
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = `https://i.pravatar.cc/150?u=${encodeURIComponent(editingUser._id || editingUser.email || editingUser.name)}`;
+                  e.target.src = getInitialsAvatar(editingUser.name || editingUser.email);
                 }}
               />
               <div className="up-min-user-meta">

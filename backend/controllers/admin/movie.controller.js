@@ -421,33 +421,33 @@ const updateMovie = async (req, res) => {
     if (req.files?.poster?.[0]) {
       await deleteMedia(movie.poster);
       movie.poster = getMediaUrl(req.files.poster[0]);
-    } else if (req.body.posterUrl !== undefined) {
-      movie.poster = req.body.posterUrl;
-    } else if (req.body.poster !== undefined) {
-      movie.poster = req.body.poster;
+    } else if (req.body.posterUrl !== undefined && typeof req.body.posterUrl === "string" && req.body.posterUrl.trim() !== "") {
+      movie.poster = req.body.posterUrl.trim();
+    } else if (req.body.poster !== undefined && typeof req.body.poster === "string" && req.body.poster.trim() !== "") {
+      movie.poster = req.body.poster.trim();
     }
 
     if (req.files?.banner?.[0]) {
       await deleteMedia(movie.banner);
       movie.banner = getMediaUrl(req.files.banner[0]);
-    } else if (req.body.bannerUrl !== undefined) {
-      movie.banner = req.body.bannerUrl;
-    } else if (req.body.banner !== undefined) {
-      movie.banner = req.body.banner;
+    } else if (req.body.bannerUrl !== undefined && typeof req.body.bannerUrl === "string" && req.body.bannerUrl.trim() !== "") {
+      movie.banner = req.body.bannerUrl.trim();
+    } else if (req.body.banner !== undefined && typeof req.body.banner === "string" && req.body.banner.trim() !== "") {
+      movie.banner = req.body.banner.trim();
     }
 
     if (req.files?.trailer?.[0]) {
       await deleteMedia(movie.trailerUrl);
       movie.trailerUrl = getMediaUrl(req.files.trailer[0]);
-    } else if (req.body.trailerUrl !== undefined) {
-      movie.trailerUrl = req.body.trailerUrl;
+    } else if (req.body.trailerUrl !== undefined && typeof req.body.trailerUrl === "string" && req.body.trailerUrl.trim() !== "") {
+      movie.trailerUrl = req.body.trailerUrl.trim();
     }
 
     if (req.files?.video?.[0]) {
       await deleteMedia(movie.videoUrl);
       movie.videoUrl = getMediaUrl(req.files.video[0]);
-    } else if (req.body.videoUrl !== undefined) {
-      movie.videoUrl = req.body.videoUrl;
+    } else if (req.body.videoUrl !== undefined && typeof req.body.videoUrl === "string" && req.body.videoUrl.trim() !== "") {
+      movie.videoUrl = req.body.videoUrl.trim();
     }
 
 

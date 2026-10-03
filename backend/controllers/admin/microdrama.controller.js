@@ -356,33 +356,50 @@ const updateMicrodrama =
 
       // POSTER
       if (req.files?.poster?.[0]) {
-
         deleteMedia(drama.poster);
-
         drama.poster =
           getMediaUrl(req.files.poster[0]);
+      } else if (req.body.posterUrl !== undefined && typeof req.body.posterUrl === "string" && req.body.posterUrl.trim() !== "") {
+        if (drama.poster && req.body.posterUrl && req.body.posterUrl !== drama.poster) {
+          deleteMedia(drama.poster);
+        }
+        drama.poster = req.body.posterUrl.trim();
+      } else if (req.body.poster !== undefined && typeof req.body.poster === "string" && req.body.poster.trim() !== "") {
+        if (drama.poster && req.body.poster && req.body.poster !== drama.poster) {
+          deleteMedia(drama.poster);
+        }
+        drama.poster = req.body.poster.trim();
       }
-
 
       // BANNER
       if (req.files?.banner?.[0]) {
-
         deleteMedia(drama.banner);
-
         drama.banner =
           getMediaUrl(req.files.banner[0]);
+      } else if (req.body.bannerUrl !== undefined && typeof req.body.bannerUrl === "string" && req.body.bannerUrl.trim() !== "") {
+        if (drama.banner && req.body.bannerUrl && req.body.bannerUrl !== drama.banner) {
+          deleteMedia(drama.banner);
+        }
+        drama.banner = req.body.bannerUrl.trim();
+      } else if (req.body.banner !== undefined && typeof req.body.banner === "string" && req.body.banner.trim() !== "") {
+        if (drama.banner && req.body.banner && req.body.banner !== drama.banner) {
+          deleteMedia(drama.banner);
+        }
+        drama.banner = req.body.banner.trim();
       }
-
 
       // TRAILER
       if (req.files?.trailer?.[0]) {
-
         deleteMedia(
           drama.trailerUrl
         );
-
         drama.trailerUrl =
           getMediaUrl(req.files.trailer[0]);
+      } else if (req.body.trailerUrl !== undefined && typeof req.body.trailerUrl === "string" && req.body.trailerUrl.trim() !== "") {
+        if (drama.trailerUrl && req.body.trailerUrl && req.body.trailerUrl !== drama.trailerUrl) {
+          deleteMedia(drama.trailerUrl);
+        }
+        drama.trailerUrl = req.body.trailerUrl.trim();
       }
 
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import API from "../api/axios";
+import { getInitialsAvatar } from "../utils/avatar";
 import "./Dashboard.css";
 import {
   LayoutDashboard,
@@ -512,12 +513,12 @@ export default function Dashboard() {
                                 ? (u.profileImage || u.profilePic || u.avatar || u.photo).startsWith("http")
                                   ? (u.profileImage || u.profilePic || u.avatar || u.photo)
                                   : `https://golidoli.com/${u.profileImage || u.profilePic || u.avatar || u.photo}`
-                                : `https://i.pravatar.cc/150?u=${encodeURIComponent(u._id || u.email || u.name || i)}`
+                                : getInitialsAvatar(u.name || u.email || "User")
                             }
                             alt={u.name || "User"}
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = `https://i.pravatar.cc/150?u=${encodeURIComponent(u._id || u.email || u.name || i)}`;
+                              e.target.src = getInitialsAvatar(u.name || u.email || "User");
                             }}
                           />
                         </div>
