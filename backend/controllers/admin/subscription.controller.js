@@ -1,10 +1,7 @@
-const Subscription = require(
-  "../../models/subscription.model"
-);
-
-const User = require(
-  "../../models/user.model"
-);
+const mongoose = require("mongoose");
+const Subscription = require("../../models/subscription.model");
+const User = require("../../models/user.model");
+const Payment = require("../../models/payment.model");
 
 
 // =====================================================
@@ -344,8 +341,6 @@ exports.getAllSubscriptions = async (req, res) => {
     // auto cleanup
     await expireOldSubscriptions();
 
-    const Payment = require("../../models/payment.model");
-
     // 1. Fetch all Payment records populated with user, plan, and linked subscription
     const payments = await Payment.find()
       .populate("user", "name email phone profileImage")
@@ -359,6 +354,14 @@ exports.getAllSubscriptions = async (req, res) => {
       .populate("plan")
       .sort({ createdAt: -1 });
 
+    // Map subscriptions by transaction id / payment id for fast lookup
+    const subByTxn = new Map();
+    for (const s of subscriptions) {
+      if (s.subscriptionId) subByTxn.set(String(s.subscriptionId), s);
+      if (s.paymentId) subByTxn.set(String(s.paymentId), s);
+      subByTxn.set(String(s._id), s);
+    }
+
     const seenTxnIds = new Set();
     const formattedList = [];
 
@@ -367,7 +370,13 @@ exports.getAllSubscriptions = async (req, res) => {
       if (p.clientTxnId) seenTxnIds.add(String(p.clientTxnId));
       if (p.paymentId) seenTxnIds.add(String(p.paymentId));
 
-      const linkedSub = p.subscription;
+      const linkedSub = (p.subscription && p.subscription.startDate)
+        ? p.subscription
+        : (p.subscription ? subByTxn.get(String(p.subscription)) : null)
+          || (p.clientTxnId ? subByTxn.get(String(p.clientTxnId)) : null)
+          || (p.paymentId ? subByTxn.get(String(p.paymentId)) : null)
+          || null;
+
       let displayStatus = p.status;
       if (p.status === "success") {
         displayStatus = linkedSub ? linkedSub.status : "active";
@@ -442,7 +451,6 @@ exports.getAllSubscriptions = async (req, res) => {
 // =====================================================
 exports.getAllPayments = async (req, res) => {
   try {
-    const Payment = require("../../models/payment.model");
     const payments = await Payment.find()
       .populate("user", "name email phone profileImage")
       .populate("plan")
@@ -476,15 +484,44 @@ exports.extendSubscription = async (req, res) => {
       });
     }
 
-    const subscription = await Subscription.findById(req.params.id);
+    const targetId = req.params.id;
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(targetId);
+
+    let subscription = null;
+
+    if (isValidObjectId) {
+      subscription = await Subscription.findById(targetId);
+      if (!subscription) {
+        const payment = await Payment.findById(targetId);
+        if (payment) {
+          if (payment.subscription) {
+            subscription = await Subscription.findById(payment.subscription);
+          } else {
+            subscription = await Subscription.findOne({
+              $or: [
+                { subscriptionId: payment.clientTxnId },
+                { paymentId: payment.paymentId },
+              ].filter(Boolean),
+            });
+          }
+        }
+      }
+    }
+
     if (!subscription) {
-      return res.status(404).json({
-        success: false,
-        message: "Subscription not found",
+      subscription = await Subscription.findOne({
+        $or: [{ subscriptionId: targetId }, { paymentId: targetId }],
       });
     }
 
-    const currentEndDate = new Date(subscription.endDate);
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscription record not found",
+      });
+    }
+
+    const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : new Date();
     const baseDate = currentEndDate > new Date() ? currentEndDate : new Date();
     baseDate.setDate(baseDate.getDate() + Number(days));
 
@@ -511,16 +548,60 @@ exports.extendSubscription = async (req, res) => {
 // =====================================================
 exports.cancelSubscriptionAdmin = async (req, res) => {
   try {
-    const subscription = await Subscription.findById(req.params.id);
-    if (!subscription) {
+    const targetId = req.params.id;
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(targetId);
+
+    let subscription = null;
+    let payment = null;
+
+    if (isValidObjectId) {
+      subscription = await Subscription.findById(targetId);
+      payment = await Payment.findById(targetId);
+
+      if (payment && !subscription) {
+        if (payment.subscription) {
+          subscription = await Subscription.findById(payment.subscription);
+        } else {
+          subscription = await Subscription.findOne({
+            $or: [
+              { subscriptionId: payment.clientTxnId },
+              { paymentId: payment.paymentId },
+            ].filter(Boolean),
+          });
+        }
+      }
+    }
+
+    if (!subscription && !payment) {
+      payment = await Payment.findOne({
+        $or: [{ clientTxnId: targetId }, { paymentId: targetId }],
+      });
+      if (payment && payment.subscription) {
+        subscription = await Subscription.findById(payment.subscription);
+      }
+      if (!subscription) {
+        subscription = await Subscription.findOne({
+          $or: [{ subscriptionId: targetId }, { paymentId: targetId }],
+        });
+      }
+    }
+
+    if (!subscription && !payment) {
       return res.status(404).json({
         success: false,
-        message: "Subscription not found",
+        message: "Subscription record not found",
       });
     }
 
-    subscription.status = "cancelled";
-    await subscription.save();
+    if (subscription) {
+      subscription.status = "cancelled";
+      await subscription.save();
+    }
+
+    if (payment && !subscription) {
+      payment.status = "failed";
+      await payment.save();
+    }
 
     res.status(200).json({
       success: true,
@@ -537,15 +618,77 @@ exports.cancelSubscriptionAdmin = async (req, res) => {
 };
 
 // =====================================================
-// ❌ DELETE SUBSCRIPTION (ADMIN)
+// ❌ DELETE SUBSCRIPTION / PAYMENT RECORD (ADMIN)
 // =====================================================
 exports.deleteSubscriptionAdmin = async (req, res) => {
   try {
-    const subscription = await Subscription.findByIdAndDelete(req.params.id);
-    if (!subscription) {
+    const targetId = req.params.id;
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(targetId);
+
+    let deleted = false;
+
+    if (isValidObjectId) {
+      // 1. Check if ID exists in Payment collection
+      const payment = await Payment.findById(targetId);
+      if (payment) {
+        // Also delete any linked subscription doc
+        if (payment.subscription) {
+          await Subscription.findByIdAndDelete(payment.subscription);
+        }
+        if (payment.clientTxnId || payment.paymentId) {
+          await Subscription.deleteMany({
+            $or: [
+              { subscriptionId: payment.clientTxnId },
+              { paymentId: payment.paymentId },
+            ].filter(Boolean),
+          });
+        }
+        await Payment.findByIdAndDelete(payment._id);
+        deleted = true;
+      }
+
+      // 2. Check if ID exists in Subscription collection
+      const subscription = await Subscription.findById(targetId);
+      if (subscription) {
+        // Also delete any linked payment doc
+        await Payment.deleteMany({
+          $or: [
+            { subscription: subscription._id },
+            ...(subscription.subscriptionId ? [{ clientTxnId: subscription.subscriptionId }] : []),
+            ...(subscription.paymentId ? [{ paymentId: subscription.paymentId }] : []),
+          ],
+        });
+        await Subscription.findByIdAndDelete(subscription._id);
+        deleted = true;
+      }
+    }
+
+    // 3. Fallback: try by transaction / payment string identifiers
+    if (!deleted) {
+      const payment = await Payment.findOne({
+        $or: [{ clientTxnId: targetId }, { paymentId: targetId }],
+      });
+      if (payment) {
+        if (payment.subscription) {
+          await Subscription.findByIdAndDelete(payment.subscription);
+        }
+        await Payment.findByIdAndDelete(payment._id);
+        deleted = true;
+      }
+
+      const subscription = await Subscription.findOne({
+        $or: [{ subscriptionId: targetId }, { paymentId: targetId }],
+      });
+      if (subscription) {
+        await Subscription.findByIdAndDelete(subscription._id);
+        deleted = true;
+      }
+    }
+
+    if (!deleted) {
       return res.status(404).json({
         success: false,
-        message: "Subscription not found",
+        message: "Subscription record not found",
       });
     }
 

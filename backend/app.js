@@ -43,6 +43,7 @@ const defaultAllowed = [
   "https://golidoli.com",
   "https://admin.golidoli.com",
   "http://www.golidoli.com",
+  "https://sage-praline-c605a4.netlify.app"
   
   
 
