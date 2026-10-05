@@ -21,7 +21,7 @@ const SABPAISA_CONFIG = {
   mode: isProduction ? "live" : "test",
   baseUrl: configuredBaseUrl,
   returnUrl:
-    (process.env.SABPAISA_RETURN_URL || "https://golidoli.com/payment/status").trim(),
+    (process.env.SABPAISA_RETURN_URL || "https://golidoli.com/subscription").trim(),
   webhookUrl:
     (process.env.SABPAISA_WEBHOOK_URL || "https://api.golidoli.com/api/payment/webhook").trim(),
   apiKey: (process.env.SABPAISA_API_KEY || "").trim(),
