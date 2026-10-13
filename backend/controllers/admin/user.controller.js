@@ -17,6 +17,7 @@ const Comment = require("../../models/comment.model");
 const AIReelWatch = require("../../models/aiReelWatch.model");
 const AIReelUserState = require("../../models/aiReelUserState.model");
 const AIReelFeedSession = require("../../models/aiReelFeedSession.model");
+const { cascadeDeleteUser } = require("../../services/userDeletion.service");
 
 
 // ========================================
@@ -153,82 +154,18 @@ exports.deleteUser = async (
 ) => {
     try {
         const userId = req.params.id;
-        const user = await User.findById(userId);
+        const result = await cascadeDeleteUser(userId);
 
-        if (!user) {
+        if (result.notFound) {
             return res.status(404).json({
                 success: false,
                 message: "User not found",
             });
         }
 
-        // 1. Delete user from User collection
-        await User.findByIdAndDelete(userId);
-
-        // 2. Cascade delete related collections:
-
-        // Subscription
-        await Subscription.deleteMany({ user: userId });
-
-        // Watchlist
-        await Watchlist.deleteMany({ user: userId });
-
-        // Support tickets and messages
-        const supportTickets = await SupportTicket.find({ user: userId });
-        const ticketIds = supportTickets.map(t => t._id);
-        await SupportMessage.deleteMany({ ticket: { $in: ticketIds } });
-        await SupportTicket.deleteMany({ user: userId });
-
-        // Ratings
-        await Rating.deleteMany({ user: userId });
-
-
-
-        // Interactions (likes, dislikes, follows, bookmarks)
-        await Interaction.deleteMany({ user: userId });
-
-
-
-        // Notifications
-        await Notification.deleteMany({ targetUser: userId });
-        await Notification.updateMany(
-            {},
-            {
-                $pull: {
-                    readBy: { user: userId },
-                    deletedBy: { user: userId }
-                }
-            }
-        );
-
-        // Watch progress (videos)
-        await WatchProgress.deleteMany({ user: userId });
-
-        // Audio progress (audio stories)
-        await AudioProgress.deleteMany({ user: userId });
-
-        // Comments
-        await Comment.deleteMany({ user: userId });
-
-        // AI Reels Watch history & state
-        await AIReelWatch.deleteMany({ user: userId });
-        await AIReelUserState.deleteMany({ user: userId });
-        await AIReelFeedSession.deleteMany({ user: userId });
-
-        // OTP records by phone
-        if (user.phone) {
-            await OTP.deleteMany({ phone: user.phone });
-        }
-
-        // Unlink/Reset Voucher usedBy field
-        await Voucher.updateMany(
-            { usedBy: userId },
-            { $set: { usedBy: null, isUsed: false } }
-        );
-
         res.status(200).json({
             success: true,
-            message: "User and all related data deleted successfully",
+            message: result.message || "User and all related data deleted successfully",
         });
 
     } catch (error) {

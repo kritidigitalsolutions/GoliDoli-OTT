@@ -165,6 +165,15 @@ app.use(
   adminUserRoutes
 );
 
+const adminDeleteAccountRequestRoutes = require(
+  "./routes/admin/deleteAccountRequest.routes"
+);
+
+app.use(
+  "/api/admin/delete-account-requests",
+  adminDeleteAccountRequestRoutes
+);
+
 app.use(
   "/api/admin/movies",
   updateUpcomingStatus,

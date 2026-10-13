@@ -1,0 +1,421 @@
+/* =====================================================
+   GOLIDOLI OTT — DELETE ACCOUNT REQUESTS PAGE STYLES
+   Minimal, Clean, Professional Executive Admin UI
+   Maintains 100% design consistency with GoliDoli Design System
+===================================================== */
+
+/* Page container utilizes standard .page-section from Dashboard.css */
+
+/* ── Interactive KPI Card Hover & Active State ── */
+.dar-kpi-card {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dar-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.dar-kpi-card.active-filter {
+  border-color: var(--primary);
+  background: rgba(255, 209, 26, 0.04);
+}
+
+.dar-kpi-card.active-filter::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary);
+}
+
+.dar-kpi-card.card-pending.active-filter::after {
+  background: #f59e0b;
+}
+
+.dar-kpi-card.card-approved.active-filter::after {
+  background: #10b981;
+}
+
+.dar-kpi-card.card-rejected.active-filter::after {
+  background: #f43f5e;
+}
+
+/* ── Status Badges ── */
+.dar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.dar-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.dar-badge-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.dar-badge-pending .dar-badge-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.dar-badge-approved {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.dar-badge-approved .dar-badge-dot {
+  background: #10b981;
+}
+
+.dar-badge-rejected {
+  background: rgba(244, 63, 94, 0.12);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.dar-badge-rejected .dar-badge-dot {
+  background: #f43f5e;
+}
+
+body.light .dar-badge-pending {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+body.light .dar-badge-approved {
+  background: #d1fae5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+body.light .dar-badge-rejected {
+  background: #ffe4e6;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
+/* ── Reason Tag / Category ── */
+.dar-reason-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  background: var(--bg3);
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.light .dar-reason-pill {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.dar-reason-snippet {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Date Cell ── */
+.dar-date-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dar-date-primary {
+  font-size: 0.8rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.dar-date-relative {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ── User ID Chip ── */
+.dar-id-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.dar-id-chip:hover {
+  color: var(--primary);
+}
+
+/* ── Action Buttons Cell ── */
+.dar-actions-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dar-btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  flex-shrink: 0;
+}
+
+.dar-btn-action:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dar-btn-action:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dar-btn-action.view:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.14);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.dar-btn-action.approve:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.14);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.dar-btn-action.reject:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.14);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+body.light .dar-btn-action {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+body.light .dar-btn-action:hover:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Request Details Modal ── */
+.dar-modal-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+  animation: darScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+@keyframes darScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+body.light .dar-modal-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.dar-modal-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg2);
+}
+
+body.light .dar-modal-head {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.dar-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dar-modal-foot {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg2);
+}
+
+body.light .dar-modal-foot {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+/* Modal User Card */
+.dar-user-profile-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+body.light .dar-user-profile-box {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.dar-user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+body.light .dar-user-avatar {
+  border-color: #e2e8f0;
+}
+
+.dar-reason-box {
+  background: rgba(244, 63, 94, 0.04);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+body.light .dar-reason-box {
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+
+.dar-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .dar-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dar-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+body.light .dar-detail-item {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.dar-detail-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 500;
+}
+
+.dar-detail-value {
+  font-size: 0.8rem;
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-all;
+}
+
+/* ── Error Banner / State ── */
+.dar-error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(244, 63, 94, 0.05);
+  border: 1px dashed rgba(244, 63, 94, 0.35);
+  border-radius: 12px;
+  gap: 10px;
+}

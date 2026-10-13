@@ -42,6 +42,22 @@ const isAuth = async (
       });
     }
 
+    const User = require("../models/user.model");
+    const activeUser = await User.findById(decoded.id).select("status role");
+    if (!activeUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Account no longer exists or has been deleted",
+      });
+    }
+
+    if (activeUser.status === "Blocked") {
+      return res.status(403).json({
+        success: false,
+        message: "Account has been blocked or deactivated",
+      });
+    }
+
     req.user = decoded;
 
     next();

@@ -68,4 +68,20 @@ router.get(
   getProfileStats
 );
 
+// ========================================
+// ACCOUNT DELETION REQUESTS (FLUTTER APP)
+// ========================================
+const {
+  submitDeleteAccountRequest,
+  getMyDeletionRequestStatus,
+  cancelMyDeletionRequest,
+} = require("../../controllers/user/deleteAccountRequest.controller");
+
+router.post("/delete-account-request", isAuth, submitDeleteAccountRequest);
+router.post("/delete-account", isAuth, submitDeleteAccountRequest);
+router.get("/delete-account-request", isAuth, getMyDeletionRequestStatus);
+router.get("/delete-account", isAuth, getMyDeletionRequestStatus);
+router.delete("/delete-account-request", isAuth, cancelMyDeletionRequest);
+router.delete("/delete-account", isAuth, cancelMyDeletionRequest);
+
 module.exports = router;

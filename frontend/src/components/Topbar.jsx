@@ -23,6 +23,7 @@ import {
   Loader2,
   BarChart3,
   Users,
+  UserX,
   Plus,
   FileText,
   Settings,
@@ -64,6 +65,7 @@ const SEARCH_CATEGORY_CONFIG = {
 const ADMIN_PAGES_AND_ACTIONS = [
   { title: "Dashboard Overview", subtitle: "Analytics, Stats & Charts", link: "/dashboard", type: "Page", icon: BarChart3, keywords: ["home", "dashboard", "stats", "overview", "analytics", "charts"] },
   { title: "Users Management", subtitle: "User accounts, registered users", link: "/dashboard/users", type: "Page", icon: Users, keywords: ["users", "accounts", "customers", "members", "profiles"] },
+  { title: "Delete Account Requests", subtitle: "Manage user account deletion requests", link: "/dashboard/delete-account-requests", type: "Page", icon: UserX, keywords: ["delete account", "account deletion", "requests", "user delete", "remove user", "gdpr", "privacy"] },
   { title: "Media Categories", subtitle: "Genres, labels & categories", link: "/dashboard/categories", type: "Page", icon: Layers, keywords: ["categories", "genres", "labels", "tags"] },
   { title: "Intro Screens", subtitle: "App onboarding & intro slides", link: "/dashboard/intro-screens", type: "Page", icon: Smartphone, keywords: ["intro", "onboarding", "screens", "slides"] },
   { title: "Home Banners", subtitle: "Hero banners & slider carousels", link: "/dashboard/home-banners", type: "Page", icon: ImageIcon, keywords: ["banners", "slides", "hero", "promotions", "home banner"] },

@@ -1,11 +1,12 @@
 import "./Sidebar.css";
 import { NavLink } from "react-router-dom";
 // import { BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, LogOut } from "lucide-react";
-import { X, BarChart3, Users, Plus, Film, FileText, HelpCircle, CreditCard, Settings, Star, Bell, MessageSquare, Clapperboard, MapPin, Layers, Smartphone, Image as ImageIcon, Headphones, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, BarChart3, Users, UserX, Plus, Film, FileText, HelpCircle, CreditCard, Settings, Star, Bell, MessageSquare, Clapperboard, MapPin, Layers, Smartphone, Image as ImageIcon, Headphones, ChevronLeft, ChevronRight } from "lucide-react";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "#FF7A1A" },
   { id: "users", label: "Users", icon: Users, color: "#3b82f6" },
+  { id: "delete-account-requests", label: "Delete Account Requests", icon: UserX, color: "#f43f5e" },
   { id: "categories", label: "Categories", icon: Layers, color: "#a78bfa" },
   { id: "intro-screens", label: "Intro Screens", icon: Smartphone, color: "#ff4757" },
   { id: "home-banners", label: "Home Banners", icon: ImageIcon, color: "#FF7A1A" },

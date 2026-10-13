@@ -1,5 +1,5 @@
 
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useState, createContext, useContext, useEffect, lazy, Suspense } from "react";
 
 import AdminLogin from "./pages/AdminLogin";
@@ -11,6 +11,7 @@ import ResetPassword from "./pages/ResetPassword";
 // ── Lazy Loaded Dashboard Pages ──
 const DashboardHome = lazy(() => import("./pages/Dashboard"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
+const DeleteAccountRequests = lazy(() => import("./pages/DeleteAccountRequests"));
 const AddContent = lazy(() => import("./pages/AddContent"));
 const Content = lazy(() => import("./pages/Content"));
 // const RatingsPage = lazy(() => import("./pages/Ratings"));
@@ -92,6 +93,7 @@ function App() {
           <Route path="/" element={<AdminLogin />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/delete-account-requests" element={<Navigate to="/dashboard/delete-account-requests" replace />} />
 
           {/* Secured Parent Route */}
           <Route
@@ -105,6 +107,7 @@ function App() {
             {/* Nested Dashboard Routes */}
             <Route index element={<DashboardHome />} />
             <Route path="users" element={<UsersPage />} />
+            <Route path="delete-account-requests" element={<DeleteAccountRequests />} />
             <Route path="add-content" element={<AddContent />} />
             <Route path="content" element={<Content />} />
             {/* <Route path="ratings" element={<RatingsPage />} /> */}
